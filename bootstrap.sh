@@ -156,11 +156,22 @@ run_installer() {
         fi
     done
     
-    # If no mode flag specified, default to interactive mode
+    # If no mode flag specified, check if we can actually be interactive
     if [ "$has_mode_flag" = false ]; then
-        install_args+=("--interactive")
-        log_info "Running in interactive mode (use --non-interactive to disable prompts)"
-        echo ""
+        # Check if we have proper interactive terminal
+        if [ -t 0 ] && [ -t 1 ] && [ -t 2 ]; then
+            install_args+=("--interactive")
+            log_info "Running in interactive mode (use --non-interactive to disable prompts)"
+            echo ""
+        else
+            install_args+=("--non-interactive")
+            log_warning "Piped input detected - running in non-interactive mode"
+            log_info "For interactive installation, download and run locally:"
+            echo "  git clone https://github.com/namastexlabs/automagik-start.git"
+            echo "  cd automagik-start"
+            echo "  ./install.sh"
+            echo ""
+        fi
     fi
     
     # Run the main installer with arguments
@@ -223,11 +234,12 @@ if [ $# -gt 0 ] && [ "$1" = "--help" ]; then
     echo "  --help               Show this help message"
     echo ""
     echo "Examples:"
-    echo "  # Interactive installation (default)"
+    echo "  # Quick automated installation (recommended for most users)"
     echo "  curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash"
     echo ""
-    echo "  # Non-interactive installation"
-    echo "  curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash -s -- --non-interactive"
+    echo "  # For interactive step-by-step installation:"
+    echo "  git clone https://github.com/namastexlabs/automagik-start.git"
+    echo "  cd automagik-start && ./install.sh"
     echo ""
     exit 0
 fi

@@ -16,20 +16,21 @@ Automagik Start is the unified installer that sets up the entire Automagik ecosy
 
 ## 🎯 Quick Start
 
-### One-Line Installation
+### Quick Installation (Automated)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash
 ```
+*Note: This runs in automated mode with safe defaults. Browser tools are optional.*
 
-### Manual Installation
+### Interactive Installation (Recommended)
 
 ```bash
 git clone https://github.com/namastexlabs/automagik-start.git
 cd automagik-start
-chmod +x install.sh
 ./install.sh
 ```
+*This allows step-by-step confirmation and customization of each installation phase.*
 
 ## 📋 System Requirements
 
