@@ -9,8 +9,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/colors.sh"
 source "$SCRIPT_DIR/../utils/logging.sh"
 
-# Repository paths
-BASE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Repository paths - use current directory if it contains repos, otherwise use script location
+if [ -d "./am-agents-labs" ] || [ -d "./automagik-spark" ]; then
+    BASE_DIR="$(pwd)"
+    log_info "Using current directory as base: $BASE_DIR"
+else
+    BASE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    log_info "Using script-relative directory as base: $BASE_DIR"
+fi
 
 # Repository environment configurations
 declare -A REPO_CONFIGS=(
@@ -341,6 +347,50 @@ get_mapped_value() {
                 "automagik-evolution") value="9000" ;;
             esac ;;
         
+        # Automagik Omni specific mappings
+        "AGENT_API_URL")
+            case "$repo_name" in
+                "automagik-omni") value="http://am-agents-labs:8881" ;;
+            esac ;;
+        "AGENT_API_KEY")
+            case "$repo_name" in
+                "automagik-omni") value="${AM_API_KEY:-namastex888}" ;;
+            esac ;;
+        "EVOLUTION_TRANSCRIPT_API")
+            case "$repo_name" in
+                "automagik-omni") value="http://automagik-evolution:9000" ;;
+            esac ;;
+        "EVOLUTION_TRANSCRIPT_API_KEY")
+            case "$repo_name" in
+                "automagik-omni") value="${EVOLUTION_API_KEY:-namastex888}" ;;
+            esac ;;
+        
+        # Automagik UI v2 specific mappings
+        "NEXT_PUBLIC_API_URL")
+            case "$repo_name" in
+                "automagik-ui-v2") value="http://localhost:8881" ;;
+            esac ;;
+        "NEXT_PUBLIC_SPARK_URL")
+            case "$repo_name" in
+                "automagik-ui-v2") value="http://localhost:8883" ;;
+            esac ;;
+        "NEXT_PUBLIC_OMNI_URL")
+            case "$repo_name" in
+                "automagik-ui-v2") value="http://localhost:8882" ;;
+            esac ;;
+        "NEXT_PUBLIC_TOOLS_SSE_URL")
+            case "$repo_name" in
+                "automagik-ui-v2") value="http://localhost:8884" ;;
+            esac ;;
+        "NEXT_PUBLIC_TOOLS_HTTP_URL")
+            case "$repo_name" in
+                "automagik-ui-v2") value="http://localhost:8885" ;;
+            esac ;;
+        "NEXT_PUBLIC_EVOLUTION_URL")
+            case "$repo_name" in
+                "automagik-ui-v2") value="http://localhost:9000" ;;
+            esac ;;
+        
     esac
     
     echo "$value"
@@ -449,6 +499,32 @@ add_project_specific_vars() {
             config+="FILE_SIZE_MB=10\n"
             config+="WEBHOOK_EVENTS=all\n"
             ;;
+        "automagik-omni")
+            config+="# Automagik Omni Specific Configuration\n"
+            config+="WHATSAPP_INSTANCE=default\n"
+            config+="SESSION_ID_PREFIX=instance-\n"
+            config+="LOG_LEVEL=INFO\n"
+            config+="LOG_VERBOSITY=short\n"
+            config+="AGENT_API_URL=http://am-agents-labs:8881\n"
+            config+="AGENT_API_KEY=namastex888\n"
+            config+="DEFAULT_AGENT_NAME=simple_agent\n"
+            config+="EVOLUTION_TRANSCRIPT_API=http://automagik-evolution:9000\n"
+            config+="EVOLUTION_TRANSCRIPT_API_KEY=namastex888\n"
+            config+="EVOLUTION_MINIO_URL=minio:9000\n"
+            ;;
+        "automagik-ui-v2")
+            config+="# Automagik UI v2 Specific Configuration\n"
+            config+="ENCRYPTION_KEY=automagik-development-key-2024\n"
+            config+="OMNI_MOCK_DATA=false\n"
+            config+="NEXT_PUBLIC_OMNI_MOCK_DATA=false\n"
+            config+="NEXT_PUBLIC_LOADING_SPLASH_TIME=500\n"
+            config+="NEXT_PUBLIC_API_URL=http://localhost:8881\n"
+            config+="NEXT_PUBLIC_SPARK_URL=http://localhost:8883\n"
+            config+="NEXT_PUBLIC_OMNI_URL=http://localhost:8882\n"
+            config+="NEXT_PUBLIC_TOOLS_SSE_URL=http://localhost:8884\n"
+            config+="NEXT_PUBLIC_TOOLS_HTTP_URL=http://localhost:8885\n"
+            config+="NEXT_PUBLIC_EVOLUTION_URL=http://localhost:9000\n"
+            ;;
     esac
     
     echo -e "$config"
@@ -513,6 +589,17 @@ generate_port_config() {
             config+="SERVER_PORT=\"9000\"\n"
             config+="SERVER_URL=\"http://localhost:9000\"\n"
             ;;
+        "automagik-omni")
+            config+="# Application Configuration\n"
+            config+="API_HOST=\"0.0.0.0\"\n"
+            config+="API_PORT=\"8882\"\n"
+            ;;
+        "automagik-ui-v2")
+            config+="# Application Configuration\n"
+            config+="PORT=\"8888\"\n"
+            config+="NODE_ENV=\"production\"\n"
+            config+="NEXT_TELEMETRY_DISABLED=\"1\"\n"
+            ;;
     esac
     
     echo -e "$config"
@@ -522,13 +609,29 @@ generate_port_config() {
 process_env_file() {
     local repo_path="$1"
     local repo_name="$(basename "$repo_path")"
-    local env_example="$repo_path/.env.example"
-    local env_file="$repo_path/.env"
+    local env_example=""
+    local env_file=""
     
     log_info "Processing $repo_name environment..."
     
+    # Determine the correct env example file and target file for each project
+    case "$repo_name" in
+        "automagik-ui-v2")
+            env_example="$repo_path/.env.local.example"
+            env_file="$repo_path/.env.local"
+            ;;
+        "automagik-omni")
+            env_example="$repo_path/.env-example"
+            env_file="$repo_path/.env"
+            ;;
+        *)
+            env_example="$repo_path/.env.example"
+            env_file="$repo_path/.env"
+            ;;
+    esac
+    
     if [ ! -f "$env_example" ]; then
-        log_warning "No .env.example found in $repo_name"
+        log_warning "No env example file found in $repo_name (checked: $(basename "$env_example"))"
         return 1
     fi
     
@@ -632,7 +735,17 @@ verify_environments() {
     
     for repo_name in "${!REPO_CONFIGS[@]}"; do
         local repo_path="$BASE_DIR/$repo_name"
-        local env_file="$repo_path/.env"
+        local env_file=""
+        
+        # Determine the correct env file to check
+        case "$repo_name" in
+            "automagik-ui-v2")
+                env_file="$repo_path/.env.local"
+                ;;
+            *)
+                env_file="$repo_path/.env"
+                ;;
+        esac
         
         local status size vars
         
@@ -680,7 +793,17 @@ show_environment_summary() {
     
     for repo_name in "${!REPO_CONFIGS[@]}"; do
         local repo_path="$BASE_DIR/$repo_name"
-        local env_file="$repo_path/.env"
+        local env_file=""
+        
+        # Determine the correct env file to check
+        case "$repo_name" in
+            "automagik-ui-v2")
+                env_file="$repo_path/.env.local"
+                ;;
+            *)
+                env_file="$repo_path/.env"
+                ;;
+        esac
         
         if [ -f "$env_file" ]; then
             echo -e "${CYAN}$repo_name:${NC}"
