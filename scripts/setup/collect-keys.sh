@@ -46,10 +46,11 @@ declare -A API_KEYS=(
     ["ENCRYPTION_KEY"]="Encryption Key (will be auto-generated if not provided)"
 )
 
-# Required keys (cannot be empty)
+# Required keys (cannot be empty) - Made optional for easier onboarding
 REQUIRED_KEYS=(
-    "OPENAI_API_KEY"
-    "NEO4J_PASSWORD"
+    # All keys are now optional to allow users to set them up later
+    # "OPENAI_API_KEY"  # Optional - users can configure later
+    # "NEO4J_PASSWORD"  # Optional - will use default if not provided
 )
 
 # Keys with default values

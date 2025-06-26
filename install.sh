@@ -94,6 +94,25 @@ show_welcome() {
 run_system_detection() {
     log_section "System Detection"
     
+    if [ "$INSTALL_MODE" = "interactive" ]; then
+        echo "This will analyze your system (OS, RAM, CPU, disk space) and check compatibility."
+        while true; do
+            read -p "Proceed with system detection? [Y/n]: " proceed
+            case $proceed in
+                [Yy]|[Yy][Ee][Ss]|"")
+                    break
+                    ;;
+                [Nn]|[Nn][Oo])
+                    log_info "System detection skipped by user"
+                    return 1
+                    ;;
+                *)
+                    print_warning "Please answer yes or no."
+                    ;;
+            esac
+        done
+    fi
+    
     if "$SCRIPT_DIR/scripts/system/detect-system.sh" detect; then
         log_success "System detection completed successfully"
         
@@ -101,6 +120,11 @@ run_system_detection() {
         if [ -f "system-info.env" ]; then
             source "system-info.env"
             log_info "System information loaded"
+        fi
+        
+        if [ "$INSTALL_MODE" = "interactive" ]; then
+            echo ""
+            read -p "Press Enter to continue to dependency installation..."
         fi
         
         return 0
@@ -139,6 +163,33 @@ install_dependencies() {
     fi
     
     log_section "Dependency Installation"
+    
+    if [ "$INSTALL_MODE" = "interactive" ]; then
+        echo "This will install required dependencies:"
+        echo "• Python 3.12+"
+        echo "• Node.js 22+"
+        echo "• Docker & Docker Compose"
+        echo "• uv (Python package manager)"
+        echo "• pnpm (Node.js package manager)"
+        echo "• GitHub CLI"
+        echo "• Claude Code CLI"
+        echo ""
+        while true; do
+            read -p "Proceed with dependency installation? [Y/n]: " proceed
+            case $proceed in
+                [Yy]|[Yy][Ee][Ss]|"")
+                    break
+                    ;;
+                [Nn]|[Nn][Oo])
+                    log_info "Dependency installation skipped by user"
+                    return 1
+                    ;;
+                *)
+                    print_warning "Please answer yes or no."
+                    ;;
+            esac
+        done
+    fi
     
     # Determine which installer to use based on detected OS
     local installer_script=""
@@ -214,32 +265,46 @@ clone_repositories() {
 collect_api_keys() {
     log_section "API Key Collection"
     
+    if [ "$INSTALL_MODE" = "interactive" ]; then
+        echo "API keys enable AI functionality but are all optional for initial setup."
+        echo "You can configure them later by editing the .env files in each service directory."
+        echo ""
+        while true; do
+            read -p "Set up API keys now? [Y/n]: " setup_keys
+            case $setup_keys in
+                [Yy]|[Yy][Ee][Ss]|"")
+                    break
+                    ;;
+                [Nn]|[Nn][Oo])
+                    log_info "Skipping API key setup - you can configure them later"
+                    return 0
+                    ;;
+                *)
+                    print_warning "Please answer yes or no."
+                    ;;
+            esac
+        done
+    fi
+    
     if "$SCRIPT_DIR/scripts/setup/collect-keys.sh" collect; then
         log_success "API keys collected successfully"
-        return 0
-    else
-        log_error "API key collection failed"
         
         if [ "$INSTALL_MODE" = "interactive" ]; then
-            while true; do
-                read -p "Continue without API keys? [y/N]: " continue_choice
-                case $continue_choice in
-                    [Yy]|[Yy][Ee][Ss])
-                        log_warning "Continuing without API keys - you'll need to configure them later"
-                        return 0
-                        ;;
-                    [Nn]|[Nn][Oo]|"")
-                        log_info "Installation stopped - API keys are required"
-                        exit 1
-                        ;;
-                    *)
-                        print_warning "Please answer yes or no."
-                        ;;
-                esac
-            done
-        else
-            return 1
+            echo ""
+            read -p "Press Enter to continue to environment setup..."
         fi
+        
+        return 0
+    else
+        log_warning "API key collection completed with some keys skipped"
+        
+        if [ "$INSTALL_MODE" = "interactive" ]; then
+            echo "Note: You can always add API keys later by editing the .env files"
+            echo ""
+            read -p "Press Enter to continue..."
+        fi
+        
+        return 0  # Don't fail the installation for missing API keys
     fi
 }
 
@@ -269,6 +334,35 @@ deploy_services() {
     fi
     
     log_section "Service Deployment"
+    
+    if [ "$INSTALL_MODE" = "interactive" ]; then
+        echo "This will start all Automagik services using Docker Compose:"
+        echo "• PostgreSQL databases (3 instances)"
+        echo "• Redis instances (2 instances)"
+        echo "• RabbitMQ message broker"
+        echo "• All Automagik applications"
+        echo ""
+        echo "Services will be accessible at:"
+        echo "• Main Interface: http://localhost:8888"
+        echo "• AM Agents Labs: http://localhost:8881"
+        echo "• Automagik Spark: http://localhost:8883"
+        echo ""
+        while true; do
+            read -p "Start all services now? [Y/n]: " start_services
+            case $start_services in
+                [Yy]|[Yy][Ee][Ss]|"")
+                    break
+                    ;;
+                [Nn]|[Nn][Oo])
+                    log_info "Service deployment skipped - you can start them later with: ./scripts/deploy/start-services.sh start"
+                    return 0
+                    ;;
+                *)
+                    print_warning "Please answer yes or no."
+                    ;;
+            esac
+        done
+    fi
     
     if "$SCRIPT_DIR/scripts/deploy/start-services.sh" deploy; then
         log_success "Services deployed successfully"
