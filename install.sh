@@ -603,8 +603,11 @@ uninstall_automagik() {
     return 0
 }
 
-# Handle command line arguments
-parse_arguments() {
+
+# Main function when script is run directly
+main() {
+    # Parse arguments and get remaining args
+    local remaining_args=()
     while [[ $# -gt 0 ]]; do
         case $1 in
             --interactive)
@@ -639,20 +642,20 @@ parse_arguments() {
                 show_usage
                 exit 0
                 ;;
+            -*)
+                echo "Unknown option: $1"
+                show_usage
+                exit 1
+                ;;
             *)
-                break
+                remaining_args+=("$1")
+                shift
                 ;;
         esac
     done
-}
-
-# Main function when script is run directly
-main() {
-    # Parse arguments first
-    parse_arguments "$@"
     
-    # Determine command
-    local command="${1:-install}"
+    # Determine command from remaining args
+    local command="${remaining_args[0]:-install}"
     
     case "$command" in
         "install"|"")
