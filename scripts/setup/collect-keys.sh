@@ -146,10 +146,28 @@ collect_api_key() {
     echo ""
     
     while true; do
-        if [ "$is_required" = true ]; then
-            read -p "Enter $key_name: " key_value
+        # In non-interactive mode, skip all key collection
+        if [ "$INSTALL_MODE" = "automated" ]; then
+            # Use default value if available
+            if [ -n "$default_value" ]; then
+                key_value="$default_value"
+                log_info "Using default value: $default_value"
+            # Auto-generate for security keys
+            elif [[ "$key_name" == "JWT_SECRET" || "$key_name" == "ENCRYPTION_KEY" ]]; then
+                key_value=$(generate_secure_key)
+                log_success "Generated secure key (64 characters)"
+            # Skip all other keys in automated mode
+            else
+                log_info "Skipping $key_name (automated mode)"
+                return 0
+            fi
         else
-            read -p "Enter $key_name (or press Enter to skip): " key_value
+            # Prompt for input in interactive mode
+            if [ "$is_required" = true ]; then
+                read -p "Enter $key_name: " key_value
+            else
+                read -p "Enter $key_name (or press Enter to skip): " key_value
+            fi
         fi
         
         # Handle empty input

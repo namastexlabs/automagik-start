@@ -87,6 +87,13 @@ get_repo_branches() {
 
 # Select branch for am-agents-labs
 select_agents_branch() {
+    # In automated mode, always use default branch
+    if [ "$INSTALL_MODE" = "automated" ]; then
+        log_info "Automated mode: using default branch (main) for am-agents-labs"
+        REPOSITORY_BRANCHES["am-agents-labs"]=""
+        return 0
+    fi
+    
     local repo_url="${REPOSITORIES[am-agents-labs]}"
     
     log_section "Branch Selection for am-agents-labs"
@@ -151,6 +158,13 @@ select_agents_branch() {
     echo ""
     
     # Get user selection
+    if [ "$INSTALL_MODE" = "automated" ]; then
+        # In automated mode, always use default branch (main)
+        log_info "Automated mode: using default branch (main)"
+        REPOSITORY_BRANCHES["am-agents-labs"]=""
+        return 0
+    fi
+    
     while true; do
         read -p "Select branch [0-$((i-1))]: " choice
         
@@ -475,21 +489,25 @@ clone_all_repositories() {
     echo ""
     
     # Confirm with user
-    while true; do
-        read -p "Proceed with cloning? [y/N]: " confirm
-        case $confirm in
-            [Yy]|[Yy][Ee][Ss])
-                break
-                ;;
-            [Nn]|[Nn][Oo]|"")
-                log_info "Cloning cancelled by user"
-                return 0
-                ;;
-            *)
-                print_warning "Please answer yes or no."
-                ;;
-        esac
-    done
+    if [ "$INSTALL_MODE" = "automated" ]; then
+        log_info "Automated mode: proceeding with repository cloning"
+    else
+        while true; do
+            read -p "Proceed with cloning? [y/N]: " confirm
+            case $confirm in
+                [Yy]|[Yy][Ee][Ss])
+                    break
+                    ;;
+                [Nn]|[Nn][Oo]|"")
+                    log_info "Cloning cancelled by user"
+                    return 0
+                    ;;
+                *)
+                    print_warning "Please answer yes or no."
+                    ;;
+            esac
+        done
+    fi
     
     # Clone repositories in order
     local total_repos=${#CLONE_ORDER[@]}
