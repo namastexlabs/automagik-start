@@ -602,21 +602,103 @@ setup_github_cli() {
     if gh auth status >/dev/null 2>&1; then
         local gh_user=$(gh api user --jq .login 2>/dev/null || echo "authenticated")
         log_success "GitHub CLI already authenticated as: $gh_user"
-    else
-        log_info "GitHub CLI authentication required"
-        log_info "This will open your browser for GitHub authentication..."
+        return 0
+    fi
+    
+    log_info "GitHub CLI authentication required"
+    
+    if [ "$INSTALL_MODE" = "interactive" ]; then
+        echo ""
+        echo -e "${YELLOW}Choose GitHub authentication method:${NC}"
+        echo "1. Personal Access Token (recommended for headless/WSL)"
+        echo "2. Web browser authentication"
+        echo "3. Skip authentication (can do later with 'gh auth login')"
+        echo ""
         
-        # Start authentication flow
-        if gh auth login --web --git-protocol https --hostname github.com; then
-            local gh_user=$(gh api user --jq .login 2>/dev/null || echo "authenticated")
-            log_success "GitHub CLI authenticated successfully as: $gh_user"
-        else
-            log_warning "GitHub CLI authentication failed or was cancelled"
-            log_info "You can run 'gh auth login' later to authenticate"
-        fi
+        while true; do
+            read -p "Select option [1-3]: " auth_choice
+            case $auth_choice in
+                1)
+                    setup_github_token_auth
+                    break
+                    ;;
+                2)
+                    setup_github_web_auth
+                    break
+                    ;;
+                3)
+                    log_info "Skipping GitHub authentication"
+                    log_info "You can run 'gh auth login' later to authenticate"
+                    return 0
+                    ;;
+                *)
+                    log_warning "Please select 1, 2, or 3"
+                    ;;
+            esac
+        done
+    else
+        log_info "Non-interactive mode: skipping GitHub authentication"
+        log_info "You can run 'gh auth login' later to authenticate"
+        return 0
     fi
     
     return 0
+}
+
+# Setup GitHub authentication via Personal Access Token
+setup_github_token_auth() {
+    echo ""
+    echo -e "${CYAN}Setting up GitHub authentication with Personal Access Token:${NC}"
+    echo ""
+    echo "1. Go to: https://github.com/settings/tokens/new"
+    echo "2. Generate a token with 'repo' and 'read:org' scopes"
+    echo "3. Copy the token and paste it below"
+    echo ""
+    
+    while true; do
+        read -s -p "Enter your GitHub Personal Access Token: " github_token
+        echo ""
+        
+        if [ -z "$github_token" ]; then
+            log_warning "Token cannot be empty"
+            continue
+        fi
+        
+        # Test the token by authenticating
+        if echo "$github_token" | gh auth login --with-token; then
+            local gh_user=$(gh api user --jq .login 2>/dev/null || echo "authenticated")
+            log_success "GitHub CLI authenticated successfully as: $gh_user"
+            return 0
+        else
+            log_error "Authentication failed. Please check your token and try again."
+            echo ""
+            read -p "Try again? [y/N]: " retry
+            case $retry in
+                [Yy]|[Yy][Ee][Ss])
+                    continue
+                    ;;
+                *)
+                    log_info "You can run 'gh auth login' later to authenticate"
+                    return 0
+                    ;;
+            esac
+        fi
+    done
+}
+
+# Setup GitHub authentication via web browser
+setup_github_web_auth() {
+    log_info "Starting web browser authentication..."
+    log_warning "This may not work in headless/WSL environments"
+    
+    if gh auth login --web --git-protocol https --hostname github.com; then
+        local gh_user=$(gh api user --jq .login 2>/dev/null || echo "authenticated")
+        log_success "GitHub CLI authenticated successfully as: $gh_user"
+    else
+        log_warning "Web authentication failed"
+        log_info "Try the Personal Access Token method instead"
+        log_info "You can run 'gh auth login' later to authenticate"
+    fi
 }
 
 # Clean up package cache
