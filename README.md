@@ -26,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/b
 ### Interactive Installation (One Command)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash
+curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh && chmod +x interactive.sh && ./interactive.sh
 ```
 *Downloads and runs installer with step-by-step prompts and full customization.*
 

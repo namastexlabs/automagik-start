@@ -238,8 +238,7 @@ if [ $# -gt 0 ] && [ "$1" = "--help" ]; then
     echo "  curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash"
     echo ""
     echo "  # For interactive step-by-step installation:"
-    echo "  git clone https://github.com/namastexlabs/automagik-start.git"
-    echo "  cd automagik-start && ./install.sh"
+    echo "  curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh && chmod +x interactive.sh && ./interactive.sh"
     echo ""
     exit 0
 fi

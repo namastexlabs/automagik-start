@@ -193,7 +193,7 @@ show_welcome() {
     echo "6. Confirm service deployment and startup"
     echo ""
     echo -e "${CYAN}💡 One-line interactive command:${NC}"
-    echo "curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash"
+    echo "curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh && chmod +x interactive.sh && ./interactive.sh"
     echo ""
 }
 
@@ -239,7 +239,7 @@ if [ $# -gt 0 ] && [ "$1" = "--help" ]; then
     echo "Automagik Start Interactive Installer"
     echo ""
     echo "Usage:"
-    echo "  curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash"
+    echo "  curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh && chmod +x interactive.sh && ./interactive.sh"
     echo ""
     echo "Features:"
     echo "  • Downloads installer to local directory"
@@ -262,10 +262,8 @@ if [ ! -t 1 ]; then
     log_info "For automated installation, use:"
     echo "  curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash"
     echo ""
-    log_info "For true interactive installation, download and run locally:"
-    echo "  curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh"
-    echo "  chmod +x interactive.sh"
-    echo "  ./interactive.sh"
+    log_info "For true interactive installation, use this working command:"
+    echo "  curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh && chmod +x interactive.sh && ./interactive.sh"
     exit 1
 fi
 
