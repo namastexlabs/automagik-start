@@ -26,11 +26,13 @@ INFRASTRUCTURE_SERVICES=(
 
 APPLICATION_SERVICES=(
     "am-agents-labs"
-    "automagik-spark"
+    "automagik-spark-api"
+    "automagik-spark-worker"
     "automagik-tools"
-    "automagik-evolution"
-    "automagik-omni"
-    "automagik-ui-v2"
+    # Note: Services below are commented out as they don't have Dockerfiles yet
+    # "automagik-evolution"
+    # "automagik-omni"
+    # "automagik-ui-v2"
 )
 
 OPTIONAL_SERVICES=(
@@ -337,11 +339,12 @@ check_service_connectivity() {
     # Define service endpoints for health checks
     declare -A SERVICE_ENDPOINTS=(
         ["am-agents-labs"]="http://localhost:8881/health"
-        ["automagik-spark"]="http://localhost:8883/health"
+        ["automagik-spark-api"]="http://localhost:8883/health"
         ["automagik-tools"]="http://localhost:8885/health"
-        ["automagik-evolution"]="http://localhost:9000/health"
-        ["automagik-omni"]="http://localhost:8882/health"
-        ["automagik-ui-v2"]="http://localhost:8888"
+        # Note: Worker service doesn't have HTTP endpoint for health checks
+        # ["automagik-evolution"]="http://localhost:9000/health"
+        # ["automagik-omni"]="http://localhost:8882/health"
+        # ["automagik-ui-v2"]="http://localhost:8888"
         ["langflow"]="http://localhost:7860/health"
     )
     
