@@ -1,0 +1,52 @@
+# Logs
+*.log
+automagik-install.log
+
+# System detection output
+system-info.env
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Node modules
+node_modules/
+*/node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Docker
+.dockerignore
+
+# Repository directories (will be cloned)
+am-agents-labs/
+automagik-ui-v2/
+automagik-omni/
+automagik-spark/
+automagik-tools/
+automagik-evolution/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
