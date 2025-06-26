@@ -22,20 +22,6 @@ declare -A REPO_CONFIGS=(
     ["automagik-ui-v2"]="Frontend application configuration"
 )
 
-# Variables to exclude (Neo4j/Graphiti related)
-EXCLUDED_VARIABLES=(
-    "NEO4J_USERNAME"
-    "NEO4J_PASSWORD" 
-    "NEO4J_URI"
-    "NEO4J_DATABASE"
-    "GRAPHITI_USERNAME"
-    "GRAPHITI_PASSWORD"
-    "GRAPHITI_URI"
-    "GRAPHITI_DATABASE"
-    "GRAPH_DATABASE_URL"
-    "GRAPH_DB_USERNAME"
-    "GRAPH_DB_PASSWORD"
-)
 
 # Load collected API keys
 load_api_keys() {
@@ -60,17 +46,6 @@ load_api_keys() {
     return 1
 }
 
-# Check if variable should be excluded
-is_excluded_variable() {
-    local var_name="$1"
-    
-    for excluded in "${EXCLUDED_VARIABLES[@]}"; do
-        if [ "$var_name" = "$excluded" ]; then
-            return 0
-        fi
-    done
-    return 1
-}
 
 # Generate database configuration
 generate_database_config() {
@@ -277,11 +252,6 @@ process_env_file() {
         # Extract variable name
         var_name=$(echo "$line" | cut -d'=' -f1)
         
-        # Skip excluded variables
-        if is_excluded_variable "$var_name"; then
-            echo "# $line  # Excluded: Neo4j/Graphiti not used in this deployment" >> "$env_file"
-            continue
-        fi
         
         # Check if we have a collected value for this variable
         local collected_value=""
@@ -461,14 +431,6 @@ show_environment_summary() {
     
     log_info "Total: $configured_vars/$total_vars variables configured across all services"
     
-    # Show excluded variables info
-    echo ""
-    echo -e "${YELLOW}Excluded Variables (Neo4j/Graphiti):${NC}"
-    for excluded in "${EXCLUDED_VARIABLES[@]}"; do
-        echo "  • $excluded"
-    done
-    echo ""
-    log_info "These variables are excluded as we're using PostgreSQL instead of Neo4j"
 }
 
 # Clean environment files
