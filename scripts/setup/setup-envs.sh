@@ -27,6 +27,15 @@ declare -A REPO_CONFIGS=(
 load_api_keys() {
     log_info "Loading collected API keys..."
     
+    # First try main .env file
+    local main_env_file="$BASE_DIR/.env"
+    if [ -f "$main_env_file" ]; then
+        log_success "Found main .env file: $main_env_file"
+        source "$main_env_file"
+        return 0
+    fi
+    
+    # Fallback to temporary keys file
     if [ -n "$AUTOMAGIK_KEYS_FILE" ] && [ -f "$AUTOMAGIK_KEYS_FILE" ]; then
         log_success "Found API keys file: $AUTOMAGIK_KEYS_FILE"
         source "$AUTOMAGIK_KEYS_FILE"

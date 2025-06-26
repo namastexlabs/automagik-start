@@ -9,6 +9,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/colors.sh"
 source "$SCRIPT_DIR/../utils/logging.sh"
 
+# Base directory for .env file
+BASE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+MAIN_ENV_FILE="$BASE_DIR/.env"
+
+# Load existing .env file if it exists
+load_existing_env() {
+    if [ -f "$MAIN_ENV_FILE" ]; then
+        log_info "Found existing .env file: $MAIN_ENV_FILE"
+        log_info "Loading existing values..."
+        
+        # Source the file to load variables
+        set -a  # Automatically export all variables
+        source "$MAIN_ENV_FILE"
+        set +a  # Turn off automatic export
+        
+        log_success "Loaded existing environment variables"
+        return 0
+    else
+        log_info "No existing .env file found - will collect all values interactively"
+        return 1
+    fi
+}
+
 # API Keys configuration
 declare -A API_KEYS=(
     # OpenAI Configuration
@@ -90,6 +113,16 @@ collect_api_key() {
     local key_name="$1"
     local description="$2"
     local is_required=false
+    
+    # Check if this key already exists (loaded from .env)
+    local existing_value
+    existing_value=$(eval echo "\${$key_name}")
+    
+    if [ -n "$existing_value" ]; then
+        log_success "$key_name: Using existing value from .env file"
+        COLLECTED_KEYS["$key_name"]="$existing_value"
+        return 0
+    fi
     
     # Check if this key is required
     for required_key in "${REQUIRED_KEYS[@]}"; do
@@ -302,7 +335,10 @@ collect_all_keys() {
     log_info "Required keys are marked with * and cannot be skipped"
     log_info "Optional keys can be added later by editing .env files"
     
-    # Load existing keys first
+    # Load existing .env file first (if it exists)
+    load_existing_env
+    
+    # Load existing keys from individual repo .env files
     load_existing_keys
     
     echo ""
@@ -431,9 +467,59 @@ export_keys() {
         return 0
     fi
     
-    # Create a temporary file with all collected keys
-    local temp_keys_file=$(mktemp)
+    # Save to main .env file
+    local main_env_file="$MAIN_ENV_FILE"
+    local existing_vars=()
     
+    # Read existing variables if file exists
+    if [ -f "$main_env_file" ]; then
+        log_info "Updating existing .env file: $main_env_file"
+        
+        # Read existing variables (excluding the ones we're updating)
+        while IFS= read -r line; do
+            # Skip comments and empty lines
+            [[ "$line" =~ ^[[:space:]]*# ]] && continue
+            [[ -z "${line// }" ]] && continue
+            
+            # Extract variable name
+            local var_name="${line%%=*}"
+            
+            # Skip if we're updating this variable
+            if [[ -z "${COLLECTED_KEYS[$var_name]}" ]]; then
+                existing_vars+=("$line")
+            fi
+        done < "$main_env_file"
+    else
+        log_info "Creating new .env file: $main_env_file"
+    fi
+    
+    # Create new .env file with existing + new variables
+    {
+        echo "# Automagik Suite Configuration"
+        echo "# Updated on $(date)"
+        echo ""
+        
+        # Write existing variables first
+        for var_line in "${existing_vars[@]}"; do
+            echo "$var_line"
+        done
+        
+        # Add collected keys
+        if [ ${#existing_vars[@]} -gt 0 ] && [ ${#COLLECTED_KEYS[@]} -gt 0 ]; then
+            echo ""
+            echo "# Updated/Added API Keys"
+        fi
+        
+        for key_name in "${!COLLECTED_KEYS[@]}"; do
+            local key_value="${COLLECTED_KEYS[$key_name]}"
+            echo "$key_name=\"$key_value\""
+        done
+    } > "$main_env_file"
+    
+    log_success "Keys saved to main .env file: $main_env_file"
+    
+    # Also create a temporary file for backward compatibility
+    local temp_keys_file=$(mktemp)
     {
         echo "# Automagik Suite API Keys"
         echo "# Generated on $(date)"
@@ -445,12 +531,10 @@ export_keys() {
         done
     } > "$temp_keys_file"
     
-    log_success "Keys exported to temporary file: $temp_keys_file"
-    
     # Save the file path for the next script to use
     export AUTOMAGIK_KEYS_FILE="$temp_keys_file"
     
-    log_info "Keys will be distributed to appropriate .env files in the next step"
+    log_info "Keys will be distributed to individual repository .env files in the next step"
     
     return 0
 }
