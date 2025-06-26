@@ -1,7 +1,25 @@
 #!/bin/bash
 
 # ===================================================================
-# 🐧 Ubuntu/Debian Dependencies Installer
+# 🐧 Ubuntu/Debian Dependencies Installer (Optimized for Docker Deployment)
+# ===================================================================
+# 
+# This optimized version installs only essential tools for Docker-based
+# deployment. All application services run in containers, so local
+# Python, Node.js, and development tools are skipped to minimize
+# installation time and disk usage.
+#
+# What's installed:
+# ✅ Essential system packages (git, curl, jq)
+# ✅ Docker Engine (to run containers)
+# ✅ GitHub CLI (optional, for repo access)
+#
+# What's skipped:
+# ⏭️  Python/uv (runs in containers)
+# ⏭️  Node.js/pnpm (runs in containers)  
+# ⏭️  Browser tools (runs in containers)
+# ⏭️  Development tools (build-essential, etc.)
+# ⏭️  Claude Code CLI (not needed for deployment)
 # ===================================================================
 
 # Source utilities
@@ -9,35 +27,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/colors.sh"
 source "$SCRIPT_DIR/../utils/logging.sh"
 
-# Package lists
-SYSTEM_PACKAGES=(
-    "curl"
-    "wget"
-    "git"
-    "build-essential"
-    "software-properties-common"
-    "apt-transport-https"
-    "ca-certificates"
-    "gnupg"
-    "lsb-release"
-    "unzip"
-    "jq"
-    "bc"
-    "lsof"
-    "net-tools"
+# Minimal package list for Docker-based deployment
+ESSENTIAL_PACKAGES=(
+    "curl"                    # Required for downloading scripts and health checks
+    "git"                     # Required for repository cloning
+    "ca-certificates"         # Required for HTTPS connections
+    "gnupg"                   # Required for package signing verification
+    "lsb-release"             # Required for system detection
+    "jq"                      # Optional: for JSON parsing in status checks
 )
 
-PYTHON_PACKAGES=(
-    "python3"
-    "python3-pip"
-    "python3-venv"
-    "python3-dev"
-    "python3-setuptools"
-)
-
-# Version requirements
-PYTHON_MIN_VERSION="3.12"
-NODE_MIN_VERSION="22"
+# Docker-only deployment doesn't need Python/Node locally
+# All services run in containers
 
 # Update package list
 update_package_list() {
@@ -52,13 +53,13 @@ update_package_list() {
     fi
 }
 
-# Install system packages
-install_system_packages() {
-    log_section "Installing System Packages"
+# Install essential packages only
+install_essential_packages() {
+    log_section "Installing Essential Packages"
     
     local failed_packages=()
     
-    for package in "${SYSTEM_PACKAGES[@]}"; do
+    for package in "${ESSENTIAL_PACKAGES[@]}"; do
         if dpkg -l | grep -q "^ii  $package "; then
             log_success "$package is already installed"
         else
@@ -76,171 +77,39 @@ install_system_packages() {
         log_error "Failed to install packages: ${failed_packages[*]}"
         return 1
     else
-        log_success "All system packages installed successfully"
+        log_success "All essential packages installed successfully"
         return 0
     fi
 }
 
 # Install Python and related tools
-install_python() {
-    log_section "Installing Python Environment"
+# Skip Python installation - runs in Docker containers
+skip_python_install() {
+    log_info "Skipping Python installation - services run in Docker containers"
+    log_info "Python/uv will be available inside the containers as needed"
     
-    # Install Python packages
-    local failed_packages=()
-    
-    for package in "${PYTHON_PACKAGES[@]}"; do
-        if dpkg -l | grep -q "^ii  $package "; then
-            log_success "$package is already installed"
-        else
-            log_info "Installing $package..."
-            if sudo apt install -y -qq "$package"; then
-                log_success "$package installed successfully"
-            else
-                log_error "Failed to install $package"
-                failed_packages+=("$package")
-            fi
-        fi
-    done
-    
-    if [ ${#failed_packages[@]} -gt 0 ]; then
-        log_error "Failed to install Python packages: ${failed_packages[*]}"
-        return 1
-    fi
-    
-    # Verify Python version
+    # Check if system Python exists (for any helper scripts)
     if command -v python3 >/dev/null 2>&1; then
         local python_version=$(python3 --version 2>&1 | cut -d' ' -f2)
-        local version_check=$(python3 -c "import sys; print(sys.version_info >= (3, 12))")
-        
-        if [ "$version_check" = "True" ]; then
-            log_success "Python $python_version meets requirements (>= $PYTHON_MIN_VERSION)"
-        else
-            log_warning "Python $python_version may be too old (recommended >= $PYTHON_MIN_VERSION)"
-        fi
-    else
-        log_error "Python installation verification failed"
-        return 1
+        log_info "System Python $python_version detected (not required for Docker deployment)"
     fi
-    
-    # Install uv (modern Python package manager)
-    install_uv
     
     return 0
-}
-
-# Install uv package manager
-install_uv() {
-    log_info "Installing uv (Python package manager)..."
-    
-    if command -v uv >/dev/null 2>&1; then
-        log_success "uv is already installed"
-        return 0
-    fi
-    
-    # Install uv using the official installer
-    if curl -LsSf https://astral.sh/uv/install.sh | sh; then
-        # Add to PATH for current session
-        export PATH="$HOME/.local/bin:$PATH"
-        
-        # Verify installation
-        if command -v uv >/dev/null 2>&1; then
-            local uv_version=$(uv --version 2>/dev/null | cut -d' ' -f2)
-            log_success "uv $uv_version installed successfully"
-            
-            # Add to shell profile
-            add_to_shell_profile 'export PATH="$HOME/.local/bin:$PATH"'
-            
-            return 0
-        else
-            log_error "uv installation verification failed"
-            return 1
-        fi
-    else
-        log_error "Failed to install uv"
-        return 1
-    fi
 }
 
 # Install Node.js and pnpm
-install_nodejs() {
-    log_section "Installing Node.js Environment"
+# Skip Node.js installation - runs in Docker containers
+skip_nodejs_install() {
+    log_info "Skipping Node.js installation - frontend services run in Docker containers"
+    log_info "Node.js/pnpm will be available inside the containers as needed"
     
-    # Check if Node.js is already installed with correct version
+    # Check if system Node.js exists (not required)
     if command -v node >/dev/null 2>&1; then
         local node_version=$(node --version 2>/dev/null | sed 's/^v//')
-        local major_version=$(echo "$node_version" | cut -d'.' -f1)
-        
-        if [ "$major_version" -ge "$NODE_MIN_VERSION" ]; then
-            log_success "Node.js $node_version meets requirements (>= $NODE_MIN_VERSION)"
-        else
-            log_warning "Node.js $node_version is too old, installing newer version"
-            install_nodejs_repo
-        fi
-    else
-        log_info "Node.js not found, installing..."
-        install_nodejs_repo
+        log_info "System Node.js $node_version detected (not required for Docker deployment)"
     fi
-    
-    # Install pnpm
-    install_pnpm
     
     return 0
-}
-
-# Install Node.js from NodeSource repository
-install_nodejs_repo() {
-    log_info "Adding NodeSource repository for Node.js $NODE_MIN_VERSION..."
-    
-    # Download and install the NodeSource signing key
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-    
-    # Create NodeSource repository
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MIN_VERSION.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-    
-    # Update package list
-    sudo apt update -qq
-    
-    # Install Node.js
-    if sudo apt install -y -qq nodejs; then
-        local node_version=$(node --version 2>/dev/null | sed 's/^v//')
-        log_success "Node.js $node_version installed successfully"
-        return 0
-    else
-        log_error "Failed to install Node.js"
-        return 1
-    fi
-}
-
-# Install pnpm package manager
-install_pnpm() {
-    log_info "Installing pnpm package manager..."
-    
-    if command -v pnpm >/dev/null 2>&1; then
-        log_success "pnpm is already installed"
-        return 0
-    fi
-    
-    # Install pnpm using npm
-    if command -v npm >/dev/null 2>&1; then
-        # Check if already installed globally
-        if npm list -g pnpm >/dev/null 2>&1; then
-            local pnpm_version=$(pnpm --version 2>/dev/null)
-            log_success "pnpm $pnpm_version is already installed"
-            return 0
-        else
-            if sudo npm install -g pnpm; then
-                local pnpm_version=$(pnpm --version 2>/dev/null)
-                log_success "pnpm $pnpm_version installed successfully"
-                return 0
-            else
-                log_error "Failed to install pnpm via npm"
-                return 1
-            fi
-        fi
-    else
-        log_error "npm not available for pnpm installation"
-        return 1
-    fi
 }
 
 # Install Docker
@@ -712,24 +581,26 @@ cleanup_packages() {
 }
 
 # Verify all installations
-verify_installations() {
-    log_section "Installation Verification"
+# Verify minimal installations for Docker deployment
+verify_minimal_setup() {
+    log_section "Minimal Setup Verification"
     
     local verification_failed=false
     
-    # Check required commands
+    # Check only essential commands for Docker deployment
     local required_commands=(
         "curl:curl"
         "git:git"
-        "python3:python3"
-        "uv:uv"
-        "node:nodejs"
-        "pnpm:pnpm"
         "docker:docker"
-        "gh:gh"
-        "claude:claude-cli"
     )
     
+    # Optional commands (warn if missing but don't fail)
+    local optional_commands=(
+        "gh:github-cli"
+        "jq:jq"
+    )
+    
+    # Check required commands (fail if missing)
     for cmd_info in "${required_commands[@]}"; do
         local cmd="${cmd_info%:*}"
         local package="${cmd_info#*:}"
@@ -737,14 +608,9 @@ verify_installations() {
         if command -v "$cmd" >/dev/null 2>&1; then
             local version=""
             case "$cmd" in
-                "python3") version=$(python3 --version 2>&1 | cut -d' ' -f2) ;;
-                "uv") version=$(uv --version 2>/dev/null | cut -d' ' -f2) ;;
-                "node") version=$(node --version 2>/dev/null | sed 's/^v//') ;;
-                "pnpm") version=$(pnpm --version 2>/dev/null) ;;
                 "docker") version=$(docker --version 2>/dev/null | cut -d' ' -f3 | sed 's/,$//') ;;
                 "git") version=$(git --version 2>/dev/null | cut -d' ' -f3) ;;
-                "gh") version=$(gh --version 2>/dev/null | head -1 | cut -d' ' -f3) ;;
-                "claude") version=$(claude --version 2>/dev/null || echo "installed") ;;
+                "curl") version=$(curl --version 2>/dev/null | head -1 | cut -d' ' -f2) ;;
                 *) version="installed" ;;
             esac
             
@@ -752,6 +618,25 @@ verify_installations() {
         else
             log_error "$cmd not found ($package package)"
             verification_failed=true
+        fi
+    done
+    
+    # Check optional commands (warn if missing but don't fail)
+    for cmd_info in "${optional_commands[@]}"; do
+        local cmd="${cmd_info%:*}"
+        local package="${cmd_info#*:}"
+        
+        if command -v "$cmd" >/dev/null 2>&1; then
+            local version=""
+            case "$cmd" in
+                "gh") version=$(gh --version 2>/dev/null | head -1 | cut -d' ' -f3) ;;
+                "jq") version=$(jq --version 2>/dev/null | sed 's/^jq-//') ;;
+                *) version="installed" ;;
+            esac
+            
+            log_success "$cmd: $version (optional)"
+        else
+            log_warning "$cmd not found ($package package) - optional"
         fi
     done
     
@@ -805,17 +690,12 @@ install_dependencies() {
     fi
     
     local install_steps=(
-        "update_package_list"
-        "install_system_packages" 
-        "install_python"
-        "install_nodejs"
-        "install_docker"
-        "install_browser_tools"
-        "install_dev_tools"
-        "install_claude_code"
-        "setup_github_cli"
-        "cleanup_packages"
-        "verify_installations"
+        "update_package_list"       # Update package repositories
+        "install_essential_packages" # Minimal: git, curl, jq, ca-certificates
+        "install_docker"            # Required for running containers
+        "setup_github_cli"          # Optional: for repository access
+        "cleanup_packages"          # Clean up to save space
+        "verify_minimal_setup"      # Verify only essential tools
     )
     
     local total_steps=${#install_steps[@]}
@@ -871,28 +751,19 @@ main() {
             install_dependencies
             ;;
         "verify")
-            verify_installations
-            ;;
-        "python")
-            install_python
-            ;;
-        "nodejs")
-            install_nodejs
+            verify_minimal_setup
             ;;
         "docker")
             install_docker
             ;;
-        "dev-tools")
-            install_dev_tools
-            ;;
         *)
-            echo "Usage: $0 {install|verify|python|nodejs|docker|dev-tools}"
-            echo "  install    - Install all dependencies (default)"
-            echo "  verify     - Verify installations"
-            echo "  python     - Install Python environment only"
-            echo "  nodejs     - Install Node.js environment only"
+            echo "Usage: $0 {install|verify|docker}"
+            echo "  install    - Install minimal dependencies for Docker deployment (default)"
+            echo "  verify     - Verify essential installations"
             echo "  docker     - Install Docker only"
-            echo "  dev-tools  - Install development tools only"
+            echo ""
+            echo "Optimized for Docker deployment - skips Python/Node.js/dev tools"
+            echo "All services run in containers, minimal host requirements"
             exit 1
             ;;
     esac
