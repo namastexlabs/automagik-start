@@ -540,6 +540,12 @@ setup_github_cli() {
 install_browser_tools() {
     log_section "Browser Tools and Automation (Optional)"
     
+    # Check if browser tools should be skipped
+    if [ "$SKIP_BROWSER_TOOLS" = "true" ]; then
+        log_info "Skipping browser tools installation (SKIP_BROWSER_TOOLS=true)"
+        return 0
+    fi
+    
     echo -e "${YELLOW}Browser tools are optional and needed for:${NC}"
     echo "• Genie Agent - Browser automation for frontend debugging"
     echo "• Web scraping and automation tasks"
@@ -549,12 +555,13 @@ install_browser_tools() {
     
     if [ "$INSTALL_MODE" = "interactive" ]; then
         while true; do
-            read -p "Install browser tools (Playwright, Lighthouse, Puppeteer)? [Y/n]: " install_browser
+            read -p "Install browser tools (Playwright, Lighthouse, Puppeteer)? [y/N]: " install_browser
             case $install_browser in
-                [Yy]|[Yy][Ee][Ss]|"")
+                [Yy]|[Yy][Ee][Ss])
+                    log_info "Proceeding with browser tools installation"
                     break
                     ;;
-                [Nn]|[Nn][Oo])
+                [Nn]|[Nn][Oo]|"")
                     log_info "Skipping browser tools installation"
                     log_info "You can install them later if needed for Genie Agent"
                     return 0
@@ -565,7 +572,9 @@ install_browser_tools() {
             esac
         done
     else
-        log_info "Auto-installing browser tools in non-interactive mode"
+        log_info "Non-interactive mode: skipping browser tools by default"
+        log_info "Use SKIP_BROWSER_TOOLS=false to force installation in non-interactive mode"
+        return 0
     fi
     
     # Install Playwright via npm
