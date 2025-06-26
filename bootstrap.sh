@@ -156,17 +156,11 @@ run_installer() {
         fi
     done
     
-    # If no mode flag specified, force interactive mode (only if we have a proper terminal)
+    # If no mode flag specified, default to interactive mode
     if [ "$has_mode_flag" = false ]; then
-        if [ -t 0 ] && [ -t 1 ]; then
-            install_args+=("--interactive")
-            log_info "Running in interactive mode (use --non-interactive to disable prompts)"
-            echo ""
-        else
-            install_args+=("--non-interactive")
-            log_info "No interactive terminal detected - running in automated mode"
-            echo ""
-        fi
+        install_args+=("--interactive")
+        log_info "Running in interactive mode (use --non-interactive to disable prompts)"
+        echo ""
     fi
     
     # Run the main installer with arguments

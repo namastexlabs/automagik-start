@@ -27,10 +27,6 @@ declare -A API_KEYS=(
     ["TOGETHER_API_KEY"]="Together AI API Key (optional)"
     ["PERPLEXITY_API_KEY"]="Perplexity API Key (optional)"
     
-    # Database Configuration
-    ["NEO4J_USERNAME"]="Neo4j Username (default: neo4j)"
-    ["NEO4J_PASSWORD"]="Neo4j Password (required for graph database)"
-    ["NEO4J_URI"]="Neo4j URI (default: bolt://localhost:7687)"
     
     # External Services
     ["SERPER_API_KEY"]="Serper.dev API Key (for web search, optional)"
@@ -55,8 +51,6 @@ REQUIRED_KEYS=(
 
 # Keys with default values
 declare -A DEFAULT_VALUES=(
-    ["NEO4J_USERNAME"]="neo4j"
-    ["NEO4J_URI"]="bolt://localhost:7687"
 )
 
 # Collected keys storage
@@ -84,13 +78,6 @@ validate_api_key() {
                 return 1
             fi
             ;;
-        "NEO4J_PASSWORD")
-            if [ ${#key_value} -lt 8 ]; then
-                log_warning "Neo4j password should be at least 8 characters long"
-                return 1
-            fi
-            return 0
-            ;;
         "JWT_SECRET"|"ENCRYPTION_KEY")
             if [ ${#key_value} -lt 32 ]; then
                 log_warning "$key_name should be at least 32 characters long"
@@ -100,8 +87,8 @@ validate_api_key() {
             ;;
         *)
             # Basic validation - not empty and reasonable length
-            if [ ${#key_value} -lt 10 ]; then
-                log_warning "$key_name seems too short (less than 10 characters)"
+            if [ ${#key_value} -lt 3 ]; then
+                log_warning "$key_name seems too short (less than 3 characters)"
                 return 1
             fi
             return 0

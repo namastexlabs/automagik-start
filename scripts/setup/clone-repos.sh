@@ -11,12 +11,12 @@ source "$SCRIPT_DIR/../utils/logging.sh"
 
 # Repository definitions
 declare -A REPOSITORIES=(
-    ["am-agents-labs"]="https://github.com/namastex/am-agents-labs.git"
-    ["automagik-ui-v2"]="https://github.com/namastex/automagik-ui-v2.git"
-    ["automagik-omni"]="https://github.com/namastex/automagik-omni.git"
-    ["automagik-spark"]="https://github.com/namastex/automagik-spark.git"
-    ["automagik-tools"]="https://github.com/namastex/automagik-tools.git"
-    ["automagik-evolution"]="https://github.com/namastex/automagik-evolution.git"
+    ["am-agents-labs"]="https://github.com/namastexlabs/am-agents-labs.git"
+    ["automagik-ui-v2"]="https://github.com/namastexlabs/automagik-ui-v2.git"
+    ["automagik-omni"]="https://github.com/namastexlabs/automagik-omni.git"
+    ["automagik-spark"]="https://github.com/namastexlabs/automagik-spark.git"
+    ["automagik-tools"]="https://github.com/namastexlabs/automagik-tools.git"
+    ["automagik-evolution"]="https://github.com/namastexlabs/automagik-evolution.git"
 )
 
 # Branch settings (empty means default branch)
@@ -107,8 +107,8 @@ select_agents_branch() {
     if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
         log_info "Using GitHub CLI to fetch branches..."
         # Try to get branches via GitHub API
-        if gh repo view namastex/am-agents-labs >/dev/null 2>&1; then
-            branches=($(gh api repos/namastex/am-agents-labs/branches --jq '.[].name' 2>/dev/null | sort))
+        if gh repo view namastexlabs/am-agents-labs >/dev/null 2>&1; then
+            branches=($(gh api repos/namastexlabs/am-agents-labs/branches --jq '.[].name' 2>/dev/null | sort))
             if [ ${#branches[@]} -gt 0 ]; then
                 log_success "Fetched ${#branches[@]} branches via GitHub CLI"
             fi
