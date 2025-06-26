@@ -145,8 +145,32 @@ run_installer() {
     log_info "Starting installation..."
     echo ""
     
-    # Run the main installer with all arguments passed to this script
-    ./install.sh "$@"
+    # Ensure interactive mode unless explicitly set to non-interactive
+    local install_args=("$@")
+    local has_mode_flag=false
+    
+    for arg in "$@"; do
+        if [[ "$arg" == "--non-interactive" ]] || [[ "$arg" == "--interactive" ]]; then
+            has_mode_flag=true
+            break
+        fi
+    done
+    
+    # If no mode flag specified, force interactive mode (only if we have a proper terminal)
+    if [ "$has_mode_flag" = false ]; then
+        if [ -t 0 ] && [ -t 1 ]; then
+            install_args+=("--interactive")
+            log_info "Running in interactive mode (use --non-interactive to disable prompts)"
+            echo ""
+        else
+            install_args+=("--non-interactive")
+            log_info "No interactive terminal detected - running in automated mode"
+            echo ""
+        fi
+    fi
+    
+    # Run the main installer with arguments
+    ./install.sh "${install_args[@]}"
 }
 
 # Show welcome message

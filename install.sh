@@ -537,6 +537,7 @@ show_usage() {
     echo "  uninstall        Remove all components"
     echo ""
     echo "Options:"
+    echo "  --interactive        Run in interactive mode (default)"
     echo "  --non-interactive    Run in automated mode"
     echo "  --skip-deps          Skip dependency installation"
     echo "  --skip-browser       Skip browser tools installation"
@@ -606,6 +607,10 @@ uninstall_automagik() {
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --interactive)
+                export INSTALL_MODE="interactive"
+                shift
+                ;;
             --non-interactive)
                 export INSTALL_MODE="automated"
                 shift
