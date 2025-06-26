@@ -2,7 +2,6 @@
 # 🐳 Automagik Suite - Unified Docker Compose
 # ===================================================================
 
-version: '3.8'
 
 networks:
   automagik-network:
