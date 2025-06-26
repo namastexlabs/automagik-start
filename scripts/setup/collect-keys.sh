@@ -56,44 +56,19 @@ declare -A DEFAULT_VALUES=(
 # Collected keys storage
 declare -A COLLECTED_KEYS=()
 
-# Check if a key looks valid
+# Check if a key looks valid (simplified validation)
 validate_api_key() {
     local key_name="$1"
     local key_value="$2"
     
-    case "$key_name" in
-        "OPENAI_API_KEY")
-            if [[ "$key_value" =~ ^sk-[A-Za-z0-9]{48,}$ ]]; then
-                return 0
-            else
-                log_warning "OpenAI API key should start with 'sk-' and be at least 48 characters"
-                return 1
-            fi
-            ;;
-        "ANTHROPIC_API_KEY")
-            if [[ "$key_value" =~ ^sk-ant-[A-Za-z0-9_-]{95,}$ ]]; then
-                return 0
-            else
-                log_warning "Anthropic API key should start with 'sk-ant-' and be at least 95 characters"
-                return 1
-            fi
-            ;;
-        "JWT_SECRET"|"ENCRYPTION_KEY")
-            if [ ${#key_value} -lt 32 ]; then
-                log_warning "$key_name should be at least 32 characters long"
-                return 1
-            fi
-            return 0
-            ;;
-        *)
-            # Basic validation - not empty and reasonable length
-            if [ ${#key_value} -lt 3 ]; then
-                log_warning "$key_name seems too short (less than 3 characters)"
-                return 1
-            fi
-            return 0
-            ;;
-    esac
+    # Just check that the key is not empty - no strict format validation
+    if [ -z "$key_value" ]; then
+        log_warning "$key_name cannot be empty"
+        return 1
+    fi
+    
+    # All non-empty keys are considered valid
+    return 0
 }
 
 # Generate secure random key
