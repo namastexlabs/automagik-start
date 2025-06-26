@@ -23,14 +23,21 @@ curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/b
 ```
 *Note: This runs in automated mode with safe defaults. Browser tools are optional.*
 
-### Interactive Installation (Recommended)
+### Interactive Installation (One Command)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash
+```
+*Downloads and runs installer with step-by-step prompts and full customization.*
+
+### Manual Installation
 
 ```bash
 git clone https://github.com/namastexlabs/automagik-start.git
 cd automagik-start
 ./install.sh
 ```
-*This allows step-by-step confirmation and customization of each installation phase.*
+*Manual download with full control over the installation process.*
 
 ## 📋 System Requirements
 
