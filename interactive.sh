@@ -51,12 +51,11 @@ log_section() {
     echo ""
 }
 
-# Check if running as root
+# Check if running as root (removed restriction for VPS compatibility)
 check_root() {
     if [ "$EUID" -eq 0 ]; then
-        log_error "Please do not run this installer as root"
-        log_info "Run as a regular user with sudo privileges instead"
-        exit 1
+        log_warning "Running as root user - some features may behave differently"
+        log_info "Consider using a regular user with sudo privileges for better security"
     fi
 }
 
@@ -72,23 +71,53 @@ check_requirements() {
     fi
     
     if [ ${#missing_commands[@]} -gt 0 ]; then
-        log_error "Missing required commands: ${missing_commands[*]}"
-        log_info "Please install them first using your package manager:"
+        log_warning "Missing required commands: ${missing_commands[*]}"
+        log_info "Auto-installing missing requirements..."
         
-        # Detect OS and suggest installation commands
+        # Auto-install missing commands
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             if command -v apt >/dev/null 2>&1; then
-                echo "  sudo apt update && sudo apt install -y ${missing_commands[*]}"
+                log_info "Updating package list..."
+                sudo apt update -qq
+                log_info "Installing: ${missing_commands[*]}"
+                sudo apt install -y ${missing_commands[*]}
             elif command -v yum >/dev/null 2>&1; then
-                echo "  sudo yum install -y ${missing_commands[*]}"
+                log_info "Installing: ${missing_commands[*]}"
+                sudo yum install -y ${missing_commands[*]}
             elif command -v dnf >/dev/null 2>&1; then
-                echo "  sudo dnf install -y ${missing_commands[*]}"
+                log_info "Installing: ${missing_commands[*]}"
+                sudo dnf install -y ${missing_commands[*]}
+            else
+                log_error "No supported package manager found"
+                exit 1
             fi
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            echo "  brew install ${missing_commands[*]}"
+            if command -v brew >/dev/null 2>&1; then
+                log_info "Installing: ${missing_commands[*]}"
+                brew install ${missing_commands[*]}
+            else
+                log_error "Homebrew not found. Please install it first: https://brew.sh"
+                exit 1
+            fi
+        else
+            log_error "Unsupported operating system"
+            exit 1
         fi
         
-        exit 1
+        # Verify installation
+        local still_missing=()
+        for cmd in "${missing_commands[@]}"; do
+            if ! command -v "$cmd" >/dev/null 2>&1; then
+                still_missing+=("$cmd")
+            fi
+        done
+        
+        if [ ${#still_missing[@]} -gt 0 ]; then
+            log_error "Failed to install: ${still_missing[*]}"
+            exit 1
+        else
+            log_success "All requirements installed successfully"
+        fi
     fi
     
     log_success "All requirements met"

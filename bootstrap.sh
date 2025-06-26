@@ -51,12 +51,11 @@ log_section() {
     echo ""
 }
 
-# Check if running as root
+# Check if running as root (removed restriction for VPS compatibility)
 check_root() {
     if [ "$EUID" -eq 0 ]; then
-        log_error "Please do not run this installer as root"
-        log_info "Run as a regular user with sudo privileges instead"
-        exit 1
+        log_warning "Running as root user - some features may behave differently"
+        log_info "Consider using a regular user with sudo privileges for better security"
     fi
 }
 

@@ -173,7 +173,7 @@ services:
   am-agents-labs:
     build:
       context: ./am-agents-labs
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: am-agents-labs
     restart: unless-stopped
     environment:
@@ -203,7 +203,7 @@ services:
   automagik-spark:
     build:
       context: ./automagik-spark
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: automagik-spark
     restart: unless-stopped
     environment:
@@ -238,7 +238,7 @@ services:
   automagik-tools:
     build:
       context: ./automagik-tools
-      dockerfile: Dockerfile
+      dockerfile: deploy/docker/Dockerfile
     container_name: automagik-tools
     restart: unless-stopped
     environment:
@@ -262,121 +262,83 @@ services:
       retries: 3
       start_period: 30s
 
-  # automagik-evolution (WhatsApp API)
-  automagik-evolution:
-    build:
-      context: ./automagik-evolution
-      dockerfile: Dockerfile
-    container_name: automagik-evolution
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:postgres@evolution-postgres:5432/evolution_api
-      - REDIS_URL=redis://evolution-redis:6379
-      - RABBITMQ_URL=amqp://rabbitmq:rabbitmq@evolution-rabbitmq:5672
-      - PORT=9000
-      - HOST=0.0.0.0
-      - SERVER_URL=http://localhost:9000
-      # Evolution specific settings (Base64 mode, no MinIO)
-      - STORE_MESSAGE_UP=true
-      - STORE_CONTACTS=true
-      - STORE_CHATS=true
-      - AUTHENTICATION_TYPE=apikey
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./automagik-evolution:/app
-      - /app/node_modules
-    networks:
-      automagik-network:
-        ipv4_address: 172.20.2.4
-    depends_on:
-      evolution-postgres:
-        condition: service_healthy
-      evolution-redis:
-        condition: service_healthy
-      evolution-rabbitmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 90s
-
-  # automagik-omni (Multi-tenant Hub)
-  automagik-omni:
-    build:
-      context: ./automagik-omni
-      dockerfile: Dockerfile
-    container_name: automagik-omni
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=8882
-      - HOST=0.0.0.0
-      - AM_AGENTS_LABS_URL=http://am-agents-labs:8881
-      - AUTOMAGIK_SPARK_URL=http://automagik-spark:8883
-      - AUTOMAGIK_TOOLS_SSE_URL=http://automagik-tools:8884
-      - AUTOMAGIK_TOOLS_HTTP_URL=http://automagik-tools:8885
-      - EVOLUTION_API_URL=http://automagik-evolution:9000
-    ports:
-      - "8882:8882"
-    volumes:
-      - ./automagik-omni:/app
-      - /app/node_modules
-    networks:
-      automagik-network:
-        ipv4_address: 172.20.2.5
-    depends_on:
-      - am-agents-labs
-      - automagik-spark
-      - automagik-tools
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8882/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # automagik-ui-v2 (Frontend - Production Build)
-  automagik-ui-v2:
-    build:
-      context: ./automagik-ui-v2
-      dockerfile: Dockerfile.production
-    container_name: automagik-ui-v2
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=8888
-      - HOST=0.0.0.0
-      - NEXT_PUBLIC_API_URL=http://localhost:8881
-      - NEXT_PUBLIC_SPARK_URL=http://localhost:8883
-      - NEXT_PUBLIC_OMNI_URL=http://localhost:8882
-      - NEXT_PUBLIC_TOOLS_SSE_URL=http://localhost:8884
-      - NEXT_PUBLIC_TOOLS_HTTP_URL=http://localhost:8885
-      - NEXT_PUBLIC_EVOLUTION_URL=http://localhost:9000
-    ports:
-      - "8888:8888"  # Main interface
-    volumes:
-      - ./automagik-ui-v2:/app
-      - /app/node_modules
-      - /app/.next
-    networks:
-      automagik-network:
-        ipv4_address: 172.20.2.6
-    depends_on:
-      - am-agents-labs
-      - automagik-spark
-      - automagik-omni
-      - automagik-tools
-      - automagik-evolution
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+  # Note: Services without Dockerfiles are commented out for now
+  # Uncomment and configure when Dockerfiles are available
+  
+  # automagik-evolution (WhatsApp API) - No Dockerfile found
+  # automagik-evolution:
+  #   image: node:18-alpine
+  #   container_name: automagik-evolution
+  #   restart: unless-stopped
+  #   working_dir: /app
+  #   command: sh -c "npm install && npm start"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - DATABASE_URL=postgresql://postgres:postgres@evolution-postgres:5432/evolution_api
+  #     - REDIS_URL=redis://evolution-redis:6379
+  #     - RABBITMQ_URL=amqp://rabbitmq:rabbitmq@evolution-rabbitmq:5672
+  #     - PORT=9000
+  #     - HOST=0.0.0.0
+  #   ports:
+  #     - "9000:9000"
+  #   volumes:
+  #     - ./automagik-evolution:/app
+  #   networks:
+  #     automagik-network:
+  #       ipv4_address: 172.20.2.4
+  #   depends_on:
+  #     evolution-postgres:
+  #       condition: service_healthy
+  #     evolution-redis:
+  #       condition: service_healthy
+  #     evolution-rabbitmq:
+  #       condition: service_healthy
+  
+  # automagik-omni (Multi-tenant Hub) - No Dockerfile found
+  # automagik-omni:
+  #   image: node:18-alpine
+  #   container_name: automagik-omni
+  #   restart: unless-stopped
+  #   working_dir: /app
+  #   command: sh -c "npm install && npm start"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=8882
+  #     - HOST=0.0.0.0
+  #   ports:
+  #     - "8882:8882"
+  #   volumes:
+  #     - ./automagik-omni:/app
+  #   networks:
+  #     automagik-network:
+  #       ipv4_address: 172.20.2.5
+  #   depends_on:
+  #     - am-agents-labs
+  #     - automagik-spark
+  #     - automagik-tools
+  
+  # automagik-ui-v2 (Frontend - Production Build) - No Dockerfile found
+  # automagik-ui-v2:
+  #   image: node:18-alpine
+  #   container_name: automagik-ui-v2
+  #   restart: unless-stopped
+  #   working_dir: /app
+  #   command: sh -c "npm install && npm run build && npm start"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=8888
+  #     - HOST=0.0.0.0
+  #   ports:
+  #     - "8888:8888"
+  #   volumes:
+  #     - ./automagik-ui-v2:/app
+  #   networks:
+  #     automagik-network:
+  #       ipv4_address: 172.20.2.6
+  #   depends_on:
+  #     - am-agents-labs
+  #     - automagik-spark
+  #     - automagik-tools
 
   # ================================
   # Optional Services
