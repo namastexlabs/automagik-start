@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===================================================================
-# 🔧 Environment Generation and Configuration
+# 🔧 Environment Generation and Configuration with Complete Mapping
 # ===================================================================
 
 # Source utilities
@@ -22,7 +22,6 @@ declare -A REPO_CONFIGS=(
     ["automagik-ui-v2"]="Frontend application configuration"
 )
 
-
 # Load collected API keys
 load_api_keys() {
     log_info "Loading collected API keys..."
@@ -31,7 +30,9 @@ load_api_keys() {
     local main_env_file="$BASE_DIR/.env"
     if [ -f "$main_env_file" ]; then
         log_success "Found main .env file: $main_env_file"
+        set -a  # Automatically export all variables
         source "$main_env_file"
+        set +a  # Turn off automatic export
         return 0
     fi
     
@@ -55,6 +56,403 @@ load_api_keys() {
     return 1
 }
 
+# Get mapped value from main .env based on project needs
+get_mapped_value() {
+    local var_name="$1"
+    local repo_name="$2"
+    local value=""
+    
+    # Direct mapping from loaded environment variables
+    case "$var_name" in
+        # AI Service Keys
+        "OPENAI_API_KEY") value="$OPENAI_API_KEY" ;;
+        "OPENAI_ORG_ID") value="$OPENAI_ORG_ID" ;;
+        "ANTHROPIC_API_KEY") value="$ANTHROPIC_API_KEY" ;;
+        "GOOGLE_API_KEY") value="$GOOGLE_API_KEY" ;;
+        "GOOGLE_CSE_ID") value="$GOOGLE_CSE_ID" ;;
+        "GEMINI_API_KEY") value="$GEMINI_API_KEY" ;;
+        "GROQ_API_KEY") value="$GROQ_API_KEY" ;;
+        "TOGETHER_API_KEY") value="$TOGETHER_API_KEY" ;;
+        "PERPLEXITY_API_KEY") value="$PERPLEXITY_API_KEY" ;;
+        
+        # Search & Web Services
+        "SERPER_API_KEY") value="$SERPER_API_KEY" ;;
+        "TAVILY_API_KEY") value="$TAVILY_API_KEY" ;;
+        "BROWSERLESS_TOKEN") value="$BROWSERLESS_TOKEN" ;;
+        
+        # Communication Services
+        "EVOLUTION_API_KEY") value="$EVOLUTION_API_KEY" ;;
+        "EVOLUTION_WEBHOOK_URL") value="$EVOLUTION_WEBHOOK_URL" ;;
+        "EVOLUTION_INSTANCE") value="$EVOLUTION_INSTANCE" ;;
+        "DEFAULT_EVOLUTION_INSTANCE") value="$DEFAULT_EVOLUTION_INSTANCE" ;;
+        "DEFAULT_WHATSAPP_NUMBER") value="$DEFAULT_WHATSAPP_NUMBER" ;;
+        "DISCORD_BOT_TOKEN") value="$DISCORD_BOT_TOKEN" ;;
+        "MEETING_BOT_URL") value="$MEETING_BOT_URL" ;;
+        
+        # Security Keys
+        "JWT_SECRET") value="$JWT_SECRET" ;;
+        "ENCRYPTION_KEY") value="$ENCRYPTION_KEY" ;;
+        "AM_API_KEY") value="$AM_API_KEY" ;;
+        "API_KEY") value="$API_KEY" ;;
+        "AUTOMAGIK_API_KEY") value="$AUTOMAGIK_API_KEY" ;;
+        "TEST_API_KEY") value="$TEST_API_KEY" ;;
+        "AUTOMAGIK_ENCRYPTION_KEY") value="$AUTOMAGIK_ENCRYPTION_KEY" ;;
+        
+        # External Services
+        "NOTION_TOKEN") value="$NOTION_TOKEN" ;;
+        "AIRTABLE_TOKEN") value="$AIRTABLE_TOKEN" ;;
+        "AIRTABLE_DEFAULT_BASE_ID") value="$AIRTABLE_DEFAULT_BASE_ID" ;;
+        "BLACKPEARL_TOKEN") value="$BLACKPEARL_TOKEN" ;;
+        "BLACKPEARL_API_URL") value="$BLACKPEARL_API_URL" ;;
+        "BLACKPEARL_DB_URI") value="$BLACKPEARL_DB_URI" ;;
+        "OMIE_TOKEN") value="$OMIE_TOKEN" ;;
+        "GOOGLE_DRIVE_TOKEN") value="$GOOGLE_DRIVE_TOKEN" ;;
+        "FLASHED_API_KEY") value="$FLASHED_API_KEY" ;;
+        "FLASHED_API_URL") value="$FLASHED_API_URL" ;;
+        "SUPABASE_URL") value="$SUPABASE_URL" ;;
+        "SUPABASE_SERVICE_ROLE_KEY") value="$SUPABASE_SERVICE_ROLE_KEY" ;;
+        "FIGMA_API_KEY") value="$FIGMA_API_KEY" ;;
+        
+        # Monitoring
+        "LOGFIRE_TOKEN") value="$LOGFIRE_TOKEN" ;;
+        "LOGFIRE_IGNORE_NO_CONFIG") value="$LOGFIRE_IGNORE_NO_CONFIG" ;;
+        
+        # Claude Code
+        "CLAUDE_LOCAL_WORKSPACE") value="$CLAUDE_LOCAL_WORKSPACE" ;;
+        "CLAUDE_LOCAL_CLEANUP") value="$CLAUDE_LOCAL_CLEANUP" ;;
+        "CLAUDE_CODE_API_URL") value="$CLAUDE_CODE_API_URL" ;;
+        
+        # Application Settings (project-specific)
+        "AM_ENV") 
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_ENV" ;;
+            esac ;;
+        "AUTOMAGIK_ENV")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_ENV" ;;
+            esac ;;
+        "AM_HOST")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_HOST" ;;
+            esac ;;
+        "AM_PORT")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_PORT" ;;
+            esac ;;
+        "AM_TIMEZONE")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_TIMEZONE" ;;
+            esac ;;
+        "AUTOMAGIK_TIMEZONE")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_TIMEZONE" ;;
+            esac ;;
+        
+        # Logging Configuration
+        "AM_LOG_LEVEL")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_LOG_LEVEL" ;;
+            esac ;;
+        "AM_VERBOSE_LOGGING")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_VERBOSE_LOGGING" ;;
+            esac ;;
+        "AM_LOG_TO_FILE")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_LOG_TO_FILE" ;;
+            esac ;;
+        "AM_LOG_FILE_PATH")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_LOG_FILE_PATH" ;;
+            esac ;;
+        "AUTOMAGIK_LOG_LEVEL")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_LOG_LEVEL" ;;
+            esac ;;
+        "AUTOMAGIK_WORKER_LOG")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_WORKER_LOG" ;;
+            esac ;;
+        "LOG_LEVEL")
+            case "$repo_name" in
+                "automagik-evolution") value="info" ;;
+            esac ;;
+        
+        # Performance Settings
+        "LLM_MAX_CONCURRENT_REQUESTS")
+            case "$repo_name" in
+                "am-agents-labs") value="$LLM_MAX_CONCURRENT_REQUESTS" ;;
+            esac ;;
+        "LLM_RETRY_ATTEMPTS")
+            case "$repo_name" in
+                "am-agents-labs") value="$LLM_RETRY_ATTEMPTS" ;;
+            esac ;;
+        "UVICORN_LIMIT_CONCURRENCY")
+            case "$repo_name" in
+                "am-agents-labs") value="$UVICORN_LIMIT_CONCURRENCY" ;;
+            esac ;;
+        "UVICORN_LIMIT_MAX_REQUESTS")
+            case "$repo_name" in
+                "am-agents-labs") value="$UVICORN_LIMIT_MAX_REQUESTS" ;;
+            esac ;;
+        
+        # Agent Configuration
+        "AM_AGENTS_NAMES")
+            case "$repo_name" in
+                "am-agents-labs") value="$AM_AGENTS_NAMES" ;;
+            esac ;;
+        
+        # Database URLs (Docker-internal)
+        "DATABASE_URL")
+            case "$repo_name" in
+                "am-agents-labs") value="postgresql://postgres:postgres@am-agents-labs-postgres:5432/am_agents_labs" ;;
+                "automagik-spark") value="postgresql+asyncpg://automagik:automagik@automagik-spark-postgres:5432/automagik" ;;
+            esac ;;
+        "DATABASE_CONNECTION_URI")
+            case "$repo_name" in
+                "automagik-evolution") value="postgresql://postgres:postgres@automagik-evolution-postgres:5432/evolution_api" ;;
+            esac ;;
+        
+        # Redis URLs (Docker-internal)
+        "CACHE_REDIS_URI")
+            case "$repo_name" in
+                "automagik-evolution") value="redis://automagik-evolution-redis:6379" ;;
+            esac ;;
+        
+        # RabbitMQ URLs (Docker-internal)
+        "RABBITMQ_URI")
+            case "$repo_name" in
+                "automagik-evolution") value="amqp://rabbitmq:rabbitmq@automagik-evolution-rabbitmq:5672" ;;
+            esac ;;
+        
+        # Celery Configuration
+        "CELERY_BROKER_URL")
+            case "$repo_name" in
+                "automagik-spark") value="redis://automagik-spark-redis:6379/0" ;;
+            esac ;;
+        "CELERY_RESULT_BACKEND")
+            case "$repo_name" in
+                "automagik-spark") value="redis://automagik-spark-redis:6379/0" ;;
+            esac ;;
+        "CELERY_TASK_SERIALIZER")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_TASK_SERIALIZER" ;;
+            esac ;;
+        "CELERY_RESULT_SERIALIZER")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_RESULT_SERIALIZER" ;;
+            esac ;;
+        "CELERY_ACCEPT_CONTENT")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_ACCEPT_CONTENT" ;;
+            esac ;;
+        "CELERY_WORKER_PREFETCH_MULTIPLIER")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_WORKER_PREFETCH_MULTIPLIER" ;;
+            esac ;;
+        "CELERY_TASK_TRACK_STARTED")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_TASK_TRACK_STARTED" ;;
+            esac ;;
+        "CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP" ;;
+            esac ;;
+        "CELERY_BEAT_MAX_LOOP_INTERVAL")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_BEAT_MAX_LOOP_INTERVAL" ;;
+            esac ;;
+        "CELERY_TASK_ALWAYS_EAGER")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_TASK_ALWAYS_EAGER" ;;
+            esac ;;
+        "CELERY_TASK_EAGER_PROPAGATES")
+            case "$repo_name" in
+                "automagik-spark") value="$CELERY_TASK_EAGER_PROPAGATES" ;;
+            esac ;;
+        
+        # Python Configuration
+        "PYTHONWARNINGS")
+            case "$repo_name" in
+                "am-agents-labs") value="$PYTHONWARNINGS" ;;
+            esac ;;
+        
+        # Langflow Configuration
+        "LANGFLOW_API_URL")
+            case "$repo_name" in
+                "automagik-spark") value="$LANGFLOW_API_URL" ;;
+            esac ;;
+        "LANGFLOW_API_KEY")
+            case "$repo_name" in
+                "automagik-spark") value="$LANGFLOW_API_KEY" ;;
+            esac ;;
+        
+        # Automagik Spark specific
+        "AUTOMAGIK_REMOTE_URL")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_REMOTE_URL" ;;
+            esac ;;
+        "AUTOMAGIK_API_HOST")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_API_HOST" ;;
+            esac ;;
+        "AUTOMAGIK_API_PORT")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_API_PORT" ;;
+            esac ;;
+        "AUTOMAGIK_API_CORS")
+            case "$repo_name" in
+                "automagik-spark") value="$AUTOMAGIK_API_CORS" ;;
+            esac ;;
+        
+        # Automagik Tools specific
+        "AUTOMAGIK_BASE_URL")
+            case "$repo_name" in
+                "automagik-tools") value="http://automagik-spark-api:8883" ;;
+            esac ;;
+        "AUTOMAGIK_OPENAPI_URL")
+            case "$repo_name" in
+                "automagik-tools") value="http://am-agents-labs:8881/api/v1/openapi.json" ;;
+            esac ;;
+        "AUTOMAGIK_WORKFLOWS_BASE_URL")
+            case "$repo_name" in
+                "automagik-tools") value="http://am-agents-labs:8881" ;;
+            esac ;;
+        "GENIE_MODEL")
+            case "$repo_name" in
+                "automagik-tools") value="gpt-4o" ;;
+            esac ;;
+        
+        # Evolution API specific mappings
+        "AUTHENTICATION_API_KEY")
+            case "$repo_name" in
+                "automagik-evolution") value="${EVOLUTION_API_KEY:-namastex888}" ;;
+            esac ;;
+        "WA_BUSINESS_TOKEN_WEBHOOK")
+            case "$repo_name" in
+                "automagik-evolution") value="$EVOLUTION_API_KEY" ;;
+            esac ;;
+        "SERVER_URL")
+            case "$repo_name" in
+                "automagik-evolution") value="http://localhost:9000" ;;
+            esac ;;
+        "SERVER_PORT")
+            case "$repo_name" in 
+                "automagik-evolution") value="9000" ;;
+            esac ;;
+        
+    esac
+    
+    echo "$value"
+}
+
+# Add project-specific variables that don't exist in .env.example
+add_project_specific_vars() {
+    local repo_name="$1"
+    local config=""
+    
+    case "$repo_name" in
+        "am-agents-labs")
+            config+="# AM Agents Labs Specific Configuration\n"
+            config+="DATABASE_TYPE=postgresql\n"
+            config+="POSTGRES_HOST=am-agents-labs-postgres\n"
+            config+="POSTGRES_PORT=5432\n"
+            config+="POSTGRES_USER=postgres\n"
+            config+="POSTGRES_PASSWORD=postgres\n"
+            config+="POSTGRES_DB=am_agents_labs\n"
+            config+="POSTGRES_POOL_MIN=10\n"
+            config+="POSTGRES_POOL_MAX=25\n"
+            ;;
+        "automagik-spark")
+            config+="# Automagik Spark Specific Configuration\n"
+            config+="POSTGRES_USER=automagik\n"
+            config+="POSTGRES_PASSWORD=automagik\n"
+            config+="POSTGRES_DB=automagik\n"
+            ;;
+        "automagik-tools")
+            config+="# Automagik Tools Specific Configuration\n"
+            config+="HOST=127.0.0.1\n"
+            config+="PORT=8000\n"
+            config+="AUTOMAGIK_TIMEOUT=30\n"
+            config+="AUTOMAGIK_ENABLE_MARKDOWN=true\n"
+            config+="AUTOMAGIK_WORKFLOWS_TIMEOUT=7200\n"
+            config+="AUTOMAGIK_WORKFLOWS_POLLING_INTERVAL=8\n"
+            config+="AUTOMAGIK_WORKFLOWS_MAX_RETRIES=3\n"
+            config+="GENIE_MEMORY_DB=genie_memory.db\n"
+            config+="GENIE_STORAGE_DB=genie_storage.db\n"
+            config+="GENIE_SESSION_ID=global_genie_session\n"
+            config+="GENIE_HISTORY_RUNS=3\n"
+            config+="GENIE_SHOW_TOOL_CALLS=true\n"
+            config+="GENIE_MCP_CLEANUP_TIMEOUT=2.0\n"
+            config+="GENIE_SSE_CLEANUP_DELAY=0.2\n"
+            config+="GENIE_AGGRESSIVE_CLEANUP=true\n"
+            config+="WAIT_MAX_DURATION=3600\n"
+            config+="WAIT_DEFAULT_PROGRESS_INTERVAL=1.0\n"
+            ;;
+        "automagik-evolution")
+            config+="# Evolution API Specific Configuration\n"
+            config+="SERVER_TYPE=http\n"
+            config+="CORS_ORIGIN=*\n"
+            config+="CORS_METHODS=GET,POST,PUT,DELETE\n"
+            config+="CORS_CREDENTIALS=true\n"
+            config+="LOG_COLOR=true\n"
+            config+="LOG_BAILEYS=error\n"
+            config+="DEL_INSTANCE=false\n"
+            config+="EVENT_EMITTER_MAX_LISTENERS=50\n"
+            config+="DATABASE_ENABLED=true\n"
+            config+="DATABASE_PROVIDER=postgresql\n"
+            config+="DATABASE_CONNECTION_CLIENT_NAME=evolution_db\n"
+            config+="DATABASE_SAVE_DATA_INSTANCE=true\n"
+            config+="DATABASE_SAVE_DATA_NEW_MESSAGE=true\n"
+            config+="DATABASE_SAVE_MESSAGE_UPDATE=true\n"
+            config+="DATABASE_SAVE_DATA_CONTACTS=true\n"
+            config+="DATABASE_SAVE_DATA_CHATS=true\n"
+            config+="DATABASE_SAVE_DATA_LABELS=true\n"
+            config+="DATABASE_SAVE_DATA_HISTORIC=true\n"
+            config+="DATABASE_SAVE_IS_ON_WHATSAPP=true\n"
+            config+="DATABASE_SAVE_IS_ON_WHATSAPP_DAYS=365\n"
+            config+="DATABASE_DELETE_MESSAGE=false\n"
+            config+="CACHE_REDIS_ENABLED=true\n"
+            config+="CACHE_REDIS_PREFIX_KEY=evolution\n"
+            config+="CACHE_REDIS_SAVE_INSTANCES=false\n"
+            config+="CACHE_LOCAL_ENABLED=false\n"
+            config+="CACHE_REDIS_TTL=604800\n"
+            config+="RABBITMQ_ENABLED=true\n"
+            config+="RABBITMQ_EXCHANGE_NAME=evolution\n"
+            config+="RABBITMQ_GLOBAL_PREFIX=evolution\n"
+            config+="RABBITMQ_EVENTS_WEBSOCKET=true\n"
+            config+="WEBSOCKET_ENABLED=true\n"
+            config+="WEBSOCKET_GLOBAL_EVENTS=false\n"
+            config+="WA_BUSINESS_URL=https://graph.facebook.com\n"
+            config+="WA_BUSINESS_VERSION=v20.0\n"
+            config+="WA_BUSINESS_LANGUAGE=pt_BR\n"
+            config+="S3_ENABLED=false\n"
+            config+="AUTHENTICATION_TYPE=apikey\n"
+            config+="AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true\n"
+            config+="LANGUAGE=en\n"
+            config+="API_DOCS_ENABLED=true\n"
+            config+="API_DOCS_PATH=/docs\n"
+            config+="CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200\n"
+            config+="QRCODE_LIMIT=30\n"
+            config+="QRCODE_COLOR='#175197'\n"
+            config+="CONFIG_SESSION_PHONE_CLIENT=Evolution API\n"
+            config+="CONFIG_SESSION_PHONE_NAME=Chrome\n"
+            config+="WEBHOOK_GLOBAL_ENABLED=false\n"
+            config+="WEBHOOK_GLOBAL_URL=\n"
+            config+="WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false\n"
+            config+="INSTANCE_MAX_RETRY_QR=3\n"
+            config+="INSTANCE_EXPIRATION_TIME=false\n"
+            config+="TYPEBOT_ENABLED=false\n"
+            config+="CHATWOOT_ENABLED=false\n"
+            config+="OPENAI_ENABLED=false\n"
+            config+="DIFY_ENABLED=false\n"
+            config+="FILE_SIZE_MB=10\n"
+            config+="WEBHOOK_EVENTS=all\n"
+            ;;
+    esac
+    
+    echo -e "$config"
+}
 
 # Generate database configuration
 generate_database_config() {
@@ -64,52 +462,25 @@ generate_database_config() {
     case "$repo_name" in
         "am-agents-labs")
             config+="# Database Configuration (PostgreSQL mode)\n"
-            config+="DATABASE_URL=\"postgresql://postgres:postgres@localhost:5401/am_agents_labs\"\n"
-            config+="DB_HOST=\"localhost\"\n"
-            config+="DB_PORT=\"5401\"\n"
-            config+="DB_NAME=\"am_agents_labs\"\n"
-            config+="DB_USER=\"postgres\"\n"
-            config+="DB_PASSWORD=\"postgres\"\n"
-            config+="DB_TYPE=\"postgresql\"\n"
+            config+="DATABASE_URL=\"postgresql://postgres:postgres@am-agents-labs-postgres:5432/am_agents_labs\"\n"
             ;;
         "automagik-spark")
             config+="# Database Configuration\n"
-            config+="DATABASE_URL=\"postgresql://postgres:postgres@localhost:5402/automagik_spark\"\n"
-            config+="DB_HOST=\"localhost\"\n"
-            config+="DB_PORT=\"5402\"\n"
-            config+="DB_NAME=\"automagik_spark\"\n"
-            config+="DB_USER=\"postgres\"\n"
-            config+="DB_PASSWORD=\"postgres\"\n"
-            config+="\n"
-            config+="# Redis Configuration\n"
-            config+="REDIS_URL=\"redis://localhost:5412\"\n"
-            config+="REDIS_HOST=\"localhost\"\n"
-            config+="REDIS_PORT=\"5412\"\n"
+            config+="DATABASE_URL=\"postgresql+asyncpg://automagik:automagik@automagik-spark-postgres:5432/automagik\"\n"
             config+="\n"
             config+="# Celery Configuration\n"
-            config+="CELERY_BROKER_URL=\"redis://localhost:5412\"\n"
-            config+="CELERY_RESULT_BACKEND=\"redis://localhost:5412\"\n"
+            config+="CELERY_BROKER_URL=\"redis://automagik-spark-redis:6379/0\"\n"
+            config+="CELERY_RESULT_BACKEND=\"redis://automagik-spark-redis:6379/0\"\n"
             ;;
         "automagik-evolution")
             config+="# Database Configuration\n"
-            config+="DATABASE_URL=\"postgresql://postgres:postgres@localhost:5403/evolution_api\"\n"
-            config+="DB_HOST=\"localhost\"\n"
-            config+="DB_PORT=\"5403\"\n"
-            config+="DB_NAME=\"evolution_api\"\n"
-            config+="DB_USER=\"postgres\"\n"
-            config+="DB_PASSWORD=\"postgres\"\n"
+            config+="DATABASE_CONNECTION_URI=\"postgresql://postgres:postgres@automagik-evolution-postgres:5432/evolution_api\"\n"
             config+="\n"
             config+="# Redis Configuration\n"
-            config+="REDIS_URL=\"redis://localhost:5413\"\n"
-            config+="REDIS_HOST=\"localhost\"\n"
-            config+="REDIS_PORT=\"5413\"\n"
+            config+="CACHE_REDIS_URI=\"redis://automagik-evolution-redis:6379\"\n"
             config+="\n"
             config+="# RabbitMQ Configuration\n"
-            config+="RABBITMQ_URL=\"amqp://rabbitmq:rabbitmq@localhost:5431\"\n"
-            config+="RABBITMQ_HOST=\"localhost\"\n"
-            config+="RABBITMQ_PORT=\"5431\"\n"
-            config+="RABBITMQ_USER=\"rabbitmq\"\n"
-            config+="RABBITMQ_PASSWORD=\"rabbitmq\"\n"
+            config+="RABBITMQ_URI=\"amqp://rabbitmq:rabbitmq@automagik-evolution-rabbitmq:5672\"\n"
             ;;
     esac
     
@@ -124,89 +495,25 @@ generate_port_config() {
     case "$repo_name" in
         "am-agents-labs")
             config+="# Application Configuration\n"
-            config+="PORT=\"8881\"\n"
-            config+="HOST=\"0.0.0.0\"\n"
-            config+="APP_URL=\"http://localhost:8881\"\n"
+            config+="AM_PORT=\"8881\"\n"
+            config+="AM_HOST=\"0.0.0.0\"\n"
             ;;
         "automagik-spark")
             config+="# Application Configuration\n"
-            config+="PORT=\"8883\"\n"
-            config+="HOST=\"0.0.0.0\"\n"
-            config+="APP_URL=\"http://localhost:8883\"\n"
+            config+="AUTOMAGIK_API_PORT=\"8883\"\n"
+            config+="AUTOMAGIK_API_HOST=\"0.0.0.0\"\n"
             ;;
         "automagik-tools")
             config+="# Application Configuration\n"
-            config+="SSE_PORT=\"8884\"\n"
-            config+="HTTP_PORT=\"8885\"\n"
             config+="HOST=\"0.0.0.0\"\n"
+            config+="PORT=\"8000\"\n"
             ;;
         "automagik-evolution")
             config+="# Application Configuration\n"
-            config+="PORT=\"9000\"\n"
-            config+="HOST=\"0.0.0.0\"\n"
+            config+="SERVER_PORT=\"9000\"\n"
             config+="SERVER_URL=\"http://localhost:9000\"\n"
-            config+="EVOLUTION_API_URL=\"http://localhost:9000\"\n"
-            ;;
-        "automagik-omni")
-            config+="# Application Configuration\n"
-            config+="PORT=\"8882\"\n"
-            config+="HOST=\"0.0.0.0\"\n"
-            config+="APP_URL=\"http://localhost:8882\"\n"
-            ;;
-        "automagik-ui-v2")
-            config+="# Application Configuration\n"
-            config+="PORT=\"8888\"\n"
-            config+="HOST=\"0.0.0.0\"\n"
-            config+="NEXT_PUBLIC_API_URL=\"http://localhost:8881\"\n"
-            config+="NEXT_PUBLIC_SPARK_URL=\"http://localhost:8883\"\n"
-            config+="NEXT_PUBLIC_OMNI_URL=\"http://localhost:8882\"\n"
-            config+="NEXT_PUBLIC_TOOLS_SSE_URL=\"http://localhost:8884\"\n"
-            config+="NEXT_PUBLIC_TOOLS_HTTP_URL=\"http://localhost:8885\"\n"
-            config+="NEXT_PUBLIC_EVOLUTION_URL=\"http://localhost:9000\"\n"
             ;;
     esac
-    
-    echo -e "$config"
-}
-
-# Generate Evolution API specific configuration
-generate_evolution_config() {
-    local config=""
-    
-    config+="# Evolution API Configuration\n"
-    config+="EVOLUTION_API_KEY=\"${EVOLUTION_API_KEY:-evolution_api_key_here}\"\n"
-    config+="AUTHENTICATION_TYPE=\"apikey\"\n"
-    config+="AUTHENTICATION_API_KEY=\"${EVOLUTION_API_KEY:-evolution_api_key_here}\"\n"
-    config+="AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=\"true\"\n"
-    config+="\n"
-    config+="# Webhook Configuration\n"
-    config+="WEBHOOK_GLOBAL_URL=\"${EVOLUTION_WEBHOOK_URL:-}\"\n"
-    config+="WEBHOOK_GLOBAL_ENABLED=\"false\"\n"
-    config+="WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=\"false\"\n"
-    config+="\n"
-    config+="# Instance Configuration\n"
-    config+="CONFIG_SESSION_PHONE_CLIENT=\"Automagik Evolution\"\n"
-    config+="CONFIG_SESSION_PHONE_NAME=\"Chrome\"\n"
-    config+="CONFIG_SESSION_PHONE_VERSION=\"4.0.0\"\n"
-    config+="\n"
-    config+="# QR Code Configuration\n"
-    config+="QRCODE_LIMIT=\"30\"\n"
-    config+="QRCODE_COLOR=\"#198754\"\n"
-    config+="\n"
-    config+="# File Storage (Base64 mode - no MinIO)\n"
-    config+="STORE_MESSAGE_UP=\"true\"\n"
-    config+="STORE_CONTACTS=\"true\"\n"
-    config+="STORE_CHATS=\"true\"\n"
-    config+="CLEAN_STORE_CLEANING_INTERVAL=\"7200\"\n"
-    config+="CLEAN_STORE_MESSAGES=\"true\"\n"
-    config+="CLEAN_STORE_MESSAGE_UP=\"true\"\n"
-    config+="CLEAN_STORE_CONTACTS=\"true\"\n"
-    config+="CLEAN_STORE_CHATS=\"true\"\n"
-    config+="\n"
-    config+="# Log Configuration\n"
-    config+="LOG_LEVEL=\"ERROR\"\n"
-    config+="LOG_COLOR=\"true\"\n"
-    config+="LOG_BAILEYS=\"error\"\n"
     
     echo -e "$config"
 }
@@ -242,11 +549,9 @@ process_env_file() {
     generate_database_config "$repo_name" >> "$env_file"
     echo "" >> "$env_file"
     
-    # Add Evolution-specific configuration
-    if [ "$repo_name" = "automagik-evolution" ]; then
-        generate_evolution_config >> "$env_file"
-        echo "" >> "$env_file"
-    fi
+    # Add project-specific variables from main .env
+    add_project_specific_vars "$repo_name" >> "$env_file"
+    echo "" >> "$env_file"
     
     # Process .env.example line by line
     echo "# Variables from .env.example" >> "$env_file"
@@ -261,57 +566,12 @@ process_env_file() {
         # Extract variable name
         var_name=$(echo "$line" | cut -d'=' -f1)
         
+        # Get mapped value from main .env or use collected value
+        local mapped_value=$(get_mapped_value "$var_name" "$repo_name")
         
-        # Check if we have a collected value for this variable
-        local collected_value=""
-        case "$var_name" in
-            "OPENAI_API_KEY")
-                collected_value="$OPENAI_API_KEY"
-                ;;
-            "OPENAI_ORG_ID")
-                collected_value="$OPENAI_ORG_ID"
-                ;;
-            "ANTHROPIC_API_KEY")
-                collected_value="$ANTHROPIC_API_KEY"
-                ;;
-            "GOOGLE_API_KEY")
-                collected_value="$GOOGLE_API_KEY"
-                ;;
-            "GOOGLE_CSE_ID")
-                collected_value="$GOOGLE_CSE_ID"
-                ;;
-            "GROQ_API_KEY")
-                collected_value="$GROQ_API_KEY"
-                ;;
-            "TOGETHER_API_KEY")
-                collected_value="$TOGETHER_API_KEY"
-                ;;
-            "PERPLEXITY_API_KEY")
-                collected_value="$PERPLEXITY_API_KEY"
-                ;;
-            "SERPER_API_KEY")
-                collected_value="$SERPER_API_KEY"
-                ;;
-            "TAVILY_API_KEY")
-                collected_value="$TAVILY_API_KEY"
-                ;;
-            "BROWSERLESS_TOKEN")
-                collected_value="$BROWSERLESS_TOKEN"
-                ;;
-            "EVOLUTION_API_KEY")
-                collected_value="$EVOLUTION_API_KEY"
-                ;;
-            "JWT_SECRET")
-                collected_value="$JWT_SECRET"
-                ;;
-            "ENCRYPTION_KEY")
-                collected_value="$ENCRYPTION_KEY"
-                ;;
-        esac
-        
-        # Use collected value if available, otherwise keep example
-        if [ -n "$collected_value" ]; then
-            echo "$var_name=\"$collected_value\"" >> "$env_file"
+        # Use mapped value if available, otherwise keep example
+        if [ -n "$mapped_value" ]; then
+            echo "$var_name=\"$mapped_value\"" >> "$env_file"
         else
             echo "$line" >> "$env_file"
         fi
@@ -439,7 +699,6 @@ show_environment_summary() {
     done
     
     log_info "Total: $configured_vars/$total_vars variables configured across all services"
-    
 }
 
 # Clean environment files

@@ -34,35 +34,48 @@ load_existing_env() {
 
 # API Keys configuration
 declare -A API_KEYS=(
-    # OpenAI Configuration
+    # AI Service Keys
     ["OPENAI_API_KEY"]="OpenAI API Key (required for AI functionality)"
     ["OPENAI_ORG_ID"]="OpenAI Organization ID (optional)"
-    
-    # Anthropic Configuration
     ["ANTHROPIC_API_KEY"]="Anthropic Claude API Key (optional but recommended)"
-    
-    # Google Configuration
     ["GOOGLE_API_KEY"]="Google AI API Key (optional)"
     ["GOOGLE_CSE_ID"]="Google Custom Search Engine ID (optional)"
-    
-    # Other AI Services
+    ["GEMINI_API_KEY"]="Google Gemini API Key (optional)"
     ["GROQ_API_KEY"]="Groq API Key (optional)"
     ["TOGETHER_API_KEY"]="Together AI API Key (optional)"
     ["PERPLEXITY_API_KEY"]="Perplexity API Key (optional)"
     
-    
-    # External Services
+    # Search & Web Services
     ["SERPER_API_KEY"]="Serper.dev API Key (for web search, optional)"
     ["TAVILY_API_KEY"]="Tavily API Key (for web search, optional)"
     ["BROWSERLESS_TOKEN"]="Browserless Token (for web scraping, optional)"
     
-    # Evolution API (WhatsApp)
+    # Communication Services
     ["EVOLUTION_API_KEY"]="Evolution API Key (for WhatsApp integration)"
     ["EVOLUTION_WEBHOOK_URL"]="Evolution Webhook URL (optional)"
+    ["DISCORD_BOT_TOKEN"]="Discord Bot Token (optional)"
     
     # Security Keys
     ["JWT_SECRET"]="JWT Secret Key (will be auto-generated if not provided)"
     ["ENCRYPTION_KEY"]="Encryption Key (will be auto-generated if not provided)"
+    
+    # External Service Integrations
+    ["NOTION_TOKEN"]="Notion API Token (optional)"
+    ["AIRTABLE_TOKEN"]="Airtable API Token (optional)"
+    ["AIRTABLE_DEFAULT_BASE_ID"]="Airtable Default Base ID (optional)"
+    ["BLACKPEARL_TOKEN"]="BlackPearl API Token (optional)"
+    ["BLACKPEARL_API_URL"]="BlackPearl API URL (optional)"
+    ["BLACKPEARL_DB_URI"]="BlackPearl Database URI (optional)"
+    ["OMIE_TOKEN"]="Omie API Token (optional)"
+    ["GOOGLE_DRIVE_TOKEN"]="Google Drive API Token (optional)"
+    ["FLASHED_API_KEY"]="Flashed API Key (optional)"
+    ["FLASHED_API_URL"]="Flashed API URL (optional)"
+    ["SUPABASE_URL"]="Supabase Project URL (optional)"
+    ["SUPABASE_SERVICE_ROLE_KEY"]="Supabase Service Role Key (optional)"
+    ["FIGMA_API_KEY"]="Figma API Key (for MCP integration, optional)"
+    
+    # Monitoring
+    ["LOGFIRE_TOKEN"]="Logfire Monitoring Token (optional)"
 )
 
 # Required keys (cannot be empty) - Made optional for easier onboarding
@@ -348,11 +361,16 @@ collect_all_keys() {
     local key_groups=(
         "OPENAI_API_KEY OPENAI_ORG_ID"
         "ANTHROPIC_API_KEY"
-        "GOOGLE_API_KEY GOOGLE_CSE_ID"
+        "GOOGLE_API_KEY GOOGLE_CSE_ID GEMINI_API_KEY"
         "GROQ_API_KEY TOGETHER_API_KEY PERPLEXITY_API_KEY"
-        "NEO4J_USERNAME NEO4J_PASSWORD NEO4J_URI"
         "SERPER_API_KEY TAVILY_API_KEY BROWSERLESS_TOKEN"
-        "EVOLUTION_API_KEY EVOLUTION_WEBHOOK_URL"
+        "EVOLUTION_API_KEY EVOLUTION_WEBHOOK_URL DISCORD_BOT_TOKEN"
+        "NOTION_TOKEN AIRTABLE_TOKEN AIRTABLE_DEFAULT_BASE_ID"
+        "BLACKPEARL_TOKEN BLACKPEARL_API_URL BLACKPEARL_DB_URI"
+        "OMIE_TOKEN GOOGLE_DRIVE_TOKEN"
+        "FLASHED_API_KEY FLASHED_API_URL"
+        "SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY"
+        "FIGMA_API_KEY LOGFIRE_TOKEN"
         "JWT_SECRET ENCRYPTION_KEY"
     )
     
