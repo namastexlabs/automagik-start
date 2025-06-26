@@ -58,7 +58,7 @@ services:
 
   # PostgreSQL for automagik-spark (Workflow Engine)
   automagik-spark-postgres:
-    image: postgres:16
+    image: postgres:15-alpine
     container_name: automagik-spark-postgres
     restart: unless-stopped
     environment:
