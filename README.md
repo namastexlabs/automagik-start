@@ -19,7 +19,7 @@ Automagik Start is the unified installer that sets up the entire Automagik ecosy
 ### One-Line Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash
 ```
 
 ### Manual Installation
