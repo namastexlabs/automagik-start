@@ -1,7 +1,27 @@
 #!/bin/bash
 
 # ===================================================================
-# 🍎 macOS Dependencies Installer
+# 🍎 macOS Dependencies Installer (Optimized for Docker Deployment)
+# ===================================================================
+# 
+# This optimized version installs only essential tools for Docker-based
+# deployment. All application services run in containers, so local
+# Python, Node.js, and development tools are skipped to minimize
+# installation time and disk usage.
+#
+# What's installed:
+# ✅ Xcode Command Line Tools (for git)
+# ✅ Homebrew (package manager) 
+# ✅ Git, curl, jq (essential tools)
+# ✅ Docker Desktop (to run containers)
+# ✅ GitHub CLI (optional, for repo access)
+#
+# What's skipped:
+# ⏭️  Python/uv (runs in containers)
+# ⏭️  Node.js/pnpm (runs in containers)  
+# ⏭️  Browser tools (runs in containers)
+# ⏭️  Development tools (vim, htop, etc.)
+# ⏭️  Claude Code CLI (not needed for deployment)
 # ===================================================================
 
 # Source utilities
@@ -9,19 +29,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/colors.sh"
 source "$SCRIPT_DIR/../utils/logging.sh"
 
-# Package lists
+# Minimal package list for Docker-based deployment
 HOMEBREW_PACKAGES=(
-    "curl"
-    "wget"
-    "git"
-    "jq"
-    "bc"
-    "lsof"
+    "git"      # Required for repository cloning
+    "curl"     # Required for downloading scripts and health checks
+    "jq"       # Optional: for JSON parsing in status checks
 )
 
-# Version requirements
-PYTHON_MIN_VERSION="3.12"
-NODE_MIN_VERSION="22"
+# Docker-only deployment doesn't need Python/Node locally
+# All services run in containers
 
 # Check if running on macOS
 check_macos() {
@@ -158,28 +174,16 @@ install_system_packages() {
     fi
 }
 
-# Install Python via Homebrew
-install_python() {
-    log_section "Installing Python Environment"
+# Skip Python installation - runs in Docker containers
+skip_python_install() {
+    log_info "Skipping Python installation - services run in Docker containers"
+    log_info "Python/uv will be available inside the containers as needed"
     
-    # Check current Python installation
+    # Check if system Python exists (for any helper scripts)
     if command -v python3 >/dev/null 2>&1; then
         local python_version=$(python3 --version 2>&1 | cut -d' ' -f2)
-        local version_check=$(python3 -c "import sys; print(sys.version_info >= (3, 12))" 2>/dev/null)
-        
-        if [ "$version_check" = "True" ]; then
-            log_success "Python $python_version meets requirements (>= $PYTHON_MIN_VERSION)"
-        else
-            log_warning "Python $python_version may be too old, installing newer version"
-            install_python_homebrew
-        fi
-    else
-        log_info "Python not found, installing via Homebrew..."
-        install_python_homebrew
+        log_info "System Python $python_version detected (not required for Docker deployment)"
     fi
-    
-    # Install uv package manager
-    install_uv
     
     return 0
 }
@@ -246,28 +250,16 @@ install_uv() {
     fi
 }
 
-# Install Node.js and pnpm
-install_nodejs() {
-    log_section "Installing Node.js Environment"
+# Skip Node.js installation - runs in Docker containers
+skip_nodejs_install() {
+    log_info "Skipping Node.js installation - frontend services run in Docker containers"
+    log_info "Node.js/pnpm will be available inside the containers as needed"
     
-    # Check if Node.js is already installed with correct version
+    # Check if system Node.js exists (not required)
     if command -v node >/dev/null 2>&1; then
         local node_version=$(node --version 2>/dev/null | sed 's/^v//')
-        local major_version=$(echo "$node_version" | cut -d'.' -f1)
-        
-        if [ "$major_version" -ge "$NODE_MIN_VERSION" ]; then
-            log_success "Node.js $node_version meets requirements (>= $NODE_MIN_VERSION)"
-        else
-            log_warning "Node.js $node_version is too old, installing newer version"
-            install_nodejs_homebrew
-        fi
-    else
-        log_info "Node.js not found, installing via Homebrew..."
-        install_nodejs_homebrew
+        log_info "System Node.js $node_version detected (not required for Docker deployment)"
     fi
-    
-    # Install pnpm
-    install_pnpm
     
     return 0
 }
@@ -388,42 +380,11 @@ install_docker() {
     fi
 }
 
-# Install additional development tools
-install_dev_tools() {
-    log_section "Installing Development Tools"
-    
-    local dev_packages=(
-        "vim"
-        "htop"
-        "tree"
-        "tmux"
-        "sqlite"
-        "rsync"
-        "watch"
-        "gh"
-    )
-    
-    local failed_packages=()
-    
-    for package in "${dev_packages[@]}"; do
-        if brew list "$package" >/dev/null 2>&1; then
-            log_success "$package is already installed"
-        else
-            log_info "Installing $package..."
-            if brew install "$package"; then
-                log_success "$package installed successfully"
-            else
-                log_warning "Failed to install $package (non-critical)"
-                failed_packages+=("$package")
-            fi
-        fi
-    done
-    
-    if [ ${#failed_packages[@]} -gt 0 ]; then
-        log_warning "Some development tools failed to install: ${failed_packages[*]}"
-    else
-        log_success "All development tools installed successfully"
-    fi
+# Skip extra development tools for minimal installation
+skip_extra_dev_tools() {
+    log_info "Skipping extra development tools for minimal Docker deployment"
+    log_info "Only essential tools (git, curl, docker) are installed"
+    log_info "You can install additional tools later if needed: brew install vim htop tree"
     
     return 0
 }
@@ -461,31 +422,10 @@ add_to_shell_profile() {
     fi
 }
 
-# Install Claude Code CLI
-install_claude_code() {
-    log_section "Installing Claude Code CLI"
-    
-    if command -v claude >/dev/null 2>&1; then
-        local claude_version=$(claude --version 2>/dev/null || echo "unknown")
-        log_success "Claude Code is already installed: $claude_version"
-        return 0
-    fi
-    
-    log_info "Installing Claude Code CLI..."
-    
-    # Install via npm (requires Node.js) - only supported method
-    if command -v npm >/dev/null 2>&1; then
-        if npm install -g @anthropic-ai/claude-code; then
-            local claude_version=$(claude --version 2>/dev/null || echo "installed")
-            log_success "Claude Code CLI installed: $claude_version"
-        else
-            log_error "Failed to install Claude Code CLI via npm"
-            return 1
-        fi
-    else
-        log_error "NPM not available for Claude Code installation"
-        return 1
-    fi
+# Skip Claude Code CLI for minimal installation
+skip_claude_cli_install() {
+    log_info "Skipping Claude Code CLI - not required for Docker deployment"
+    log_info "Claude Code can be installed later if needed for development"
     
     return 0
 }
@@ -536,107 +476,11 @@ setup_github_cli() {
     return 0
 }
 
-# Install browser tools and automation dependencies (optional)
-install_browser_tools() {
-    log_section "Browser Tools and Automation (Optional)"
+# Skip browser tools for minimal installation
+skip_browser_tools() {
+    log_info "Skipping browser tools - services run in Docker containers"
+    log_info "Browser automation tools can be installed later if needed for development"
     
-    # Check if browser tools should be skipped
-    if [ "$SKIP_BROWSER_TOOLS" = "true" ]; then
-        log_info "Skipping browser tools installation (SKIP_BROWSER_TOOLS=true)"
-        return 0
-    fi
-    
-    echo -e "${YELLOW}Browser tools are optional and needed for:${NC}"
-    echo "• Genie Agent - Browser automation for frontend debugging"
-    echo "• Web scraping and automation tasks"
-    echo "• Performance testing with Lighthouse"
-    echo "• Headless browser testing"
-    echo ""
-    
-    if [ "$INSTALL_MODE" = "interactive" ]; then
-        while true; do
-            read -p "Install browser tools (Playwright, Lighthouse, Puppeteer)? [y/N]: " install_browser
-            case $install_browser in
-                [Yy]|[Yy][Ee][Ss])
-                    log_info "Proceeding with browser tools installation"
-                    break
-                    ;;
-                [Nn]|[Nn][Oo]|"")
-                    log_info "Skipping browser tools installation"
-                    log_info "You can install them later if needed for Genie Agent"
-                    return 0
-                    ;;
-                *)
-                    print_warning "Please answer yes or no."
-                    ;;
-            esac
-        done
-    else
-        log_info "Non-interactive mode: skipping browser tools by default"
-        log_info "Use SKIP_BROWSER_TOOLS=false to force installation in non-interactive mode"
-        return 0
-    fi
-    
-    # Install Playwright via npm
-    if command -v npm >/dev/null 2>&1; then
-        # Check if already installed
-        if npm list -g playwright >/dev/null 2>&1; then
-            log_success "Playwright is already installed globally"
-        else
-            log_info "Installing Playwright..."
-            if npm install -g playwright; then
-                log_success "Playwright installed successfully"
-                
-                # Install Playwright browsers
-                log_info "Installing Playwright browsers (this may take a few minutes)..."
-                if npx playwright install --with-deps; then
-                    log_success "Playwright browsers installed successfully"
-                else
-                    log_warning "Failed to install Playwright browsers"
-                fi
-            else
-                log_warning "Failed to install Playwright"
-            fi
-        fi
-    else
-        log_warning "NPM not available for Playwright installation"
-    fi
-    
-    # Install Lighthouse
-    if command -v npm >/dev/null 2>&1; then
-        # Check if already installed
-        if npm list -g lighthouse >/dev/null 2>&1; then
-            log_success "Lighthouse is already installed globally"
-        else
-            log_info "Installing Lighthouse..."
-            if npm install -g lighthouse; then
-                log_success "Lighthouse installed successfully"
-            else
-                log_warning "Failed to install Lighthouse"
-            fi
-        fi
-    else
-        log_warning "NPM not available for Lighthouse installation"
-    fi
-    
-    # Install Puppeteer
-    if command -v npm >/dev/null 2>&1; then
-        # Check if already installed
-        if npm list -g puppeteer >/dev/null 2>&1; then
-            log_success "Puppeteer is already installed globally"
-        else
-            log_info "Installing Puppeteer..."
-            if npm install -g puppeteer; then
-                log_success "Puppeteer installed successfully"
-            else
-                log_warning "Failed to install Puppeteer"
-            fi
-        fi
-    else
-        log_warning "NPM not available for Puppeteer installation"
-    fi
-    
-    log_success "Browser tools installation completed"
     return 0
 }
 
@@ -649,26 +493,27 @@ cleanup_packages() {
     log_success "Homebrew cleanup completed"
 }
 
-# Verify all installations
-verify_installations() {
-    log_section "Installation Verification"
+# Verify minimal installations for Docker deployment
+verify_minimal_setup() {
+    log_section "Minimal Setup Verification"
     
     local verification_failed=false
     
-    # Check required commands
+    # Check only essential commands for Docker deployment
     local required_commands=(
         "curl:curl"
         "git:git"
-        "python3:python"
-        "uv:uv"
-        "node:node"
-        "pnpm:pnpm"
         "docker:docker"
         "brew:homebrew"
-        "gh:gh"
-        "claude:claude-cli"
     )
     
+    # Optional commands (warn if missing but don't fail)
+    local optional_commands=(
+        "gh:github-cli"
+        "jq:jq"
+    )
+    
+    # Check required commands (fail if missing)
     for cmd_info in "${required_commands[@]}"; do
         local cmd="${cmd_info%:*}"
         local package="${cmd_info#*:}"
@@ -676,15 +521,10 @@ verify_installations() {
         if command -v "$cmd" >/dev/null 2>&1; then
             local version=""
             case "$cmd" in
-                "python3") version=$(python3 --version 2>&1 | cut -d' ' -f2) ;;
-                "uv") version=$(uv --version 2>/dev/null | cut -d' ' -f2) ;;
-                "node") version=$(node --version 2>/dev/null | sed 's/^v//') ;;
-                "pnpm") version=$(pnpm --version 2>/dev/null) ;;
                 "docker") version=$(docker --version 2>/dev/null | cut -d' ' -f3 | sed 's/,$//') ;;
                 "git") version=$(git --version 2>/dev/null | cut -d' ' -f3) ;;
                 "brew") version=$(brew --version 2>/dev/null | head -1 | cut -d' ' -f2) ;;
-                "gh") version=$(gh --version 2>/dev/null | head -1 | cut -d' ' -f3) ;;
-                "claude") version=$(claude --version 2>/dev/null || echo "installed") ;;
+                "curl") version=$(curl --version 2>/dev/null | head -1 | cut -d' ' -f2) ;;
                 *) version="installed" ;;
             esac
             
@@ -692,6 +532,25 @@ verify_installations() {
         else
             log_error "$cmd not found ($package package)"
             verification_failed=true
+        fi
+    done
+    
+    # Check optional commands (warn if missing but don't fail)
+    for cmd_info in "${optional_commands[@]}"; do
+        local cmd="${cmd_info%:*}"
+        local package="${cmd_info#*:}"
+        
+        if command -v "$cmd" >/dev/null 2>&1; then
+            local version=""
+            case "$cmd" in
+                "gh") version=$(gh --version 2>/dev/null | head -1 | cut -d' ' -f3) ;;
+                "jq") version=$(jq --version 2>/dev/null | sed 's/^jq-//') ;;
+                *) version="installed" ;;
+            esac
+            
+            log_success "$cmd: $version (optional)"
+        else
+            log_warning "$cmd not found ($package package) - optional"
         fi
     done
     
@@ -735,18 +594,13 @@ install_dependencies() {
     fi
     
     local install_steps=(
-        "install_xcode_tools"
-        "install_homebrew"
-        "install_system_packages" 
-        "install_python"
-        "install_nodejs"
-        "install_docker"
-        "install_browser_tools"
-        "install_dev_tools"
-        "install_claude_code"
-        "setup_github_cli"
-        "cleanup_packages"
-        "verify_installations"
+        "install_xcode_tools"     # Needed for git and build tools
+        "install_homebrew"       # Package manager for macOS
+        "install_system_packages" # Minimal: git, curl, jq
+        "install_docker"         # Required for running containers
+        "setup_github_cli"       # Optional: for repository access
+        "cleanup_packages"       # Clean up to save space
+        "verify_minimal_setup"   # Verify only essential tools
     )
     
     local total_steps=${#install_steps[@]}
@@ -784,20 +638,23 @@ show_post_install_notes() {
     echo "• Verify installations with: 'automagik-installer.sh verify'"
     echo ""
     
-    echo -e "${CYAN}What was installed:${NC}"
-    echo "• Xcode Command Line Tools (build tools)"
+    echo -e "${CYAN}What was installed (minimal Docker setup):${NC}"
+    echo "• Xcode Command Line Tools (for git)"
     echo "• Homebrew package manager"
-    echo "• System packages: curl, git, jq, etc."
-    echo "• Python 3.11+ with uv package manager"
-    echo "• Node.js 20+ with pnpm package manager"  
+    echo "• Essential packages: git, curl, jq"
     echo "• Docker Desktop for Mac"
-    echo "• Development tools: vim, htop, sqlite, etc."
+    echo "• GitHub CLI (optional)"
+    echo ""
+    echo -e "${GREEN}✅ All services will run in Docker containers${NC}"
+    echo "• No local Python/Node.js installation needed"
+    echo "• No browser tools or development packages installed"
+    echo "• Minimal disk space usage"
     echo ""
     
     echo -e "${CYAN}Next steps:${NC}"
-    echo "• Restart your terminal"
-    echo "• Start Docker Desktop"
+    echo "• Start Docker Desktop from Applications"
     echo "• Run the Automagik installer"
+    echo "• Everything else runs in containers!"
     echo ""
 }
 
@@ -808,7 +665,7 @@ main() {
             install_dependencies
             ;;
         "verify")
-            verify_installations
+            verify_minimal_setup
             ;;
         "xcode")
             install_xcode_tools
@@ -816,28 +673,19 @@ main() {
         "homebrew")
             install_homebrew
             ;;
-        "python")
-            install_python
-            ;;
-        "nodejs")
-            install_nodejs
-            ;;
         "docker")
             install_docker
             ;;
-        "dev-tools")
-            install_dev_tools
-            ;;
         *)
-            echo "Usage: $0 {install|verify|xcode|homebrew|python|nodejs|docker|dev-tools}"
-            echo "  install    - Install all dependencies (default)"
-            echo "  verify     - Verify installations"
+            echo "Usage: $0 {install|verify|xcode|homebrew|docker}"
+            echo "  install    - Install minimal dependencies for Docker deployment (default)"
+            echo "  verify     - Verify essential installations" 
             echo "  xcode      - Install Xcode Command Line Tools only"
             echo "  homebrew   - Install Homebrew only"
-            echo "  python     - Install Python environment only"
-            echo "  nodejs     - Install Node.js environment only"
             echo "  docker     - Install Docker only"
-            echo "  dev-tools  - Install development tools only"
+            echo ""
+            echo "Optimized for Docker deployment - skips Python/Node.js/dev tools"
+            echo "All services run in containers, minimal host requirements"
             exit 1
             ;;
     esac
