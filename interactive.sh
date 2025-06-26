@@ -256,11 +256,16 @@ if [ $# -gt 0 ] && [ "$1" = "--help" ]; then
 fi
 
 # Check if we have a proper terminal for interaction
-if [ ! -t 0 ] || [ ! -t 1 ]; then
+if [ ! -t 1 ]; then
     log_error "This script requires an interactive terminal"
     log_info "It looks like you're running this in a non-interactive environment"
     log_info "For automated installation, use:"
     echo "  curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash"
+    echo ""
+    log_info "For true interactive installation, download and run locally:"
+    echo "  curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh"
+    echo "  chmod +x interactive.sh"
+    echo "  ./interactive.sh"
     exit 1
 fi
 
