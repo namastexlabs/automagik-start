@@ -58,13 +58,13 @@ services:
 
   # PostgreSQL for automagik-spark (Workflow Engine)
   automagik-spark-postgres:
-    image: postgres:15-alpine
+    image: postgres:16
     container_name: automagik-spark-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: automagik_spark
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: automagik
+      POSTGRES_USER: automagik
+      POSTGRES_PASSWORD: automagik
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5402:5432"
@@ -74,7 +74,7 @@ services:
       automagik-network:
         ipv4_address: 172.20.1.2
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_spark"]
+      test: ["CMD-SHELL", "pg_isready -U automagik -d automagik"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -199,16 +199,19 @@ services:
       retries: 3
       start_period: 60s
 
-  # automagik-spark (Workflow Engine)
-  automagik-spark:
+  # automagik-spark API (Workflow Engine)
+  automagik-spark-api:
     build:
       context: ./automagik-spark
       dockerfile: docker/Dockerfile
-    container_name: automagik-spark
+    container_name: automagik-spark-api
     restart: unless-stopped
+    command: python -m automagik api start
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:postgres@automagik-spark-postgres:5432/automagik_spark
+      - POSTGRES_USER=automagik
+      - POSTGRES_PASSWORD=automagik
+      - POSTGRES_DB=automagik
+      - DATABASE_URL=postgresql://automagik:automagik@automagik-spark-postgres:5432/automagik
       - REDIS_URL=redis://automagik-spark-redis:6379
       - CELERY_BROKER_URL=redis://automagik-spark-redis:6379
       - CELERY_RESULT_BACKEND=redis://automagik-spark-redis:6379
@@ -218,7 +221,7 @@ services:
       - "8883:8883"
     volumes:
       - ./automagik-spark:/app
-      - /app/node_modules
+    working_dir: /app
     networks:
       automagik-network:
         ipv4_address: 172.20.2.2
@@ -233,6 +236,36 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # automagik-spark Worker (Celery)
+  automagik-spark-worker:
+    build:
+      context: ./automagik-spark
+      dockerfile: docker/Dockerfile
+    container_name: automagik-spark-worker
+    restart: unless-stopped
+    command: python -m automagik worker start
+    environment:
+      - POSTGRES_USER=automagik
+      - POSTGRES_PASSWORD=automagik
+      - POSTGRES_DB=automagik
+      - DATABASE_URL=postgresql://automagik:automagik@automagik-spark-postgres:5432/automagik
+      - REDIS_URL=redis://automagik-spark-redis:6379
+      - CELERY_BROKER_URL=redis://automagik-spark-redis:6379
+      - CELERY_RESULT_BACKEND=redis://automagik-spark-redis:6379
+    volumes:
+      - ./automagik-spark:/app
+    working_dir: /app
+    networks:
+      automagik-network:
+        ipv4_address: 172.20.2.7
+    depends_on:
+      automagik-spark-postgres:
+        condition: service_healthy
+      automagik-spark-redis:
+        condition: service_healthy
+      automagik-spark-api:
+        condition: service_healthy
 
   # automagik-tools (MCP Tools)
   automagik-tools:
