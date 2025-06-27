@@ -23,6 +23,9 @@ volumes:
   # Evolution API Data
   evolution_instances:
   
+  # Omnihub Data
+  omnihub_data:
+  
   # Langflow Data
   langflow-data:
 
@@ -315,8 +318,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 90s
+      retries: 5
+      start_period: 120s
 
   # automagik-omni (Multi-tenant Hub)
   automagik-omni:
@@ -335,15 +338,15 @@ services:
       - EVOLUTION_TRANSCRIPT_API_KEY=namastex888
       - WHATSAPP_INSTANCE=default
       - SESSION_ID_PREFIX=instance-
-      - SQLITE_DB_PATH=/app/data/omnihub.db
+      - SQLITE_DB_PATH=./data/omnihub.db
       - DATABASE_URL=sqlite:///app/data/omnihub.db
-      - LOG_LEVEL=INFO
-      - LOG_VERBOSITY=short
+      - LOG_LEVEL=DEBUG
+      - LOG_VERBOSITY=full
+      - PYTHONPATH=/app
     ports:
       - "8882:8882"
     volumes:
-      - ./automagik-omni:/app
-      - ./automagik-omni/data:/app/data
+      - omnihub_data:/app/data
     networks:
       automagik-network:
     depends_on:
@@ -356,7 +359,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 90s
 
   # automagik-ui-v2 (Frontend - Production Build)
   automagik-ui-v2:
@@ -390,8 +393,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8888"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 120s
 
   # ================================
   # Optional Services

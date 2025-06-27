@@ -29,10 +29,9 @@ APPLICATION_SERVICES=(
     "automagik-spark-api"
     "automagik-spark-worker"
     "automagik-tools"
-    # Note: Services below are commented out as they don't have Dockerfiles yet
-    # "automagik-evolution"
-    # "automagik-omni"
-    # "automagik-ui-v2"
+    "automagik-evolution"
+    "automagik-omni"
+    "automagik-ui-v2"
 )
 
 OPTIONAL_SERVICES=(
