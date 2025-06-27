@@ -11,7 +11,7 @@ Automagik Start is the unified installer that sets up the entire Automagik ecosy
 - **automagik-tools** - MCP Tools (SSE + HTTP)
 - **automagik-evolution** - WhatsApp API (PostgreSQL + Redis + RabbitMQ)
 - **automagik-omni** - Multi-tenant Hub
-- **automagik-ui-v2** - Main Interface (Production Build)
+- **automagik-ui** - Main Interface (Production Build)
 - **langflow** - Visual Flow Builder (Optional)
 
 ## 🎯 Quick Start
@@ -152,7 +152,7 @@ The installer sets up these Docker services:
 - **automagik-tools-sse** (Port: 8884)
 - **automagik-tools-http** (Port: 8885)
 - **automagik-evolution** (Port: 9000)
-- **automagik-ui-v2** (Port: 8888)
+- **automagik-ui** (Port: 8888)
 
 ## 🔍 Troubleshooting
 
@@ -212,7 +212,7 @@ This project is licensed under the MIT License - see the individual repository l
 ## 🔗 Related Projects
 
 - [am-agents-labs](https://github.com/namastexlabs/am-agents-labs) - Main Orchestrator
-- [automagik-ui-v2](https://github.com/namastexlabs/automagik-ui-v2) - Main Interface
+- [automagik-ui](https://github.com/namastexlabs/automagik-ui) - Main Interface
 - [automagik-omni](https://github.com/namastexlabs/automagik-omni) - Multi-tenant Hub
 - [automagik-spark](https://github.com/namastexlabs/automagik-spark) - Workflow Engine
 - [automagik-tools](https://github.com/namastexlabs/automagik-tools) - MCP Tools

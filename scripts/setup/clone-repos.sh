@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/../utils/logging.sh"
 # Repository definitions
 declare -A REPOSITORIES=(
     ["am-agents-labs"]="https://github.com/namastexlabs/am-agents-labs.git"
-    ["automagik-ui-v2"]="https://github.com/namastexlabs/automagik-ui-v2.git"
+    ["automagik-ui"]="https://github.com/namastexlabs/automagik-ui.git"
     ["automagik-omni"]="https://github.com/namastexlabs/automagik-omni.git"
     ["automagik-spark"]="https://github.com/namastexlabs/automagik-spark.git"
     ["automagik-tools"]="https://github.com/namastexlabs/automagik-tools.git"
@@ -22,7 +22,7 @@ declare -A REPOSITORIES=(
 # Branch settings (empty means default branch)
 declare -A REPOSITORY_BRANCHES=(
     ["am-agents-labs"]=""  # Will be set by user selection
-    ["automagik-ui-v2"]=""
+    ["automagik-ui"]=""
     ["automagik-omni"]=""
     ["automagik-spark"]=""
     ["automagik-tools"]=""
@@ -36,7 +36,7 @@ CLONE_ORDER=(
     "automagik-tools"
     "automagik-evolution"
     "automagik-omni"
-    "automagik-ui-v2"
+    "automagik-ui"
 )
 
 # Base directory for cloning

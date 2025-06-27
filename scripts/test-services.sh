@@ -24,7 +24,7 @@ AM_AGENTS_DIR="$SERVICES_DIR/am-agents-labs"
 SPARK_DIR="$SERVICES_DIR/automagik-spark"
 TOOLS_DIR="$SERVICES_DIR/automagik-tools"
 OMNI_DIR="$SERVICES_DIR/automagik-omni"
-UI_DIR="$SERVICES_DIR/automagik-ui-v2"
+UI_DIR="$SERVICES_DIR/automagik-ui"
 
 # Function to print colored messages
 print_status() {
@@ -112,10 +112,10 @@ test_tools_service() {
 
 # Function to test UI service
 test_ui_service() {
-    print_status "Testing automagik-ui-v2..."
+    print_status "Testing automagik-ui..."
     
     if [ ! -d "$UI_DIR" ]; then
-        print_error "automagik-ui-v2 directory not found: $UI_DIR"
+        print_error "automagik-ui directory not found: $UI_DIR"
         return 1
     fi
     
@@ -123,7 +123,7 @@ test_ui_service() {
     
     # Check if node_modules exists
     if [ ! -d "node_modules" ]; then
-        print_error "automagik-ui-v2: No node_modules found. Run 'pnpm install' first."
+        print_error "automagik-ui: No node_modules found. Run 'pnpm install' first."
         return 1
     fi
     
@@ -144,7 +144,7 @@ test_ui_service() {
         fi
     fi
     
-    print_success "automagik-ui-v2: Ready to start"
+    print_success "automagik-ui: Ready to start"
 }
 
 # Main execution
@@ -178,7 +178,7 @@ echo "  - am-agents-labs: 8881"
 echo "  - automagik-omni: 8882"
 echo "  - automagik-spark: 8883"
 echo "  - automagik-tools: 8884"
-echo "  - automagik-ui-v2: 8888 (production), 3000 (dev)"
+echo "  - automagik-ui: 8888 (production), 3000 (dev)"
 echo ""
 echo "To start all services locally without sudo:"
 echo "  make -f Makefile.local setup-pm2"

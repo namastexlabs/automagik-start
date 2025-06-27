@@ -184,11 +184,11 @@ LOG_VERBOSITY=full
 PYTHONPATH=/app
 EOF
 
-# automagik-ui-v2
-print_info "Configuring automagik-ui-v2..."
-cat > "${SERVICES_DIR}/automagik-ui-v2/.env" << 'EOF'
+# automagik-ui
+print_info "Configuring automagik-ui..."
+cat > "${SERVICES_DIR}/automagik-ui/.env" << 'EOF'
 # ===================================================================
-# 🎨 automagik-ui-v2 - Local Service Configuration
+# 🎨 automagik-ui - Local Service Configuration
 # ===================================================================
 
 # Node.js Configuration
@@ -217,7 +217,7 @@ echo ""
 # ===========================================
 print_status "Creating data directories..."
 
-for service in am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui-v2; do
+for service in am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui; do
     data_dir="${SERVICES_DIR}/${service}/data"
     if [ ! -d "$data_dir" ]; then
         mkdir -p "$data_dir"
@@ -265,7 +265,7 @@ echo -e "  am-agents-labs:               ${GREEN}localhost:8881${RESET}"
 echo -e "  automagik-spark:              ${GREEN}localhost:8883${RESET}"
 echo -e "  automagik-tools:              ${GREEN}localhost:8884${RESET}"
 echo -e "  automagik-omni:               ${GREEN}localhost:8882${RESET}"
-echo -e "  automagik-ui-v2:              ${GREEN}localhost:8888${RESET}"
+echo -e "  automagik-ui:              ${GREEN}localhost:8888${RESET}"
 echo ""
 
 print_success "Local configuration setup completed!"

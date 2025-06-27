@@ -53,13 +53,13 @@ AM_AGENTS_LABS_DIR := $(SERVICES_DIR)/am-agents-labs
 AUTOMAGIK_SPARK_DIR := $(SERVICES_DIR)/automagik-spark
 AUTOMAGIK_TOOLS_DIR := $(SERVICES_DIR)/automagik-tools
 AUTOMAGIK_OMNI_DIR := $(SERVICES_DIR)/automagik-omni
-AUTOMAGIK_UI_DIR := $(SERVICES_DIR)/automagik-ui-v2
+AUTOMAGIK_UI_DIR := $(SERVICES_DIR)/automagik-ui
 
 # Service names (logical)
-SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui-v2
+SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui
 
 # Actual runnable services (excludes automagik-tools which is a library)
-RUNNABLE_SERVICES := am-agents-labs automagik-spark automagik-omni automagik-ui-v2
+RUNNABLE_SERVICES := am-agents-labs automagik-spark automagik-omni automagik-ui
 
 # Systemd service names (for backward compatibility)
 SYSTEMD_SERVICES := automagik-agents automagik-spark automagik-omni
@@ -69,7 +69,7 @@ AM_AGENTS_LABS_URL := https://github.com/namastexlabs/am-agents-labs.git
 AUTOMAGIK_SPARK_URL := https://github.com/namastexlabs/automagik-spark.git
 AUTOMAGIK_TOOLS_URL := https://github.com/namastexlabs/automagik-tools.git
 AUTOMAGIK_OMNI_URL := https://github.com/namastexlabs/automagik-omni.git
-AUTOMAGIK_UI_URL := https://github.com/namastexlabs/automagik-ui-v2.git
+AUTOMAGIK_UI_URL := https://github.com/namastexlabs/automagik-ui.git
 
 # Configuration
 CONFIG_DIR := $(PROJECT_ROOT)/config
@@ -387,15 +387,15 @@ build-omni: ## Build automagik-omni service
 		cd "$(AUTOMAGIK_OMNI_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-omni$(FONT_RESET)"; \
 	fi
 
-build-ui: ## Build automagik-ui-v2 service (can be slow)
-	$(call print_status,Building $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service...)
+build-ui: ## Build automagik-ui service (can be slow)
+	$(call print_status,Building $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
 	@if [ -d "$(AUTOMAGIK_UI_DIR)" ] && [ -f "$(AUTOMAGIK_UI_DIR)/Makefile" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Building UI (this may take a few minutes)...$(FONT_RESET)"; \
-		cd "$(AUTOMAGIK_UI_DIR)" && make build || echo -e "$(FONT_RED)$(ERROR) Failed to build automagik-ui-v2$(FONT_RESET)"; \
+		cd "$(AUTOMAGIK_UI_DIR)" && make build || echo -e "$(FONT_RED)$(ERROR) Failed to build automagik-ui$(FONT_RESET)"; \
 	fi
 
-build-ui-fast: ## Build automagik-ui-v2 service (smart - skip if recent)
-	$(call print_status,Building $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service (smart mode)...)
+build-ui-fast: ## Build automagik-ui service (smart - skip if recent)
+	$(call print_status,Building $(UI_COLOR)automagik-ui$(FONT_RESET) service (smart mode)...)
 	@if [ -d "$(AUTOMAGIK_UI_DIR)" ] && [ -f "$(AUTOMAGIK_UI_DIR)/Makefile" ]; then \
 		cd "$(AUTOMAGIK_UI_DIR)" && make build-fast; \
 	fi
@@ -435,7 +435,7 @@ install-dependencies-only: ## 📦 Install only dependencies (no systemd service
 		cd "$(AUTOMAGIK_OMNI_DIR)" && make install 2>&1 | grep -v "sudo" || true; \
 	fi
 	@if [ -d "$(AUTOMAGIK_UI_DIR)" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-ui-v2...$(FONT_RESET)"; \
+		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-ui...$(FONT_RESET)"; \
 		cd "$(AUTOMAGIK_UI_DIR)" && pnpm install; \
 		if [ -f "$(AUTOMAGIK_UI_DIR)/.env.local.example" ] && [ ! -f "$(AUTOMAGIK_UI_DIR)/.env.local" ]; then \
 			cp "$(AUTOMAGIK_UI_DIR)/.env.local.example" "$(AUTOMAGIK_UI_DIR)/.env.local"; \
@@ -476,10 +476,10 @@ install-omni: ## Install automagik-omni service
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),install)
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),install-service)
 
-install-ui: ## Install automagik-ui-v2 service
-	$(call print_status,Installing $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service...)
+install-ui: ## Install automagik-ui service
+	$(call print_status,Installing $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
 	@if [ ! -d "$(AUTOMAGIK_UI_DIR)" ]; then \
-		$(call ensure_repository,automagik-ui-v2,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL)); \
+		$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL)); \
 	fi
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install)
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install-service)
@@ -487,7 +487,7 @@ install-ui: ## Install automagik-ui-v2 service
 uninstall-all-services: ## 🗑️ Uninstall all services (remove systemd services)
 	$(call print_status,Uninstalling all Automagik services...)
 	@$(MAKE) stop-all-services
-	@for service in am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui-v2; do \
+	@for service in am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui; do \
 		echo -e "Removing $$service systemd service..."; \
 		sudo systemctl disable $$service 2>/dev/null || true; \
 		sudo rm -f /etc/systemd/system/$$service.service 2>/dev/null || true; \
@@ -517,7 +517,7 @@ start-all-services: ## 🚀 Start all services
 	@echo -e "$(OMNI_COLOR)[3/4] Starting automagik-omni (multi-tenant hub)...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),start-service)
 	@sleep 2
-	@echo -e "$(UI_COLOR)[4/4] Starting automagik-ui-v2 (frontend - PM2)...$(FONT_RESET)"
+	@echo -e "$(UI_COLOR)[4/4] Starting automagik-ui (frontend - PM2)...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),start-service)
 	@sleep 3
 	@$(call print_success,All services started!)
@@ -538,7 +538,7 @@ start-all-dev: ## 🚀 Start all services in dev mode (no sudo required)
 	@echo -e "$(TOOLS_COLOR)[4/5] Starting automagik-tools on port 9994...$(FONT_RESET)"
 	@cd $(AUTOMAGIK_TOOLS_DIR) && PORT=9994 $(MAKE) serve-all 2>/dev/null &
 	@sleep 3
-	@echo -e "$(UI_COLOR)[5/5] Starting automagik-ui-v2 on port 9998...$(FONT_RESET)"
+	@echo -e "$(UI_COLOR)[5/5] Starting automagik-ui on port 9998...$(FONT_RESET)"
 	@cd $(AUTOMAGIK_UI_DIR) && PORT=9998 $(MAKE) dev &
 	@sleep 3
 	@$(call print_success,All services started in dev mode!)
@@ -553,7 +553,7 @@ stop-all-services: ## 🛑 Stop all services
 	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),stop-service)
 	@echo -e "$(OMNI_COLOR)Stopping automagik-omni...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),stop-service)
-	@echo -e "$(UI_COLOR)Stopping automagik-ui-v2...$(FONT_RESET)"
+	@echo -e "$(UI_COLOR)Stopping automagik-ui...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),stop-service)
 	@$(call print_success,All services stopped!)
 
@@ -570,7 +570,7 @@ status-all-services: ## 📊 Check status of all services
 	$(call check_service_health,automagik-agents,$(AGENTS_COLOR),8881)
 	$(call check_service_health,automagik-spark,$(SPARK_COLOR),8883)
 	$(call check_service_health,omni-hub,$(OMNI_COLOR),8882)
-	$(call check_pm2_service_health,automagik-ui-v2,$(UI_COLOR),8888)
+	$(call check_pm2_service_health,automagik-ui,$(UI_COLOR),8888)
 	@echo -e "  $(FONT_GRAY)automagik-tools      [LIBRARY]       8884     -          -$(FONT_RESET)"
 	@echo ""
 	@$(call print_infrastructure_status)
@@ -628,12 +628,12 @@ start-omni-user: ## 🚀 Start automagik-omni with user systemd (no sudo)
 	$(call print_status,Starting $(OMNI_COLOR)automagik-omni$(FONT_RESET) with user systemd...)
 	@systemctl --user start omni-hub 2>/dev/null || echo "User service not installed. Use 'make install-user-services' first."
 
-start-ui: ## 🚀 Start automagik-ui-v2 service only (PM2)
-	$(call print_status,Starting $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service...)
+start-ui: ## 🚀 Start automagik-ui service only (PM2)
+	$(call print_status,Starting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),start-service)
 
-start-ui-dev: ## 🚀 Start automagik-ui-v2 in dev mode (no sudo)
-	$(call print_status,Starting $(UI_COLOR)automagik-ui-v2$(FONT_RESET) in dev mode on port 9998...)
+start-ui-dev: ## 🚀 Start automagik-ui in dev mode (no sudo)
+	$(call print_status,Starting $(UI_COLOR)automagik-ui$(FONT_RESET) in dev mode on port 9998...)
 	@cd $(AUTOMAGIK_UI_DIR) && PORT=9998 $(MAKE) dev
 
 # Individual Stop Commands
@@ -652,8 +652,8 @@ stop-omni: ## 🛑 Stop automagik-omni service only
 	$(call print_status,Stopping $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),stop-service)
 
-stop-ui: ## 🛑 Stop automagik-ui-v2 service only (PM2)
-	$(call print_status,Stopping $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service...)
+stop-ui: ## 🛑 Stop automagik-ui service only (PM2)
+	$(call print_status,Stopping $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),stop-service)
 
 # Individual Restart Commands
@@ -672,8 +672,8 @@ restart-omni: ## 🔄 Restart automagik-omni service only
 	$(call print_status,Restarting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),restart-service)
 
-restart-ui: ## 🔄 Restart automagik-ui-v2 service only (PM2)
-	$(call print_status,Restarting $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service...)
+restart-ui: ## 🔄 Restart automagik-ui service only (PM2)
+	$(call print_status,Restarting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),restart-service)
 
 # Individual Status Commands
@@ -689,7 +689,7 @@ status-tools: ## 📊 Check automagik-tools status only
 status-omni: ## 📊 Check automagik-omni status only
 	$(call show_service_status,$(AUTOMAGIK_OMNI_DIR),$(OMNI_COLOR))
 
-status-ui: ## 📊 Check automagik-ui-v2 status only (PM2)
+status-ui: ## 📊 Check automagik-ui status only (PM2)
 	$(call show_service_status,$(AUTOMAGIK_UI_DIR),$(UI_COLOR))
 
 # ===========================================
@@ -702,7 +702,7 @@ logs-all: ## 📋 Follow logs from all services (colorized)
 	@(journalctl -u automagik-agents -f --no-pager 2>/dev/null | sed "s/^/$(AGENTS_COLOR)[AGENTS]$(FONT_RESET) /" &); \
 	(journalctl -u automagik-spark -f --no-pager 2>/dev/null | sed "s/^/$(SPARK_COLOR)[SPARK]$(FONT_RESET)  /" &); \
 	(journalctl -u automagik-omni -f --no-pager 2>/dev/null | sed "s/^/$(OMNI_COLOR)[OMNI]$(FONT_RESET)   /" &); \
-	(pm2 logs automagik-ui-v2 --follow --lines 0 2>/dev/null | sed "s/^/$(UI_COLOR)[UI]$(FONT_RESET)     /" &); \
+	(pm2 logs automagik-ui --follow --lines 0 2>/dev/null | sed "s/^/$(UI_COLOR)[UI]$(FONT_RESET)     /" &); \
 	wait
 
 logs-agents: ## 📋 Follow am-agents-labs logs
@@ -720,8 +720,8 @@ logs-omni: ## 📋 Follow automagik-omni logs
 	$(call print_status,Following $(OMNI_COLOR)automagik-omni$(FONT_RESET) logs...)
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),logs)
 
-logs-ui: ## 📋 Follow automagik-ui-v2 logs (PM2)
-	$(call print_status,Following $(UI_COLOR)automagik-ui-v2$(FONT_RESET) logs...)
+logs-ui: ## 📋 Follow automagik-ui logs (PM2)
+	$(call print_status,Following $(UI_COLOR)automagik-ui$(FONT_RESET) logs...)
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),logs)
 
 logs-infrastructure: ## 📋 Follow Docker infrastructure logs
@@ -822,7 +822,7 @@ install-local: ## 🏠 Local installation (no sudo required - uses PM2)
 	@$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
 	@$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL))
 	@$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL))
-	@$(call ensure_repository,automagik-ui-v2,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
+	@$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
@@ -845,7 +845,7 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
 	@$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL))
 	@$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL))
-	@$(call ensure_repository,automagik-ui-v2,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
+	@$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
@@ -868,7 +868,7 @@ install-full: ## 🚀 Complete installation (includes UI build - slower but full
 	@$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
 	@$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL))
 	@$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL))
-	@$(call ensure_repository,automagik-ui-v2,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
+	@$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
@@ -958,11 +958,11 @@ pull-omni: ## 🔄 Pull automagik-omni repository only
 	@cd $(AUTOMAGIK_OMNI_DIR) && git pull
 	@$(call print_success,automagik-omni updated!)
 
-pull-ui: ## 🔄 Pull automagik-ui-v2 repository only
-	$(call print_status,Pulling $(UI_COLOR)automagik-ui-v2$(FONT_RESET)...)
-	$(call ensure_repository,automagik-ui-v2,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
+pull-ui: ## 🔄 Pull automagik-ui repository only
+	$(call print_status,Pulling $(UI_COLOR)automagik-ui$(FONT_RESET)...)
+	$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@cd $(AUTOMAGIK_UI_DIR) && git pull
-	@$(call print_success,automagik-ui-v2 updated!)
+	@$(call print_success,automagik-ui updated!)
 
 logs: ## 📋 Show last 30 lines from all services (colorized)
 	$(call print_status,📋 Showing last 30 lines from all services...)
@@ -974,7 +974,7 @@ logs: ## 📋 Show last 30 lines from all services (colorized)
 	@echo -e "$(OMNI_COLOR)[OMNI] Last 30 lines:$(FONT_RESET)"
 	@journalctl -u automagik-omni -n 30 --no-pager 2>/dev/null | sed "s/^/$(OMNI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"
 	@echo -e "$(UI_COLOR)[UI] Last 30 lines:$(FONT_RESET)"
-	@pm2 logs automagik-ui-v2 --lines 30 2>/dev/null | sed "s/^/$(UI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"
+	@pm2 logs automagik-ui --lines 30 2>/dev/null | sed "s/^/$(UI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"
 
 status: ## 📊 Check status of everything
 	@$(MAKE) status-all-services

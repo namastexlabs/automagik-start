@@ -11,7 +11,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/logging.sh"
 # Required ports for Automagik Suite
 declare -A REQUIRED_PORTS=(
     # Core Automagik Services
-    ["8888"]="automagik-ui-v2 (Main Interface)"
+    ["8888"]="automagik-ui (Main Interface)"
     ["8881"]="am-agents-labs (Main Orchestrator)"
     ["8882"]="automagik-omni (Multi-tenant Hub)"
     ["8883"]="automagik-spark (Workflow Engine)"

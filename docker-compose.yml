@@ -361,12 +361,12 @@ services:
       retries: 3
       start_period: 90s
 
-  # automagik-ui-v2 (Frontend - Production Build)
-  automagik-ui-v2:
+  # automagik-ui (Frontend - Production Build)
+  automagik-ui:
     build:
-      context: ./automagik-ui-v2
+      context: ./automagik-ui
       dockerfile: Dockerfile.production
-    container_name: automagik-ui-v2
+    container_name: automagik-ui
     restart: unless-stopped
     environment:
       - NODE_ENV=production

@@ -31,7 +31,7 @@ APPLICATION_SERVICES=(
     "automagik-tools"
     "automagik-evolution"
     "automagik-omni"
-    "automagik-ui-v2"
+    "automagik-ui"
 )
 
 OPTIONAL_SERVICES=(
@@ -343,7 +343,7 @@ check_service_connectivity() {
         # Note: Worker service doesn't have HTTP endpoint for health checks
         # ["automagik-evolution"]="http://localhost:9000/health"
         # ["automagik-omni"]="http://localhost:8882/health"
-        # ["automagik-ui-v2"]="http://localhost:8888"
+        # ["automagik-ui"]="http://localhost:8888"
         ["langflow"]="http://localhost:7860/health"
     )
     

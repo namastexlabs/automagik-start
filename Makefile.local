@@ -37,7 +37,7 @@ AM_AGENTS_DIR := $(PROJECT_ROOT)/am-agents-labs
 SPARK_DIR := $(PROJECT_ROOT)/automagik-spark
 TOOLS_DIR := $(PROJECT_ROOT)/automagik-tools
 OMNI_DIR := $(PROJECT_ROOT)/automagik-omni
-UI_DIR := $(PROJECT_ROOT)/automagik-ui-v2
+UI_DIR := $(PROJECT_ROOT)/automagik-ui
 
 # ===========================================
 # 🛠️ Utility Functions

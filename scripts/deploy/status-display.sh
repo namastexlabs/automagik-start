@@ -22,7 +22,7 @@ declare -A SERVICE_INFO=(
     ["automagik-tools"]="MCP Tools|http://localhost:8885|8885"
     ["automagik-evolution"]="WhatsApp API|http://localhost:9000|9000"
     ["automagik-omni"]="Multi-tenant Hub|http://localhost:8882|8882"
-    ["automagik-ui-v2"]="Main Interface|http://localhost:8888|8888"
+    ["automagik-ui"]="Main Interface|http://localhost:8888|8888"
 )
 
 declare -A OPTIONAL_SERVICE_INFO=(

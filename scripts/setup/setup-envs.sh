@@ -19,7 +19,7 @@ declare -A REPO_CONFIGS=(
     ["automagik-tools"]="MCP tools with API configurations"
     ["automagik-evolution"]="WhatsApp integration with Evolution API"
     ["automagik-omni"]="Multi-tenant hub configuration"
-    ["automagik-ui-v2"]="Frontend application configuration"
+    ["automagik-ui"]="Frontend application configuration"
 )
 
 # Load collected API keys
@@ -362,27 +362,27 @@ get_mapped_value() {
         # Automagik UI v2 specific mappings
         "NEXT_PUBLIC_API_URL")
             case "$repo_name" in
-                "automagik-ui-v2") value="http://localhost:8881" ;;
+                "automagik-ui") value="http://localhost:8881" ;;
             esac ;;
         "NEXT_PUBLIC_SPARK_URL")
             case "$repo_name" in
-                "automagik-ui-v2") value="http://localhost:8883" ;;
+                "automagik-ui") value="http://localhost:8883" ;;
             esac ;;
         "NEXT_PUBLIC_OMNI_URL")
             case "$repo_name" in
-                "automagik-ui-v2") value="http://localhost:8882" ;;
+                "automagik-ui") value="http://localhost:8882" ;;
             esac ;;
         "NEXT_PUBLIC_TOOLS_SSE_URL")
             case "$repo_name" in
-                "automagik-ui-v2") value="http://localhost:8884" ;;
+                "automagik-ui") value="http://localhost:8884" ;;
             esac ;;
         "NEXT_PUBLIC_TOOLS_HTTP_URL")
             case "$repo_name" in
-                "automagik-ui-v2") value="http://localhost:8885" ;;
+                "automagik-ui") value="http://localhost:8885" ;;
             esac ;;
         "NEXT_PUBLIC_EVOLUTION_URL")
             case "$repo_name" in
-                "automagik-ui-v2") value="http://localhost:9000" ;;
+                "automagik-ui") value="http://localhost:9000" ;;
             esac ;;
         
     esac
@@ -506,7 +506,7 @@ add_project_specific_vars() {
             config+="EVOLUTION_TRANSCRIPT_API_KEY=namastex888\n"
             config+="EVOLUTION_MINIO_URL=minio:9000\n"
             ;;
-        "automagik-ui-v2")
+        "automagik-ui")
             config+="# Automagik UI v2 Specific Configuration\n"
             config+="ENCRYPTION_KEY=automagik-development-key-2024\n"
             config+="OMNI_MOCK_DATA=false\n"
@@ -588,7 +588,7 @@ generate_port_config() {
             config+="API_HOST=\"0.0.0.0\"\n"
             config+="API_PORT=\"8882\"\n"
             ;;
-        "automagik-ui-v2")
+        "automagik-ui")
             config+="# Application Configuration\n"
             config+="PORT=\"8888\"\n"
             config+="NODE_ENV=\"production\"\n"
@@ -610,7 +610,7 @@ process_env_file() {
     
     # Determine the correct env example file and target file for each project
     case "$repo_name" in
-        "automagik-ui-v2")
+        "automagik-ui")
             env_example="$repo_path/.env.local.example"
             env_file="$repo_path/.env.local"
             ;;
@@ -733,7 +733,7 @@ verify_environments() {
         
         # Determine the correct env file to check
         case "$repo_name" in
-            "automagik-ui-v2")
+            "automagik-ui")
                 env_file="$repo_path/.env.local"
                 ;;
             *)
@@ -791,7 +791,7 @@ show_environment_summary() {
         
         # Determine the correct env file to check
         case "$repo_name" in
-            "automagik-ui-v2")
+            "automagik-ui")
                 env_file="$repo_path/.env.local"
                 ;;
             *)

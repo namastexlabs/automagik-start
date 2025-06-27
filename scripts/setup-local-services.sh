@@ -32,7 +32,7 @@ AM_AGENTS_DIR="$SERVICES_DIR/am-agents-labs"
 SPARK_DIR="$SERVICES_DIR/automagik-spark"
 TOOLS_DIR="$SERVICES_DIR/automagik-tools"
 OMNI_DIR="$SERVICES_DIR/automagik-omni"
-UI_DIR="$SERVICES_DIR/automagik-ui-v2"
+UI_DIR="$SERVICES_DIR/automagik-ui"
 
 # Runtime directory for non-sudo services
 RUNTIME_DIR="$HOME/.local/share/automagik"
