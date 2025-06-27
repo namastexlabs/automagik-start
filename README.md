@@ -16,17 +16,27 @@ Automagik Start is the unified installer that sets up the entire Automagik ecosy
 
 ## 🎯 Quick Start
 
-### Quick Installation (Automated)
+### One-Command Installation (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash
 ```
-*Note: This runs in automated mode with safe defaults. Browser tools are optional.*
 
-### Interactive Installation (One Command)
+**That's it!** This single command will:
+- Detect any `.env` file in your current directory
+- Download the complete installer
+- Set up all services with your configuration
+- Launch the full Automagik suite
+
+### With Your Own Configuration
 
 ```bash
-curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh && chmod +x interactive.sh && ./interactive.sh
+# 1. Create your .env file with API keys
+echo "OPENAI_API_KEY=sk-your-key-here" > .env
+echo "ANTHROPIC_API_KEY=sk-ant-your-key" >> .env
+
+# 2. Run the installer (it will find and use your .env)
+curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash
 ```
 *Downloads and runs installer with step-by-step prompts and full customization.*
 

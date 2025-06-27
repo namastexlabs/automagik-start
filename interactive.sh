@@ -28,6 +28,9 @@ REPO_URL="https://github.com/namastexlabs/automagik-start.git"
 INSTALL_DIR="automagik-start"
 BRANCH="main"
 
+# Store the original working directory where user ran curl
+ORIGINAL_DIR="$(pwd)"
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}${INFO} $1${NC}"
@@ -123,6 +126,21 @@ check_requirements() {
     log_success "All requirements met"
 }
 
+# Check for and copy .env file from original directory
+copy_env_file() {
+    local original_env="$ORIGINAL_DIR/.env"
+    local target_env="$PWD/.env"
+    
+    if [ -f "$original_env" ]; then
+        log_info "Found .env file in original directory"
+        cp "$original_env" "$target_env"
+        log_success "Copied .env file to installer directory"
+        log_info "Your API keys and configuration will be used during installation"
+    else
+        log_info "No .env file found - will use interactive setup or defaults"
+    fi
+}
+
 # Clean up function
 cleanup() {
     # Don't clean up in interactive mode - user might want to explore
@@ -171,6 +189,9 @@ download_installer() {
     fi
     
     cd "$INSTALL_DIR"
+    
+    # Copy .env file if it exists in the original directory
+    copy_env_file
 }
 
 # Run the installer

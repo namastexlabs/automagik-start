@@ -1,18 +1,22 @@
 # Automagik Environment Setup
 
-This repository provides scripts to automatically generate environment files for all Automagik repositories with proper Docker-internal service URLs and variable mapping.
+This repository provides a single install command that automatically detects your .env file, downloads the installer, and sets up all Automagik repositories with proper Docker-internal service URLs and variable mapping.
 
-## 🚀 Quick Start (Standalone)
+## 🚀 Quick Start (One Command)
 
-The easiest way to set up environments is using the standalone script that can be curled and run from any directory:
+The easiest way to install Automagik with your environment configuration:
 
 ```bash
-# Navigate to your directory containing cloned Automagik repositories
-cd /path/to/your/automagik-repos
-
-# Download and run the standalone environment setup
-curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/setup-envs-standalone.sh | bash
+# Put your .env file in the directory where you want to install
+# Then run the one-line installer:
+curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash
 ```
+
+**That's it!** The installer will:
+1. Detect your `.env` file in the current directory  
+2. Download the installer
+3. Copy your `.env` file to the installation
+4. Run the full interactive setup with your configuration
 
 ## 🏗️ What It Does
 
@@ -110,51 +114,51 @@ If you've cloned this repository and want to use the local scripts:
 ./scripts/setup/setup-envs.sh verify
 ```
 
-### Manual Download
+### Alternative: Manual Download
 
 ```bash
-# Download the standalone script
-curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/setup-envs-standalone.sh
-chmod +x setup-envs-standalone.sh
+# Download the interactive installer
+curl -O https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh
+chmod +x interactive.sh
 
-# Run it
-./setup-envs-standalone.sh
+# Run it (will detect .env in current directory)
+./interactive.sh
 ```
 
 ## 🚨 Important Notes
 
-1. **Run from Repository Directory**: The script must be run from a directory containing the Automagik repositories
-2. **Overwrites Existing Files**: Will overwrite any existing `.env` files
+1. **Put .env in Install Directory**: Place your `.env` file where you want to install Automagik
+2. **One Command Does Everything**: Downloads, configures, and installs everything
 3. **Docker-Ready**: Generated files are optimized for Docker deployment
 4. **No Root Required**: Script runs with user permissions
 
 ## 📋 Requirements
 
 - **Bash**: Script requires bash shell
-- **curl**: For downloading the script (if using curl method)
-- **Repositories**: At least one Automagik repository in current directory
+- **curl**: For downloading the installer
+- **git**: For cloning repositories (auto-installed if missing)
 
 ## 🔧 Troubleshooting
 
-### "No Automagik repositories found"
-- Ensure you're in a directory containing cloned Automagik repositories
-- Check that repository names match exactly (case-sensitive)
+### ".env file not detected"
+- Make sure your `.env` file is in the directory where you run the curl command
+- Check file permissions and name (exactly `.env`)
 
 ### "Permission denied"
-- Make sure the script is executable: `chmod +x setup-envs-standalone.sh`
-- Ensure you have write permissions in the repository directories
+- Make sure you have write permissions in the installation directory
+- Don't run as root unless necessary
 
 ### Variable not mapping correctly
-- Check your main `.env` file syntax
-- Ensure variable names match exactly
-- Variables are case-sensitive
+- Check your `.env` file syntax
+- Ensure variable names match exactly (case-sensitive)
+- Use format: `VARIABLE_NAME=value` (no spaces around =)
 
 ## 📝 Contributing
 
 To modify the environment mapping:
-1. Edit `setup-envs-standalone.sh`
+1. Edit `scripts/setup/setup-envs.sh` 
 2. Update the `get_mapped_value()` function
 3. Add new repository configurations to `REPO_CONFIGS`
 4. Test with your repository structure
 
-This script is designed to be portable and work across different user setups without hardcoded paths or assumptions about directory structure.
+This installer is designed to be simple: **one command, one .env file, everything works**.
