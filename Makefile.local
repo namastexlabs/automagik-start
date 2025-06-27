@@ -1,0 +1,342 @@
+# ===================================================================
+# 🚀 Automagik Suite - Local Development (No Sudo)
+# ===================================================================
+# This Makefile provides local development commands that don't require sudo
+# Use this for development and testing without system-level access
+
+.DEFAULT_GOAL := help
+MAKEFLAGS += --no-print-directory
+SHELL := /bin/bash
+
+# ===========================================
+# 🎨 Colors & Symbols
+# ===========================================
+FONT_RED := $(shell tput setaf 1)
+FONT_GREEN := $(shell tput setaf 2)
+FONT_YELLOW := $(shell tput setaf 3)
+FONT_BLUE := $(shell tput setaf 4)
+FONT_PURPLE := $(shell tput setaf 5)
+FONT_CYAN := $(shell tput setaf 6)
+FONT_RESET := $(shell tput sgr0)
+CHECKMARK := ✅
+WARNING := ⚠️
+ERROR := ❌
+ROCKET := 🚀
+INFO := ℹ️
+
+# ===========================================
+# 📁 Paths & Configuration
+# ===========================================
+PROJECT_ROOT := $(shell pwd)
+RUNTIME_DIR := $(HOME)/.local/share/automagik
+LOG_DIR := $(RUNTIME_DIR)/logs
+PID_DIR := $(RUNTIME_DIR)/pids
+
+# Service directories
+AM_AGENTS_DIR := $(PROJECT_ROOT)/am-agents-labs
+SPARK_DIR := $(PROJECT_ROOT)/automagik-spark
+TOOLS_DIR := $(PROJECT_ROOT)/automagik-tools
+OMNI_DIR := $(PROJECT_ROOT)/automagik-omni
+UI_DIR := $(PROJECT_ROOT)/automagik-ui-v2
+
+# ===========================================
+# 🛠️ Utility Functions
+# ===========================================
+define print_status
+	@echo -e "$(FONT_PURPLE)$(ROCKET) $(1)$(FONT_RESET)"
+endef
+
+define print_success
+	@echo -e "$(FONT_GREEN)$(CHECKMARK) $(1)$(FONT_RESET)"
+endef
+
+define print_warning
+	@echo -e "$(FONT_YELLOW)$(WARNING) $(1)$(FONT_RESET)"
+endef
+
+define print_error
+	@echo -e "$(FONT_RED)$(ERROR) $(1)$(FONT_RESET)"
+endef
+
+define print_info
+	@echo -e "$(FONT_CYAN)$(INFO) $(1)$(FONT_RESET)"
+endef
+
+# ===========================================
+# 📋 Help
+# ===========================================
+.PHONY: help
+help: ## Show this help message
+	@echo ""
+	@echo -e "$(FONT_PURPLE)$(ROCKET) Automagik Local Development Commands (No Sudo)$(FONT_RESET)"
+	@echo ""
+	@echo -e "$(FONT_CYAN)Quick Start:$(FONT_RESET)"
+	@echo -e "  make setup-pm2        Setup PM2 for all services"
+	@echo -e "  make start-all        Start all services with PM2"
+	@echo -e "  make stop-all         Stop all services"
+	@echo -e "  make status           Show service status"
+	@echo ""
+	@echo -e "$(FONT_GREEN)Individual Services (PM2):$(FONT_RESET)"
+	@echo -e "  make start-ui         Start UI service (port 8888)"
+	@echo -e "  make start-agents     Start Agents service"
+	@echo -e "  make start-spark      Start Spark service"
+	@echo -e "  make start-omni       Start Omni service (port 8000)"
+	@echo -e "  make start-tools      Start Tools service (port 8884)"
+	@echo ""
+	@echo -e "$(FONT_YELLOW)Development Mode:$(FONT_RESET)"
+	@echo -e "  make dev-ui           Start UI in dev mode (port 3000)"
+	@echo -e "  make dev-agents       Start Agents in dev mode"
+	@echo -e "  make dev-spark        Start Spark in dev mode"
+	@echo -e "  make dev-omni         Start Omni in dev mode"
+	@echo -e "  make dev-tools        Start Tools in dev mode"
+	@echo ""
+	@echo -e "$(FONT_BLUE)Logs & Monitoring:$(FONT_RESET)"
+	@echo -e "  make logs             Show all PM2 logs"
+	@echo -e "  make logs-ui          Show UI logs"
+	@echo -e "  make logs-agents      Show Agents logs"
+	@echo -e "  make logs-spark       Show Spark logs"
+	@echo -e "  make logs-omni        Show Omni logs"
+	@echo -e "  make logs-tools       Show Tools logs"
+	@echo ""
+
+# ===========================================
+# 🚀 Setup
+# ===========================================
+.PHONY: setup-dirs
+setup-dirs: ## Create runtime directories
+	@mkdir -p "$(RUNTIME_DIR)" "$(LOG_DIR)" "$(PID_DIR)"
+	$(call print_success,Runtime directories created)
+
+.PHONY: check-pm2
+check-pm2: ## Check if PM2 is installed
+	@if ! command -v pm2 &> /dev/null; then \
+		$(call print_error,PM2 not found); \
+		echo -e "$(FONT_YELLOW)Install with: npm install -g pm2$(FONT_RESET)"; \
+		exit 1; \
+	fi
+
+.PHONY: setup-pm2
+setup-pm2: setup-dirs check-pm2 ## Setup PM2 ecosystem for all services
+	$(call print_status,Creating PM2 ecosystem configuration...)
+	@cat > "$(RUNTIME_DIR)/ecosystem.config.js" << 'EOF'
+module.exports = {
+  apps: [
+    {
+      name: 'automagik-ui',
+      cwd: '$(UI_DIR)',
+      script: 'pnpm',
+      args: 'start',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 8888
+      },
+      error_file: '$(LOG_DIR)/ui-error.log',
+      out_file: '$(LOG_DIR)/ui-out.log',
+      merge_logs: true,
+      time: true
+    },
+    {
+      name: 'am-agents-labs',
+      cwd: '$(AM_AGENTS_DIR)',
+      script: '.venv/bin/python',
+      args: '-m src',
+      env: {
+        PYTHONPATH: '$(AM_AGENTS_DIR)',
+        AM_PORT: '8881'
+      },
+      error_file: '$(LOG_DIR)/agents-error.log',
+      out_file: '$(LOG_DIR)/agents-out.log',
+      merge_logs: true,
+      time: true
+    },
+    {
+      name: 'automagik-spark',
+      cwd: '$(SPARK_DIR)',
+      script: '.venv/bin/python',
+      args: '-m src',
+      env: {
+        PYTHONPATH: '$(SPARK_DIR)',
+        SPARK_API_PORT: '8883'
+      },
+      error_file: '$(LOG_DIR)/spark-error.log',
+      out_file: '$(LOG_DIR)/spark-out.log',
+      merge_logs: true,
+      time: true
+    },
+    {
+      name: 'automagik-omni',
+      cwd: '$(OMNI_DIR)',
+      script: '.venv/bin/uvicorn',
+      args: 'src.api.app:app --host 0.0.0.0 --port 8882',
+      env: {
+        PYTHONPATH: '$(OMNI_DIR)',
+        OMNI_API_PORT: '8882'
+      },
+      error_file: '$(LOG_DIR)/omni-error.log',
+      out_file: '$(LOG_DIR)/omni-out.log',
+      merge_logs: true,
+      time: true
+    },
+    {
+      name: 'automagik-tools',
+      cwd: '$(TOOLS_DIR)',
+      script: '.venv/bin/automagik-tools',
+      args: 'serve-all --host 0.0.0.0 --port 8884',
+      env: {
+        PYTHONPATH: '$(TOOLS_DIR)'
+      },
+      error_file: '$(LOG_DIR)/tools-error.log',
+      out_file: '$(LOG_DIR)/tools-out.log',
+      merge_logs: true,
+      time: true
+    }
+  ]
+};
+EOF
+	$(call print_success,PM2 ecosystem created at: $(RUNTIME_DIR)/ecosystem.config.js)
+	$(call print_info,Start all services with: make start-all)
+
+# ===========================================
+# 🎮 Service Management (PM2)
+# ===========================================
+.PHONY: start-all
+start-all: check-pm2 ## Start all services with PM2
+	$(call print_status,Starting all services...)
+	@pm2 start "$(RUNTIME_DIR)/ecosystem.config.js"
+	@pm2 save
+	$(call print_success,All services started)
+
+.PHONY: stop-all
+stop-all: check-pm2 ## Stop all services
+	$(call print_status,Stopping all services...)
+	@pm2 stop all || true
+	$(call print_success,All services stopped)
+
+.PHONY: restart-all
+restart-all: check-pm2 ## Restart all services
+	$(call print_status,Restarting all services...)
+	@pm2 restart all
+	$(call print_success,All services restarted)
+
+.PHONY: delete-all
+delete-all: check-pm2 ## Delete all PM2 processes
+	$(call print_status,Deleting all PM2 processes...)
+	@pm2 delete all || true
+	$(call print_success,All PM2 processes deleted)
+
+# Individual service controls
+.PHONY: start-ui
+start-ui: check-pm2 ## Start UI service
+	@pm2 start "$(RUNTIME_DIR)/ecosystem.config.js" --only automagik-ui
+
+.PHONY: start-agents
+start-agents: check-pm2 ## Start Agents service
+	@pm2 start "$(RUNTIME_DIR)/ecosystem.config.js" --only am-agents-labs
+
+.PHONY: start-spark
+start-spark: check-pm2 ## Start Spark service
+	@pm2 start "$(RUNTIME_DIR)/ecosystem.config.js" --only automagik-spark
+
+.PHONY: start-omni
+start-omni: check-pm2 ## Start Omni service
+	@pm2 start "$(RUNTIME_DIR)/ecosystem.config.js" --only automagik-omni
+
+.PHONY: start-tools
+start-tools: check-pm2 ## Start Tools service
+	@pm2 start "$(RUNTIME_DIR)/ecosystem.config.js" --only automagik-tools
+
+# ===========================================
+# 🔧 Development Mode
+# ===========================================
+.PHONY: dev-ui
+dev-ui: ## Start UI in development mode
+	$(call print_status,Starting UI in dev mode on port 3000...)
+	@cd "$(UI_DIR)" && pnpm dev
+
+.PHONY: dev-agents
+dev-agents: ## Start Agents in development mode
+	$(call print_status,Starting Agents in dev mode...)
+	@cd "$(AM_AGENTS_DIR)" && make dev
+
+.PHONY: dev-spark
+dev-spark: ## Start Spark in development mode
+	$(call print_status,Starting Spark in dev mode...)
+	@cd "$(SPARK_DIR)" && make dev
+
+.PHONY: dev-omni
+dev-omni: ## Start Omni in development mode
+	$(call print_status,Starting Omni in dev mode...)
+	@cd "$(OMNI_DIR)" && make dev
+
+.PHONY: dev-tools
+dev-tools: ## Start Tools in development mode
+	$(call print_status,Starting Tools in dev mode...)
+	@cd "$(TOOLS_DIR)" && make serve
+
+# ===========================================
+# 📊 Status & Logs
+# ===========================================
+.PHONY: status
+status: ## Show service status
+	$(call print_status,Service Status:)
+	@pm2 list || echo "PM2 not running"
+
+.PHONY: logs
+logs: check-pm2 ## Show all PM2 logs
+	@pm2 logs
+
+.PHONY: logs-ui
+logs-ui: check-pm2 ## Show UI logs
+	@pm2 logs automagik-ui
+
+.PHONY: logs-agents
+logs-agents: check-pm2 ## Show Agents logs
+	@pm2 logs am-agents-labs
+
+.PHONY: logs-spark
+logs-spark: check-pm2 ## Show Spark logs
+	@pm2 logs automagik-spark
+
+.PHONY: logs-omni
+logs-omni: check-pm2 ## Show Omni logs
+	@pm2 logs automagik-omni
+
+.PHONY: logs-tools
+logs-tools: check-pm2 ## Show Tools logs
+	@pm2 logs automagik-tools
+
+# ===========================================
+# 🧹 Cleanup
+# ===========================================
+.PHONY: clean-logs
+clean-logs: ## Clean all log files
+	$(call print_status,Cleaning log files...)
+	@rm -rf "$(LOG_DIR)"/*
+	$(call print_success,Log files cleaned)
+
+.PHONY: clean-pids
+clean-pids: ## Clean PID files
+	$(call print_status,Cleaning PID files...)
+	@rm -rf "$(PID_DIR)"/*
+	$(call print_success,PID files cleaned)
+
+# ===========================================
+# 🔍 Port Check
+# ===========================================
+.PHONY: check-ports
+check-ports: ## Check if required ports are available
+	$(call print_status,Checking ports...)
+	@echo "UI (production): 8888"
+	@lsof -i :8888 2>/dev/null || echo "  ✅ Port 8888 is available"
+	@echo "UI (development): 3000"
+	@lsof -i :3000 2>/dev/null || echo "  ✅ Port 3000 is available"
+	@echo "UI (PM2 dev): 9999"
+	@lsof -i :9999 2>/dev/null || echo "  ✅ Port 9999 is available"
+	@echo "Agents: 8881"
+	@lsof -i :8881 2>/dev/null || echo "  ✅ Port 8881 is available"
+	@echo "Omni: 8882"
+	@lsof -i :8882 2>/dev/null || echo "  ✅ Port 8882 is available"
+	@echo "Spark: 8883"
+	@lsof -i :8883 2>/dev/null || echo "  ✅ Port 8883 is available"
+	@echo "Tools: 8884"
+	@lsof -i :8884 2>/dev/null || echo "  ✅ Port 8884 is available"

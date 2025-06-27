@@ -1,0 +1,422 @@
+# ===================================================================
+# 🐳 Automagik Suite - Unified Docker Compose
+# ===================================================================
+
+
+networks:
+  automagik-network:
+    driver: bridge
+
+volumes:
+  # PostgreSQL Data
+  am-agents-labs-postgres-data:
+  automagik-spark-postgres-data: 
+  evolution-postgres-data:
+  
+  # Redis Data
+  automagik-spark-redis-data:
+  evolution-redis-data:
+  
+  # RabbitMQ Data
+  evolution-rabbitmq-data:
+  
+  # Evolution API Data
+  evolution_instances:
+  
+  # Langflow Data
+  langflow-data:
+
+services:
+  # ================================
+  # Infrastructure Services
+  # ================================
+  
+  # PostgreSQL for am-agents-labs (Main Orchestrator)
+  am-agents-labs-postgres:
+    image: postgres:15-alpine
+    container_name: am-agents-labs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: am_agents_labs
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5401:5432"
+    volumes:
+      - am-agents-labs-postgres-data:/var/lib/postgresql/data
+    networks:
+      automagik-network:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d am_agents_labs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+
+  # PostgreSQL for automagik-spark (Workflow Engine)
+  automagik-spark-postgres:
+    image: postgres:15-alpine
+    container_name: automagik-spark-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: automagik
+      POSTGRES_USER: automagik
+      POSTGRES_PASSWORD: automagik
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5402:5432"
+    volumes:
+      - automagik-spark-postgres-data:/var/lib/postgresql/data
+    networks:
+      automagik-network:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U automagik -d automagik"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for automagik-spark
+  automagik-spark-redis:
+    image: redis:7-alpine
+    container_name: automagik-spark-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ""
+    ports:
+      - "5412:6379"
+    volumes:
+      - automagik-spark-redis-data:/data
+    networks:
+      automagik-network:
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgreSQL for Evolution API (WhatsApp)
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evolution_api
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5403:5432"
+    volumes:
+      - evolution-postgres-data:/var/lib/postgresql/data
+    networks:
+      automagik-network:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d evolution_api"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for Evolution API
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ""
+    ports:
+      - "5413:6379"
+    volumes:
+      - evolution-redis-data:/data
+    networks:
+      automagik-network:
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # RabbitMQ for Evolution API
+  evolution-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: evolution-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5431:5672"    # AMQP port
+      # Management UI disabled as per requirements
+    volumes:
+      - evolution-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      automagik-network:
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ================================
+  # Application Services
+  # ================================
+
+  # am-agents-labs (Main Orchestrator)
+  am-agents-labs:
+    build:
+      context: ./am-agents-labs
+      dockerfile: docker/Dockerfile
+    container_name: am-agents-labs
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@am-agents-labs-postgres:5432/am_agents_labs
+      - PORT=8881
+      - HOST=0.0.0.0
+    ports:
+      - "8881:8881"
+    volumes:
+      - ./am-agents-labs:/app
+      - /app/node_modules
+    networks:
+      automagik-network:
+    depends_on:
+      am-agents-labs-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8881/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # automagik-spark API (Workflow Engine)
+  automagik-spark-api:
+    build:
+      context: ./automagik-spark
+      dockerfile: docker/Dockerfile
+    container_name: automagik-spark-api
+    restart: unless-stopped
+    command: python -m automagik api start
+    environment:
+      - POSTGRES_USER=automagik
+      - POSTGRES_PASSWORD=automagik
+      - POSTGRES_DB=automagik
+      - DATABASE_URL=postgresql://automagik:automagik@automagik-spark-postgres:5432/automagik
+      - REDIS_URL=redis://automagik-spark-redis:6379
+      - CELERY_BROKER_URL=redis://automagik-spark-redis:6379
+      - CELERY_RESULT_BACKEND=redis://automagik-spark-redis:6379
+      - AUTOMAGIK_PORT=8883
+      - AUTOMAGIK_HOST=0.0.0.0
+    ports:
+      - "8883:8883"
+    volumes:
+      - ./automagik-spark:/app
+    working_dir: /app
+    networks:
+      automagik-network:
+    depends_on:
+      automagik-spark-postgres:
+        condition: service_healthy
+      automagik-spark-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8883/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # automagik-spark Worker (Celery)
+  automagik-spark-worker:
+    build:
+      context: ./automagik-spark
+      dockerfile: docker/Dockerfile
+    container_name: automagik-spark-worker
+    restart: unless-stopped
+    command: python -m automagik worker start
+    environment:
+      - POSTGRES_USER=automagik
+      - POSTGRES_PASSWORD=automagik
+      - POSTGRES_DB=automagik
+      - DATABASE_URL=postgresql://automagik:automagik@automagik-spark-postgres:5432/automagik
+      - REDIS_URL=redis://automagik-spark-redis:6379
+      - CELERY_BROKER_URL=redis://automagik-spark-redis:6379
+      - CELERY_RESULT_BACKEND=redis://automagik-spark-redis:6379
+    volumes:
+      - ./automagik-spark:/app
+    working_dir: /app
+    networks:
+      automagik-network:
+    depends_on:
+      automagik-spark-postgres:
+        condition: service_healthy
+      automagik-spark-redis:
+        condition: service_healthy
+      automagik-spark-api:
+        condition: service_healthy
+
+  # automagik-tools (MCP Tools)
+  automagik-tools:
+    image: python:3.11-slim
+    container_name: automagik-tools
+    restart: unless-stopped
+    command: sh -c "pip install uv && uvx automagik-tools@latest hub --transport sse --host 0.0.0.0 --port 8884"
+    environment:
+      - SSE_PORT=8884
+      - HTTP_PORT=8885
+      - HOST=0.0.0.0
+    ports:
+      - "8884:8884"  # SSE port
+      - "8885:8885"  # HTTP port
+    networks:
+      automagik-network:
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.settimeout(2); s.connect(('localhost', 8884)); s.close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # automagik-evolution (WhatsApp API)
+  automagik-evolution:
+    image: evoapicloud/evolution-api:v2.3.0
+    container_name: automagik-evolution
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:9000
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@evolution-postgres:5432/evolution_api
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://evolution-redis:6379
+      - RABBITMQ_ENABLED=true
+      - RABBITMQ_URI=amqp://rabbitmq:rabbitmq@evolution-rabbitmq:5672
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=namastex888
+      - LOG_LEVEL=info
+    ports:
+      - "9000:8080"
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      automagik-network:
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_healthy
+      evolution-rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # automagik-omni (Multi-tenant Hub)
+  automagik-omni:
+    build:
+      context: ./automagik-omni
+      dockerfile: Dockerfile
+    container_name: automagik-omni
+    restart: unless-stopped
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8882
+      - AGENT_API_URL=http://am-agents-labs:8881
+      - AGENT_API_KEY=namastex888
+      - DEFAULT_AGENT_NAME=simple_agent
+      - EVOLUTION_TRANSCRIPT_API=http://automagik-evolution:9000
+      - EVOLUTION_TRANSCRIPT_API_KEY=namastex888
+      - WHATSAPP_INSTANCE=default
+      - SESSION_ID_PREFIX=instance-
+      - SQLITE_DB_PATH=/app/data/omnihub.db
+      - DATABASE_URL=sqlite:///app/data/omnihub.db
+      - LOG_LEVEL=INFO
+      - LOG_VERBOSITY=short
+    ports:
+      - "8882:8882"
+    volumes:
+      - ./automagik-omni:/app
+      - ./automagik-omni/data:/app/data
+    networks:
+      automagik-network:
+    depends_on:
+      - am-agents-labs
+      - automagik-spark-api
+      - automagik-tools
+      - automagik-evolution
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8882/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # automagik-ui-v2 (Frontend - Production Build)
+  automagik-ui-v2:
+    build:
+      context: ./automagik-ui-v2
+      dockerfile: Dockerfile.production
+    container_name: automagik-ui-v2
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8888
+      - HOSTNAME=0.0.0.0
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=http://localhost:8881
+      - NEXT_PUBLIC_SPARK_URL=http://localhost:8883
+      - NEXT_PUBLIC_OMNI_URL=http://localhost:8882
+      - NEXT_PUBLIC_TOOLS_SSE_URL=http://localhost:8884
+      - NEXT_PUBLIC_TOOLS_HTTP_URL=http://localhost:8885
+      - NEXT_PUBLIC_EVOLUTION_URL=http://localhost:9000
+    ports:
+      - "8888:8888"  # Main interface
+    networks:
+      automagik-network:
+    depends_on:
+      - am-agents-labs
+      - automagik-spark-api
+      - automagik-omni
+      - automagik-tools
+      - automagik-evolution
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ================================
+  # Optional Services
+  # ================================
+
+  # Langflow (Visual Flow Builder) - Optional
+  langflow:
+    image: logspace/langflow:latest
+    container_name: automagik-langflow
+    restart: unless-stopped
+    environment:
+      - LANGFLOW_HOST=0.0.0.0
+      - LANGFLOW_PORT=7860
+    ports:
+      - "7860:7860"
+    volumes:
+      - langflow-data:/app/langflow
+    networks:
+      automagik-network:
+    profiles:
+      - langflow
+      - optional
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
