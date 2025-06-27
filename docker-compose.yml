@@ -324,43 +324,50 @@ services:
     container_name: automagik-omni
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
-      - PORT=8882
-      - HOST=0.0.0.0
-      - AM_AGENTS_LABS_URL=http://am-agents-labs:8881
-      - AUTOMAGIK_SPARK_URL=http://automagik-spark:8883
-      - AUTOMAGIK_TOOLS_SSE_URL=http://automagik-tools:8884
-      - AUTOMAGIK_TOOLS_HTTP_URL=http://automagik-tools:8885
-      - EVOLUTION_API_URL=http://automagik-evolution:9000
+      - API_HOST=0.0.0.0
+      - API_PORT=8882
+      - AGENT_API_URL=http://am-agents-labs:8881
+      - AGENT_API_KEY=namastex888
+      - DEFAULT_AGENT_NAME=simple_agent
+      - EVOLUTION_TRANSCRIPT_API=http://automagik-evolution:9000
+      - EVOLUTION_TRANSCRIPT_API_KEY=namastex888
+      - WHATSAPP_INSTANCE=default
+      - SESSION_ID_PREFIX=instance-
+      - SQLITE_DB_PATH=/app/data/omnihub.db
+      - DATABASE_URL=sqlite:///app/data/omnihub.db
+      - LOG_LEVEL=INFO
+      - LOG_VERBOSITY=short
     ports:
       - "8882:8882"
     volumes:
       - ./automagik-omni:/app
-      - /app/node_modules
+      - ./automagik-omni/data:/app/data
     networks:
       automagik-network:
     depends_on:
       - am-agents-labs
       - automagik-spark-api
       - automagik-tools
+      - automagik-evolution
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8882/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
 
-  # automagik-ui-v2 (Frontend - Development Build)
+  # automagik-ui-v2 (Frontend - Production Build)
   automagik-ui-v2:
-    image: node:18-alpine
-    working_dir: /app
+    build:
+      context: ./automagik-ui-v2
+      dockerfile: Dockerfile.production
     container_name: automagik-ui-v2
     restart: unless-stopped
-    command: sh -c "corepack enable pnpm && pnpm install && pnpm build && pnpm start"
     environment:
       - NODE_ENV=production
       - PORT=8888
-      - HOST=0.0.0.0
+      - HOSTNAME=0.0.0.0
+      - NEXT_TELEMETRY_DISABLED=1
       - NEXT_PUBLIC_API_URL=http://localhost:8881
       - NEXT_PUBLIC_SPARK_URL=http://localhost:8883
       - NEXT_PUBLIC_OMNI_URL=http://localhost:8882
@@ -369,10 +376,6 @@ services:
       - NEXT_PUBLIC_EVOLUTION_URL=http://localhost:9000
     ports:
       - "8888:8888"  # Main interface
-    volumes:
-      - ./automagik-ui-v2:/app
-      - /app/node_modules
-      - /app/.next
     networks:
       automagik-network:
     depends_on:
