@@ -324,6 +324,49 @@ setup-env-files: ## 📝 Setup .env files for all repositories
 	@$(call print_success,Environment files setup complete!)
 
 # ===========================================
+# 🏗️ Service Building
+# ===========================================
+.PHONY: build-all-services build-agents build-spark build-tools build-omni build-ui
+build-all-services: ## 🏗️ Build all services
+	$(call print_status,Building all Automagik services...)
+	@$(MAKE) build-agents
+	@$(MAKE) build-spark
+	@$(MAKE) build-tools
+	@$(MAKE) build-omni
+	@$(MAKE) build-ui
+	@$(call print_success,All services built successfully!)
+
+build-agents: ## Build am-agents-labs service
+	$(call print_status,Building $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
+	@if [ -d "$(AM_AGENTS_LABS_DIR)" ] && [ -f "$(AM_AGENTS_LABS_DIR)/Makefile" ]; then \
+		cd "$(AM_AGENTS_LABS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for am-agents-labs$(FONT_RESET)"; \
+	fi
+
+build-spark: ## Build automagik-spark service
+	$(call print_status,Building $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
+	@if [ -d "$(AUTOMAGIK_SPARK_DIR)" ] && [ -f "$(AUTOMAGIK_SPARK_DIR)/Makefile" ]; then \
+		cd "$(AUTOMAGIK_SPARK_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-spark$(FONT_RESET)"; \
+	fi
+
+build-tools: ## Build automagik-tools service
+	$(call print_status,Building $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
+	@if [ -d "$(AUTOMAGIK_TOOLS_DIR)" ] && [ -f "$(AUTOMAGIK_TOOLS_DIR)/Makefile" ]; then \
+		cd "$(AUTOMAGIK_TOOLS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-tools$(FONT_RESET)"; \
+	fi
+
+build-omni: ## Build automagik-omni service
+	$(call print_status,Building $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
+	@if [ -d "$(AUTOMAGIK_OMNI_DIR)" ] && [ -f "$(AUTOMAGIK_OMNI_DIR)/Makefile" ]; then \
+		cd "$(AUTOMAGIK_OMNI_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-omni$(FONT_RESET)"; \
+	fi
+
+build-ui: ## Build automagik-ui-v2 service
+	$(call print_status,Building $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service...)
+	@if [ -d "$(AUTOMAGIK_UI_DIR)" ] && [ -f "$(AUTOMAGIK_UI_DIR)/Makefile" ]; then \
+		cd "$(AUTOMAGIK_UI_DIR)" && make build || echo -e "$(FONT_RED)$(ERROR) Failed to build automagik-ui-v2$(FONT_RESET)"; \
+	fi
+
+# ===========================================
 # ⚙️ Service Installation
 # ===========================================
 .PHONY: install-all-services uninstall-all-services install-agents install-spark install-tools install-omni install-ui
@@ -656,7 +699,9 @@ install: ## 🚀 Complete installation (infrastructure + services + env)
 	$(call print_status,🚀 Installing complete Automagik suite...)
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
+	@$(MAKE) build-all-services
 	@$(MAKE) install-all-services
+	@$(MAKE) start-all-services
 	@$(call print_success_with_logo,Complete installation finished!)
 	@echo -e "$(FONT_CYAN)🌐 Frontend: http://localhost:8888$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)🔧 API: http://localhost:8881$(FONT_RESET)"
