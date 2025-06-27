@@ -20,6 +20,9 @@ volumes:
   # RabbitMQ Data
   evolution-rabbitmq-data:
   
+  # Evolution API Data
+  evolution_instances:
+  
   # Langflow Data
   langflow-data:
 
@@ -283,7 +286,7 @@ services:
     container_name: automagik-evolution
     restart: unless-stopped
     environment:
-      - SERVER_PORT=9000
+      - SERVER_PORT=8080
       - SERVER_URL=http://localhost:9000
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
@@ -296,10 +299,9 @@ services:
       - AUTHENTICATION_API_KEY=namastex888
       - LOG_LEVEL=info
     ports:
-      - "9000:9000"
+      - "9000:8080"
     volumes:
-      - ./automagik-evolution:/app
-      - /app/node_modules
+      - evolution_instances:/evolution/instances
     networks:
       automagik-network:
     depends_on:
@@ -310,7 +312,7 @@ services:
       evolution-rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
