@@ -61,6 +61,13 @@ SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automa
 # Systemd service names (actual)
 SYSTEMD_SERVICES := automagik-agents automagik-spark automagik-tools omni-hub automagik-ui-v2
 
+# Repository URLs
+AM_AGENTS_LABS_URL := https://github.com/namastexlabs/am-agents-labs.git
+AUTOMAGIK_SPARK_URL := https://github.com/namastexlabs/automagik-spark.git
+AUTOMAGIK_TOOLS_URL := https://github.com/namastexlabs/automagik-tools.git
+AUTOMAGIK_OMNI_URL := https://github.com/namastexlabs/automagik-omni.git
+AUTOMAGIK_UI_URL := https://github.com/namastexlabs/automagik-ui-v2.git
+
 # Configuration
 CONFIG_DIR := $(PROJECT_ROOT)/config
 ENV_FILE := $(CONFIG_DIR)/local-services.env
@@ -86,6 +93,44 @@ endef
 
 define print_info
 	@echo -e "$(FONT_CYAN)$(INFO) $(1)$(FONT_RESET)"
+endef
+
+define ensure_repository
+	@repo_name="$(1)"; \
+	repo_dir="$(2)"; \
+	repo_url="$(3)"; \
+	if [ ! -d "$$repo_dir" ]; then \
+		echo -e "$(FONT_YELLOW)$(WARNING) Repository $$repo_name not found$(FONT_RESET)"; \
+		echo -e "$(FONT_CYAN)$(INFO) Cloning $$repo_name from $$repo_url...$(FONT_RESET)"; \
+		if git clone "$$repo_url" "$$repo_dir"; then \
+			echo -e "$(FONT_GREEN)$(CHECKMARK) Successfully cloned $$repo_name$(FONT_RESET)"; \
+		else \
+			echo -e "$(FONT_RED)$(ERROR) Failed to clone $$repo_name$(FONT_RESET)"; \
+			exit 1; \
+		fi; \
+	elif [ ! -d "$$repo_dir/.git" ]; then \
+		echo -e "$(FONT_RED)$(ERROR) Directory $$repo_dir exists but is not a Git repository$(FONT_RESET)"; \
+		exit 1; \
+	else \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Repository $$repo_name already exists$(FONT_RESET)"; \
+	fi
+endef
+
+define install_service
+	@repo_dir="$(1)"; \
+	if [ -f "$$repo_dir/Makefile" ]; then \
+		if cd "$$repo_dir" && make -n install-service >/dev/null 2>&1; then \
+			cd "$$repo_dir" && make install-service; \
+		elif cd "$$repo_dir" && make -n install >/dev/null 2>&1; then \
+			cd "$$repo_dir" && make install; \
+		else \
+			echo -e "$(FONT_RED)$(ERROR) No install-service or install target found in $$repo_dir$(FONT_RESET)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo -e "$(FONT_RED)$(ERROR) No Makefile found in $$repo_dir$(FONT_RESET)"; \
+		exit 1; \
+	fi
 endef
 
 define print_service_status
@@ -264,23 +309,28 @@ install-all-services: ## ⚙️ Install all services as systemd services
 
 install-agents: ## Install am-agents-labs service
 	$(call print_status,Installing $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@cd $(AM_AGENTS_LABS_DIR) && make install-service
+	$(call ensure_repository,am-agents-labs,$(AM_AGENTS_LABS_DIR),$(AM_AGENTS_LABS_URL))
+	$(call install_service,$(AM_AGENTS_LABS_DIR))
 
 install-spark: ## Install automagik-spark service
 	$(call print_status,Installing $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	@cd $(AUTOMAGIK_SPARK_DIR) && make install-service
+	$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
+	$(call install_service,$(AUTOMAGIK_SPARK_DIR))
 
 install-tools: ## Install automagik-tools service
 	$(call print_status,Installing $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	@cd $(AUTOMAGIK_TOOLS_DIR) && make install-service
+	$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL))
+	$(call install_service,$(AUTOMAGIK_TOOLS_DIR))
 
 install-omni: ## Install automagik-omni service
 	$(call print_status,Installing $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	@cd $(AUTOMAGIK_OMNI_DIR) && make install-service
+	$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL))
+	$(call install_service,$(AUTOMAGIK_OMNI_DIR))
 
 install-ui: ## Install automagik-ui-v2 service
 	$(call print_status,Installing $(UI_COLOR)automagik-ui-v2$(FONT_RESET) service...)
-	@cd $(AUTOMAGIK_UI_DIR) && make install-service
+	$(call ensure_repository,automagik-ui-v2,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
+	$(call install_service,$(AUTOMAGIK_UI_DIR))
 
 uninstall-all-services: ## 🗑️ Uninstall all services (remove systemd services)
 	$(call print_status,Uninstalling all Automagik services...)
@@ -622,26 +672,31 @@ pull: ## 🔄 Pull from all GitHub repos (main + all services)
 
 pull-agents: ## 🔄 Pull am-agents-labs repository only
 	$(call print_status,Pulling $(AGENTS_COLOR)am-agents-labs$(FONT_RESET)...)
+	$(call ensure_repository,am-agents-labs,$(AM_AGENTS_LABS_DIR),$(AM_AGENTS_LABS_URL))
 	@cd $(AM_AGENTS_LABS_DIR) && git pull
 	@$(call print_success,am-agents-labs updated!)
 
 pull-spark: ## 🔄 Pull automagik-spark repository only
 	$(call print_status,Pulling $(SPARK_COLOR)automagik-spark$(FONT_RESET)...)
+	$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
 	@cd $(AUTOMAGIK_SPARK_DIR) && git pull
 	@$(call print_success,automagik-spark updated!)
 
 pull-tools: ## 🔄 Pull automagik-tools repository only
 	$(call print_status,Pulling $(TOOLS_COLOR)automagik-tools$(FONT_RESET)...)
+	$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL))
 	@cd $(AUTOMAGIK_TOOLS_DIR) && git pull
 	@$(call print_success,automagik-tools updated!)
 
 pull-omni: ## 🔄 Pull automagik-omni repository only
 	$(call print_status,Pulling $(OMNI_COLOR)automagik-omni$(FONT_RESET)...)
+	$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL))
 	@cd $(AUTOMAGIK_OMNI_DIR) && git pull
 	@$(call print_success,automagik-omni updated!)
 
 pull-ui: ## 🔄 Pull automagik-ui-v2 repository only
 	$(call print_status,Pulling $(UI_COLOR)automagik-ui-v2$(FONT_RESET)...)
+	$(call ensure_repository,automagik-ui-v2,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@cd $(AUTOMAGIK_UI_DIR) && git pull
 	@$(call print_success,automagik-ui-v2 updated!)
 
