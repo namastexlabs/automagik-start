@@ -380,17 +380,18 @@ show_services_status() {
     $DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps --format "table"
     
     echo ""
-    echo -e "${CYAN}Service URLs:${NC}"
-    echo "• Main Interface:     http://localhost:8888"
-    echo "• AM Agents Labs:     http://localhost:8881" 
-    echo "• Automagik Spark:    http://localhost:8883"
-    echo "• Automagik Omni:     http://localhost:8882"
-    echo "• MCP Tools SSE:      http://localhost:8884"
-    echo "• MCP Tools HTTP:     http://localhost:8885"
-    echo "• Evolution API:      http://localhost:9000"
+    echo -e "${BOLD}${CYAN}🌐 Active Service URLs:${NC}"
+    echo ""
+    echo -e "${BOLD}${YELLOW}   🎯 Main Interface:${NC}     ${BOLD}${GREEN}http://localhost:8888${NC}   ${GRAY}← Primary dashboard${NC}"
+    echo -e "   🤖 AI Agents Labs:      ${GREEN}http://localhost:8881${NC}   ${GRAY}(13 agents available)${NC}" 
+    echo -e "   ⚡ Workflow Engine:      ${GREEN}http://localhost:8883${NC}   ${GRAY}(Automagik Spark)${NC}"
+    echo -e "   📱 WhatsApp API:        ${GREEN}http://localhost:9000${NC}   ${GRAY}(Evolution API)${NC}"
+    echo -e "   🌐 Multi-tenant Hub:    ${GREEN}http://localhost:8882${NC}   ${GRAY}(Omni)${NC}"
+    echo -e "   🔧 MCP Tools (SSE):     ${GREEN}http://localhost:8884${NC}   ${GRAY}(Tools Hub)${NC}"
+    echo -e "   🔧 MCP Tools (HTTP):    ${GREEN}http://localhost:8885${NC}   ${GRAY}(Alternative)${NC}"
     echo ""
     echo -e "${CYAN}Optional Services:${NC}"
-    echo "• Langflow:           http://localhost:7860"
+    echo -e "   🎨 Langflow:            ${GREEN}http://localhost:7860${NC}   ${GRAY}(Visual builder)${NC}"
     echo ""
 }
 
@@ -489,8 +490,28 @@ deploy_all_services() {
     check_service_connectivity
     show_services_status
     
-    log_success "Automagik Suite deployment completed!"
-    log_info "Access the main interface at: http://localhost:8888"
+    log_success "🎉 Automagik Suite deployment completed successfully!"
+    echo ""
+    echo -e "${BOLD}${GREEN}╔═══════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BOLD}${GREEN}║                    🚀 AUTOMAGIK SUITE IS READY!                      ║${NC}"
+    echo -e "${BOLD}${GREEN}╚═══════════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${BOLD}${CYAN}🌐 Access Your Services:${NC}"
+    echo ""
+    echo -e "${BOLD}${YELLOW}   Main Dashboard:${NC}     ${BOLD}${GREEN}http://localhost:8888${NC}   ${GRAY}← Start here!${NC}"
+    echo -e "   AI Agents:           ${GREEN}http://localhost:8881${NC}   ${GRAY}(13 agents ready)${NC}"
+    echo -e "   Workflow Engine:     ${GREEN}http://localhost:8883${NC}   ${GRAY}(API + Worker)${NC}"
+    echo -e "   WhatsApp API:        ${GREEN}http://localhost:9000${NC}   ${GRAY}(Evolution API)${NC}"
+    echo -e "   Multi-tenant Hub:    ${GREEN}http://localhost:8882${NC}   ${GRAY}(Omni)${NC}"
+    echo -e "   MCP Tools (SSE):     ${GREEN}http://localhost:8884${NC}   ${GRAY}(Tools Hub)${NC}"
+    echo -e "   MCP Tools (HTTP):    ${GREEN}http://localhost:8885${NC}   ${GRAY}(Alternative)${NC}"
+    echo ""
+    echo -e "${BOLD}${CYAN}📋 Next Steps:${NC}"
+    echo -e "   1. Visit ${BOLD}${GREEN}http://localhost:8888${NC} for the main interface"
+    echo -e "   2. Configure your AI agents at ${GREEN}http://localhost:8881${NC}"
+    echo -e "   3. Connect WhatsApp instances at ${GREEN}http://localhost:9000${NC}"
+    echo -e "   4. Monitor services: ${CYAN}./scripts/deploy/status-display.sh${NC}"
+    echo ""
     
     return 0
 }
