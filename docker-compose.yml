@@ -350,13 +350,13 @@ services:
       retries: 3
       start_period: 30s
 
-  # automagik-ui-v2 (Frontend - Production Build)
+  # automagik-ui-v2 (Frontend - Development Build)
   automagik-ui-v2:
-    build:
-      context: ./automagik-ui-v2
-      dockerfile: Dockerfile.production
+    image: node:18-alpine
+    working_dir: /app
     container_name: automagik-ui-v2
     restart: unless-stopped
+    command: sh -c "corepack enable pnpm && pnpm install && pnpm build && pnpm start"
     environment:
       - NODE_ENV=production
       - PORT=8888
