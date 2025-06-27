@@ -55,8 +55,11 @@ AUTOMAGIK_TOOLS_DIR := $(SERVICES_DIR)/automagik-tools
 AUTOMAGIK_OMNI_DIR := $(SERVICES_DIR)/automagik-omni
 AUTOMAGIK_UI_DIR := $(SERVICES_DIR)/automagik-ui-v2
 
-# Service names
+# Service names (logical)
 SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui-v2
+
+# Systemd service names (actual)
+SYSTEMD_SERVICES := automagik-agents automagik-spark automagik-tools omni-hub automagik-ui-v2
 
 # Configuration
 CONFIG_DIR := $(PROJECT_ROOT)/config
@@ -305,7 +308,7 @@ start-all-services: ## 🚀 Start all services
 	$(call print_status,Starting all Automagik services...)
 	@echo -e "$(FONT_CYAN)Starting services in dependency order...$(FONT_RESET)"
 	@echo -e "$(AGENTS_COLOR)[1/5] Starting am-agents-labs (core orchestrator)...$(FONT_RESET)"
-	@sudo systemctl start am-agents-labs 2>/dev/null || echo "Service not installed"
+	@sudo systemctl start automagik-agents 2>/dev/null || echo "Service not installed"
 	@sleep 2
 	@echo -e "$(SPARK_COLOR)[2/5] Starting automagik-spark (workflow engine)...$(FONT_RESET)"
 	@sudo systemctl start automagik-spark 2>/dev/null || echo "Service not installed"
@@ -314,7 +317,7 @@ start-all-services: ## 🚀 Start all services
 	@sudo systemctl start automagik-tools 2>/dev/null || echo "Service not installed"
 	@sleep 2
 	@echo -e "$(OMNI_COLOR)[4/5] Starting automagik-omni (multi-tenant hub)...$(FONT_RESET)"
-	@sudo systemctl start automagik-omni 2>/dev/null || echo "Service not installed"
+	@sudo systemctl start omni-hub 2>/dev/null || echo "Service not installed"
 	@sleep 2
 	@echo -e "$(UI_COLOR)[5/5] Starting automagik-ui-v2 (frontend)...$(FONT_RESET)"
 	@sudo systemctl start automagik-ui-v2 2>/dev/null || echo "Service not installed"
@@ -324,7 +327,7 @@ start-all-services: ## 🚀 Start all services
 
 stop-all-services: ## 🛑 Stop all services
 	$(call print_status,Stopping all Automagik services...)
-	@for service in $(SERVICES); do \
+	@for service in $(SYSTEMD_SERVICES); do \
 		echo -e "Stopping $$service..."; \
 		sudo systemctl stop $$service 2>/dev/null || echo "Service not running"; \
 	done
@@ -359,7 +362,7 @@ status-all-services: ## 📊 Check status of all services
 # Individual Start Commands
 start-agents: ## 🚀 Start am-agents-labs service only
 	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@sudo systemctl start am-agents-labs
+	@sudo systemctl start automagik-agents
 	@$(call print_success,am-agents-labs started!)
 
 start-spark: ## 🚀 Start automagik-spark service only
@@ -374,7 +377,7 @@ start-tools: ## 🚀 Start automagik-tools service only
 
 start-omni: ## 🚀 Start automagik-omni service only
 	$(call print_status,Starting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	@sudo systemctl start automagik-omni
+	@sudo systemctl start omni-hub
 	@$(call print_success,automagik-omni started!)
 
 start-ui: ## 🚀 Start automagik-ui-v2 service only
@@ -385,7 +388,7 @@ start-ui: ## 🚀 Start automagik-ui-v2 service only
 # Individual Stop Commands
 stop-agents: ## 🛑 Stop am-agents-labs service only
 	$(call print_status,Stopping $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@sudo systemctl stop am-agents-labs
+	@sudo systemctl stop automagik-agents
 	@$(call print_success,am-agents-labs stopped!)
 
 stop-spark: ## 🛑 Stop automagik-spark service only
@@ -400,7 +403,7 @@ stop-tools: ## 🛑 Stop automagik-tools service only
 
 stop-omni: ## 🛑 Stop automagik-omni service only
 	$(call print_status,Stopping $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	@sudo systemctl stop automagik-omni
+	@sudo systemctl stop omni-hub
 	@$(call print_success,automagik-omni stopped!)
 
 stop-ui: ## 🛑 Stop automagik-ui-v2 service only
