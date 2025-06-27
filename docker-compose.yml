@@ -6,9 +6,6 @@
 networks:
   automagik-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
 
 volumes:
   # PostgreSQL Data
@@ -47,7 +44,6 @@ services:
       - am-agents-labs-postgres-data:/var/lib/postgresql/data
     networks:
       automagik-network:
-        ipv4_address: 172.20.1.1
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d am_agents_labs"]
       interval: 10s
@@ -72,7 +68,6 @@ services:
       - automagik-spark-postgres-data:/var/lib/postgresql/data
     networks:
       automagik-network:
-        ipv4_address: 172.20.1.2
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U automagik -d automagik"]
       interval: 10s
@@ -92,7 +87,6 @@ services:
       - automagik-spark-redis-data:/data
     networks:
       automagik-network:
-        ipv4_address: 172.20.1.3
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -115,7 +109,6 @@ services:
       - evolution-postgres-data:/var/lib/postgresql/data
     networks:
       automagik-network:
-        ipv4_address: 172.20.1.4
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d evolution_api"]
       interval: 10s
@@ -135,7 +128,6 @@ services:
       - evolution-redis-data:/data
     networks:
       automagik-network:
-        ipv4_address: 172.20.1.5
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -158,7 +150,6 @@ services:
       - evolution-rabbitmq-data:/var/lib/rabbitmq
     networks:
       automagik-network:
-        ipv4_address: 172.20.1.6
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 30s
@@ -188,7 +179,6 @@ services:
       - /app/node_modules
     networks:
       automagik-network:
-        ipv4_address: 172.20.2.1
     depends_on:
       am-agents-labs-postgres:
         condition: service_healthy
@@ -224,7 +214,6 @@ services:
     working_dir: /app
     networks:
       automagik-network:
-        ipv4_address: 172.20.2.2
     depends_on:
       automagik-spark-postgres:
         condition: service_healthy
@@ -258,7 +247,6 @@ services:
     working_dir: /app
     networks:
       automagik-network:
-        ipv4_address: 172.20.2.7
     depends_on:
       automagik-spark-postgres:
         condition: service_healthy
@@ -282,7 +270,6 @@ services:
       - "8885:8885"  # HTTP port
     networks:
       automagik-network:
-        ipv4_address: 172.20.2.3
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8884/"]
       interval: 30s
@@ -315,7 +302,6 @@ services:
       - /app/node_modules
     networks:
       automagik-network:
-        ipv4_address: 172.20.2.4
     depends_on:
       evolution-postgres:
         condition: service_healthy
@@ -353,7 +339,6 @@ services:
       - /app/node_modules
     networks:
       automagik-network:
-        ipv4_address: 172.20.2.5
     depends_on:
       - am-agents-labs
       - automagik-spark-api
@@ -390,7 +375,6 @@ services:
       - /app/.next
     networks:
       automagik-network:
-        ipv4_address: 172.20.2.6
     depends_on:
       - am-agents-labs
       - automagik-spark-api
@@ -399,6 +383,34 @@ services:
       - automagik-evolution
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ================================
+  # Optional Services
+  # ================================
+
+  # Langflow (Visual Flow Builder) - Optional
+  langflow:
+    image: logspace/langflow:latest
+    container_name: automagik-langflow
+    restart: unless-stopped
+    environment:
+      - LANGFLOW_HOST=0.0.0.0
+      - LANGFLOW_PORT=7860
+    ports:
+      - "7860:7860"
+    volumes:
+      - langflow-data:/app/langflow
+    networks:
+      automagik-network:
+    profiles:
+      - langflow
+      - optional
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
       interval: 30s
       timeout: 10s
       retries: 3
