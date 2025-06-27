@@ -295,6 +295,35 @@ status-infrastructure: ## 📊 Check infrastructure status
 	@$(call print_infrastructure_status)
 
 # ===========================================
+# 📝 Environment Setup
+# ===========================================
+.PHONY: setup-env-files
+setup-env-files: ## 📝 Setup .env files for all repositories
+	$(call print_status,Setting up environment files...)
+	@# Create main .env file if it doesn't exist
+	@if [ ! -f .env ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Creating main .env file from template...$(FONT_RESET)"; \
+		cp .env.example .env; \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Main .env file created$(FONT_RESET)"; \
+	else \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Main .env file already exists$(FONT_RESET)"; \
+	fi
+	@# Setup .env files for all repositories
+	@for repo_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+		repo_name=$$(basename $$repo_dir); \
+		if [ -d "$$repo_dir" ]; then \
+			if [ ! -f "$$repo_dir/.env" ] && [ -f "$$repo_dir/.env.example" ]; then \
+				echo -e "$(FONT_CYAN)$(INFO) Creating .env file for $$repo_name...$(FONT_RESET)"; \
+				cp "$$repo_dir/.env.example" "$$repo_dir/.env"; \
+				echo -e "$(FONT_GREEN)$(CHECKMARK) .env file created for $$repo_name$(FONT_RESET)"; \
+			else \
+				echo -e "$(FONT_GREEN)$(CHECKMARK) .env file already exists for $$repo_name$(FONT_RESET)"; \
+			fi; \
+		fi; \
+	done
+	@$(call print_success,Environment files setup complete!)
+
+# ===========================================
 # ⚙️ Service Installation
 # ===========================================
 .PHONY: install-all-services uninstall-all-services install-agents install-spark install-tools install-omni install-ui
@@ -625,6 +654,7 @@ docker-stop: ## 🛑 Stop full Docker stack
 
 install: ## 🚀 Complete installation (infrastructure + services + env)
 	$(call print_status,🚀 Installing complete Automagik suite...)
+	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
 	@$(MAKE) install-all-services
 	@$(call print_success_with_logo,Complete installation finished!)
