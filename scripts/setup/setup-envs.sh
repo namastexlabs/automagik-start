@@ -9,14 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/colors.sh"
 source "$SCRIPT_DIR/../utils/logging.sh"
 
-# Repository paths - use current directory if it contains repos, otherwise use script location
-if [ -d "./am-agents-labs" ] || [ -d "./automagik-spark" ]; then
-    BASE_DIR="$(pwd)"
-    log_info "Using current directory as base: $BASE_DIR"
-else
-    BASE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-    log_info "Using script-relative directory as base: $BASE_DIR"
-fi
+# Repository paths - always use current working directory where script is run
+BASE_DIR="$(pwd)"
 
 # Repository environment configurations
 declare -A REPO_CONFIGS=(
@@ -32,8 +26,8 @@ declare -A REPO_CONFIGS=(
 load_api_keys() {
     log_info "Loading collected API keys..."
     
-    # First try main .env file
-    local main_env_file="$BASE_DIR/.env"
+    # Look for main .env file in current directory
+    local main_env_file="./.env"
     if [ -f "$main_env_file" ]; then
         log_success "Found main .env file: $main_env_file"
         set -a  # Automatically export all variables
