@@ -217,6 +217,13 @@ clone_repositories() {
 collect_api_keys() {
     log_section "API Key Collection"
     
+    # Check if main .env file already exists (copied by interactive.sh)
+    if [ -f ".env" ]; then
+        log_success "Found existing .env file with your configuration"
+        log_info "Skipping interactive API key setup - using your .env file"
+        return 0
+    fi
+    
     if [ "$INSTALL_MODE" = "interactive" ]; then
         echo "API keys enable AI functionality but are all optional for initial setup."
         echo "You can configure them later by editing the .env files in each service directory."

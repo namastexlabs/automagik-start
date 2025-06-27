@@ -340,6 +340,29 @@ review_existing_keys() {
     done
 }
 
+# Generate keys file from currently loaded environment variables
+generate_keys_file() {
+    local output_file="$1"
+    
+    {
+        echo "# Automagik API Keys"
+        echo "# Generated from existing .env file"
+        echo "# $(date)"
+        echo ""
+        
+        # Export all known API keys that are currently set
+        for key_name in "${!API_KEYS[@]}"; do
+            local key_value="${!key_name:-}"
+            if [ -n "$key_value" ]; then
+                echo "${key_name}=\"${key_value}\""
+            fi
+        done
+        
+    } > "$output_file"
+    
+    log_info "Generated keys file: $output_file"
+}
+
 # Collect all API keys interactively
 collect_all_keys() {
     log_section "API Key Collection"
@@ -349,7 +372,29 @@ collect_all_keys() {
     log_info "Optional keys can be added later by editing .env files"
     
     # Load existing .env file first (if it exists)
-    load_existing_env
+    if load_existing_env; then
+        # Check if we have some essential keys already loaded
+        local has_ai_key=false
+        if [[ -n "${OPENAI_API_KEY:-}" || -n "${ANTHROPIC_API_KEY:-}" ]]; then
+            has_ai_key=true
+        fi
+        
+        if [ "$has_ai_key" = true ]; then
+            log_success "Found AI API keys in existing .env file"
+            log_info "Skipping interactive collection - your existing configuration will be used"
+            
+            # Still load any additional keys from repo files
+            load_existing_keys
+            
+            # Generate keys file from loaded environment
+            local keys_file="/tmp/automagik-keys.env"
+            generate_keys_file "$keys_file"
+            export AUTOMAGIK_KEYS_FILE="$keys_file"
+            
+            log_success "Environment configuration ready"
+            return 0
+        fi
+    fi
     
     # Load existing keys from individual repo .env files
     load_existing_keys
