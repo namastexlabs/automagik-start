@@ -668,6 +668,24 @@ status-all-services: ## 📊 Check status of all services
 		-e 's/errored/\x1b[31merrored\x1b[0m/g'
 	@echo ""
 	@$(call print_infrastructure_status)
+	@echo ""
+	@echo -e "$(FONT_CYAN)🌟 Optional Services:$(FONT_RESET)"
+	@echo -n -e "$(FONT_BLUE)🌊 LangFlow: $(FONT_RESET)"
+	@if $(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow ps 2>/dev/null | grep -q "(healthy)"; then \
+		echo -e "$(FONT_GREEN)online$(FONT_RESET) (http://localhost:7860)"; \
+	elif $(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow ps 2>/dev/null | grep -q "Up"; then \
+		echo -e "$(FONT_YELLOW)starting$(FONT_RESET) (http://localhost:7860)"; \
+	else \
+		echo -e "$(FONT_YELLOW)stopped$(FONT_RESET)"; \
+	fi
+	@echo -n -e "$(FONT_BLUE)📱 Evolution API: $(FONT_RESET)"
+	@if $(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api ps 2>/dev/null | grep -q "(healthy)"; then \
+		echo -e "$(FONT_GREEN)online$(FONT_RESET) (http://localhost:8080)"; \
+	elif $(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api ps 2>/dev/null | grep -q "Up"; then \
+		echo -e "$(FONT_YELLOW)starting$(FONT_RESET) (http://localhost:8080)"; \
+	else \
+		echo -e "$(FONT_YELLOW)stopped$(FONT_RESET)"; \
+	fi
 
 # ===========================================
 # 🔧 Individual Service Commands
@@ -1099,7 +1117,41 @@ install-full: ## 🚀 Complete installation (includes UI build - slower but full
 	@echo -e "$(FONT_CYAN)🌐 Frontend: http://localhost:8888$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)🔧 API: http://localhost:8881$(FONT_RESET)"
 
-start: start-all-services ## 🚀 Start everything (alias for start-all-services)
+start: ## 🚀 Start everything (infrastructure + optional services + PM2 services)
+	$(call print_status,🚀 Starting complete Automagik stack...)
+	@echo -e "$(FONT_CYAN)[1/3] Starting all Docker containers in parallel...$(FONT_RESET)"
+	@# Start infrastructure and optional services in parallel
+	@{ \
+		$(MAKE) start-infrastructure > /tmp/automagik-infra.log 2>&1 & \
+		INFRA_PID=$$!; \
+		$(MAKE) start-langflow > /tmp/automagik-langflow.log 2>&1 & \
+		LANG_PID=$$!; \
+		$(MAKE) start-evolution > /tmp/automagik-evolution.log 2>&1 & \
+		EVO_PID=$$!; \
+		echo -e "  • Infrastructure starting (PID: $$INFRA_PID)"; \
+		echo -e "  • LangFlow starting (PID: $$LANG_PID)"; \
+		echo -e "  • Evolution API starting (PID: $$EVO_PID)"; \
+		echo ""; \
+		echo -n "Waiting for containers to start"; \
+		wait $$INFRA_PID && echo -e "\n  $(FONT_GREEN)✓$(FONT_RESET) Infrastructure started" || echo -e "\n  $(FONT_YELLOW)⚠$(FONT_RESET) Infrastructure failed"; \
+		wait $$LANG_PID && echo -e "  $(FONT_GREEN)✓$(FONT_RESET) LangFlow started" || echo -e "  $(FONT_YELLOW)⚠$(FONT_RESET) LangFlow not available"; \
+		wait $$EVO_PID && echo -e "  $(FONT_GREEN)✓$(FONT_RESET) Evolution API started" || echo -e "  $(FONT_YELLOW)⚠$(FONT_RESET) Evolution API not available"; \
+	}
+	@echo ""
+	@echo -e "$(FONT_CYAN)[2/3] Waiting for containers to be healthy...$(FONT_RESET)"
+	@echo -n "Docker healthchecks"
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		echo -n "."; \
+		sleep 2; \
+	done
+	@echo " ready!"
+	@echo ""
+	@echo -e "$(FONT_CYAN)[3/3] Starting PM2 services...$(FONT_RESET)"
+	@$(MAKE) start-all-services
+	@echo ""
+	@$(call print_success,Complete Automagik stack started!)
+	@echo ""
+	@$(MAKE) status
 
 start-nosudo: ## 🚀 Start everything without sudo (dev mode)
 	$(call print_status,🚀 Starting Automagik stack in dev mode (no sudo)...)
@@ -1108,19 +1160,38 @@ start-nosudo: ## 🚀 Start everything without sudo (dev mode)
 	@$(MAKE) start-all-dev
 	@$(call print_success,Complete dev stack started! All services on 999x ports.)
 
-stop: ## 🛑 Stop everything (services + infrastructure + optional services)
+stop: ## 🛑 Stop everything (PM2 services + optional services + infrastructure)
 	$(call print_status,🛑 Stopping complete Automagik stack...)
+	@echo -e "$(FONT_CYAN)[1/2] Stopping PM2 services...$(FONT_RESET)"
 	@$(MAKE) stop-all-services
-	@$(MAKE) stop-infrastructure
-	@# Stop optional services if they're running
-	@if $(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow ps -q 2>/dev/null | grep -q .; then \
-		echo -e "$(FONT_CYAN)$(INFO) Stopping LangFlow...$(FONT_RESET)"; \
-		$(MAKE) stop-langflow; \
-	fi
-	@if $(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api ps -q 2>/dev/null | grep -q .; then \
-		echo -e "$(FONT_CYAN)$(INFO) Stopping Evolution API...$(FONT_RESET)"; \
-		$(MAKE) stop-evolution; \
-	fi
+	@echo ""
+	@echo -e "$(FONT_CYAN)[2/2] Stopping all Docker containers in parallel...$(FONT_RESET)"
+	@# Stop all containers in parallel
+	@{ \
+		$(MAKE) stop-infrastructure > /tmp/automagik-stop-infra.log 2>&1 & \
+		INFRA_PID=$$!; \
+		if $(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow ps -q 2>/dev/null | grep -q .; then \
+			$(MAKE) stop-langflow > /tmp/automagik-stop-langflow.log 2>&1 & \
+			LANG_PID=$$!; \
+			echo -e "  • Stopping LangFlow (PID: $$LANG_PID)"; \
+		else \
+			LANG_PID=""; \
+		fi; \
+		if $(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api ps -q 2>/dev/null | grep -q .; then \
+			$(MAKE) stop-evolution > /tmp/automagik-stop-evolution.log 2>&1 & \
+			EVO_PID=$$!; \
+			echo -e "  • Stopping Evolution API (PID: $$EVO_PID)"; \
+		else \
+			EVO_PID=""; \
+		fi; \
+		echo -e "  • Stopping Infrastructure (PID: $$INFRA_PID)"; \
+		echo ""; \
+		echo -n "Waiting for containers to stop"; \
+		wait $$INFRA_PID && echo -e "\n  $(FONT_GREEN)✓$(FONT_RESET) Infrastructure stopped" || echo -e "\n  $(FONT_RED)✗$(FONT_RESET) Infrastructure stop failed"; \
+		[ -n "$$LANG_PID" ] && wait $$LANG_PID && echo -e "  $(FONT_GREEN)✓$(FONT_RESET) LangFlow stopped" || true; \
+		[ -n "$$EVO_PID" ] && wait $$EVO_PID && echo -e "  $(FONT_GREEN)✓$(FONT_RESET) Evolution API stopped" || true; \
+	}
+	@echo ""
 	@$(call print_success,Complete stack stopped!)
 
 restart: ## 🔄 Restart everything
