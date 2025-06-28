@@ -341,13 +341,13 @@ uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove con
 	$(call print_status,Uninstalling Docker infrastructure...)
 	@# Stop and remove main infrastructure
 	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down -v --rmi all --remove-orphans 2>/dev/null || true
-	@# Stop and remove optional services only if they're actually running
-	@if [ -f "$(LANGFLOW_COMPOSE)" ] && docker ps -q --filter "label=com.docker.compose.project=langflow" 2>/dev/null | grep -q .; then \
-		echo -e "$(FONT_CYAN)$(INFO) Removing LangFlow containers and images...$(FONT_RESET)"; \
+	@# Remove optional services (whether running or not)
+	@if [ -f "$(LANGFLOW_COMPOSE)" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Removing LangFlow containers, volumes and images...$(FONT_RESET)"; \
 		$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow down -v --rmi all --remove-orphans 2>/dev/null || true; \
 	fi
-	@if [ -f "$(EVOLUTION_COMPOSE)" ] && docker ps -q --filter "label=com.docker.compose.project=evolution_api" 2>/dev/null | grep -q .; then \
-		echo -e "$(FONT_CYAN)$(INFO) Removing Evolution API containers and images...$(FONT_RESET)"; \
+	@if [ -f "$(EVOLUTION_COMPOSE)" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Removing Evolution API containers, volumes and images...$(FONT_RESET)"; \
 		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans 2>/dev/null || true; \
 	fi
 	@# Cleanup only our Docker containers and resources
@@ -366,6 +366,9 @@ uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove con
 		docker volume ls -q --filter "label=com.docker.compose.project=automagik" | xargs -r docker volume rm 2>/dev/null || true; \
 		docker volume ls -q --filter "label=com.docker.compose.project=langflow" | xargs -r docker volume rm 2>/dev/null || true; \
 		docker volume ls -q --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker volume rm 2>/dev/null || true; \
+		docker volume ls -q | grep -E "langflow|evolution" | xargs -r docker volume rm 2>/dev/null || true; \
+		echo -e "$(FONT_CYAN)$(INFO) Removing unused images...$(FONT_RESET)"; \
+		docker images | grep -E "langflow|evolution" | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true; \
 		docker system prune -f --volumes 2>/dev/null || true; \
 		echo ""; \
 		echo -e "$(FONT_CYAN)$(INFO) Final Docker disk usage:$(FONT_RESET)"; \
