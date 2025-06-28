@@ -527,7 +527,13 @@ setup-pm2: ## 📦 Setup PM2 with ecosystem file
 	@pm2 startup -s >/dev/null 2>&1 || echo -e "$(FONT_GRAY)✓ PM2 startup already configured$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)$(INFO) Registering services with PM2...$(FONT_RESET)"
 	@pm2 delete all >/dev/null 2>&1 || true
-	@pm2 start ecosystem.config.js >/dev/null 2>&1 || echo -e "$(FONT_GRAY)Services registered (will start when needed)$(FONT_RESET)"
+	@# Start each service from its own ecosystem config
+	@cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
+	@cd $(AUTOMAGIK_SPARK_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
+	@cd $(AUTOMAGIK_TOOLS_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
+	@cd $(AUTOMAGIK_OMNI_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
+	@cd $(AUTOMAGIK_UI_DIR) && pm2 start ecosystem.prod.config.js >/dev/null 2>&1 || true
+	@echo -e "$(FONT_GRAY)Services registered (will start when needed)$(FONT_RESET)"
 	@pm2 save --force >/dev/null 2>&1 || true
 	@echo -e "$(FONT_GREEN)✓ PM2 ecosystem configured$(FONT_RESET)"
 
@@ -592,7 +598,7 @@ uninstall-all-services: ## 🗑️ Uninstall all services (remove PM2 services)
 	$(call print_status,Uninstalling all Automagik services...)
 	@# Remove PM2 services
 	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 services...$(FONT_RESET)"
-	@pm2 delete ecosystem.config.js 2>/dev/null || true
+	@pm2 delete am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui 2>/dev/null || true
 	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 logrotate module...$(FONT_RESET)"
 	@pm2 uninstall pm2-logrotate 2>/dev/null || true
 	@pm2 save --force 2>/dev/null || true
@@ -611,7 +617,11 @@ uninstall: ## 🗑️ Complete uninstall (stop everything, remove services and i
 .PHONY: start-all-services stop-all-services restart-all-services status-all-services
 start-all-services: ## 🚀 Start all services with PM2
 	$(call print_status,Starting all Automagik services with PM2...)
-	@pm2 start ecosystem.config.js
+	@cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js
+	@cd $(AUTOMAGIK_SPARK_DIR) && pm2 start ecosystem.config.js
+	@cd $(AUTOMAGIK_TOOLS_DIR) && pm2 start ecosystem.config.js
+	@cd $(AUTOMAGIK_OMNI_DIR) && pm2 start ecosystem.config.js
+	@cd $(AUTOMAGIK_UI_DIR) && pm2 start ecosystem.prod.config.js
 	@$(call print_success,All services started!)
 
 start-all-dev: ## 🚀 Start all services in dev mode (no sudo required)
@@ -639,12 +649,12 @@ start-all-dev: ## 🚀 Start all services in dev mode (no sudo required)
 
 stop-all-services: ## 🛑 Stop all services with PM2
 	$(call print_status,Stopping all Automagik services...)
-	@pm2 stop ecosystem.config.js 2>/dev/null || true
+	@pm2 stop am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui 2>/dev/null || true
 	@$(call print_success,All services stopped!)
 
 restart-all-services: ## 🔄 Restart all services with PM2
 	$(call print_status,Restarting all Automagik services...)
-	@pm2 restart ecosystem.config.js 2>/dev/null || pm2 start ecosystem.config.js
+	@pm2 restart am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui 2>/dev/null || $(MAKE) start-all-services
 	@$(call print_success,All services restarted!)
 
 status-all-services: ## 📊 Check status of all services
@@ -690,7 +700,7 @@ status-all-services: ## 📊 Check status of all services
 # Individual Start Commands
 start-agents: ## 🚀 Start am-agents-labs service only
 	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@pm2 start ecosystem.config.js --only am-agents-labs
+	@cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js
 
 start-agents-dev: ## 🚀 Start am-agents-labs in dev mode (no sudo)
 	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) in dev mode on port 9991...)
@@ -698,7 +708,7 @@ start-agents-dev: ## 🚀 Start am-agents-labs in dev mode (no sudo)
 
 start-spark: ## 🚀 Start automagik-spark services (API + Worker)
 	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)
-	@pm2 start ecosystem.config.js --only "automagik-spark-api" --only "automagik-spark-worker"
+	@cd $(AUTOMAGIK_SPARK_DIR) && pm2 start ecosystem.config.js
 	@echo -e "$(FONT_CYAN)   API: http://localhost:8883$(FONT_RESET)"
 
 start-spark-dev: ## 🚀 Start automagik-spark in dev mode (no sudo)
@@ -708,7 +718,7 @@ start-spark-dev: ## 🚀 Start automagik-spark in dev mode (no sudo)
 
 start-tools: ## 🚀 Start automagik-tools services (SSE + HTTP)
 	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) services...)
-	@pm2 start ecosystem.config.js --only "automagik-tools-sse" --only "automagik-tools-http"
+	@cd $(AUTOMAGIK_TOOLS_DIR) && pm2 start ecosystem.config.js
 	@echo -e "$(FONT_CYAN)   SSE Transport: http://localhost:8884$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)   HTTP Transport: http://localhost:8885$(FONT_RESET)"
 
@@ -718,7 +728,7 @@ start-tools-dev: ## 🚀 Start automagik-tools in dev mode (no sudo)
 
 start-omni: ## 🚀 Start automagik-omni service only
 	$(call print_status,Starting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	@pm2 start ecosystem.config.js --only automagik-omni
+	@cd $(AUTOMAGIK_OMNI_DIR) && pm2 start ecosystem.config.js
 
 start-omni-dev: ## 🚀 Start automagik-omni in dev mode (no sudo)
 	$(call print_status,Starting $(OMNI_COLOR)automagik-omni$(FONT_RESET) in dev mode on port 9992...)
@@ -726,7 +736,7 @@ start-omni-dev: ## 🚀 Start automagik-omni in dev mode (no sudo)
 
 start-ui: ## 🚀 Start automagik-ui service only (PM2)
 	$(call print_status,Starting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
-	@pm2 start ecosystem.config.js --only automagik-ui
+	@cd $(AUTOMAGIK_UI_DIR) && pm2 start ecosystem.prod.config.js
 
 start-ui-dev: ## 🚀 Start automagik-ui in dev mode (no sudo)
 	$(call print_status,Starting $(UI_COLOR)automagik-ui$(FONT_RESET) in dev mode on port 9998...)
@@ -756,23 +766,23 @@ stop-ui: ## 🛑 Stop automagik-ui service only (PM2)
 # Individual Restart Commands
 restart-agents: ## 🔄 Restart am-agents-labs service only
 	$(call print_status,Restarting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@pm2 restart am-agents-labs 2>/dev/null || pm2 start ecosystem.config.js --only am-agents-labs
+	@pm2 restart am-agents-labs 2>/dev/null || (cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js)
 
 restart-spark: ## 🔄 Restart automagik-spark services (API + Worker)
 	$(call print_status,Restarting $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)
-	@pm2 restart automagik-spark-api automagik-spark-worker 2>/dev/null || pm2 start ecosystem.config.js --only "automagik-spark-api" --only "automagik-spark-worker"
+	@pm2 restart automagik-spark-api automagik-spark-worker 2>/dev/null || (cd $(AUTOMAGIK_SPARK_DIR) && pm2 start ecosystem.config.js)
 
 restart-tools: ## 🔄 Restart automagik-tools services (SSE + HTTP)
 	$(call print_status,Restarting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) services...)
-	@pm2 restart automagik-tools-sse automagik-tools-http 2>/dev/null || pm2 start ecosystem.config.js --only "automagik-tools-sse" --only "automagik-tools-http"
+	@pm2 restart automagik-tools-sse automagik-tools-http 2>/dev/null || (cd $(AUTOMAGIK_TOOLS_DIR) && pm2 start ecosystem.config.js)
 
 restart-omni: ## 🔄 Restart automagik-omni service only
 	$(call print_status,Restarting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	@pm2 restart automagik-omni 2>/dev/null || pm2 start ecosystem.config.js --only automagik-omni
+	@pm2 restart automagik-omni 2>/dev/null || (cd $(AUTOMAGIK_OMNI_DIR) && pm2 start ecosystem.config.js)
 
 restart-ui: ## 🔄 Restart automagik-ui service only (PM2)
 	$(call print_status,Restarting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
-	@pm2 restart automagik-ui 2>/dev/null || pm2 start ecosystem.config.js --only automagik-ui
+	@pm2 restart automagik-ui 2>/dev/null || (cd $(AUTOMAGIK_UI_DIR) && pm2 start ecosystem.prod.config.js)
 
 # Individual Status Commands
 status-agents: ## 📊 Check am-agents-labs status only

@@ -119,7 +119,7 @@ else
 fi
 
 # Install Claude Code
-if ! command -v claude-code &> /dev/null; then
+if ! command -v claude &> /dev/null; then
     echo -e "${CYAN}Installing Claude Code...${NC}"
     npm install -g @anthropic-ai/claude-code
 else
@@ -127,12 +127,20 @@ else
 fi
 
 # Install OpenAI Codex
-echo -e "${CYAN}Installing OpenAI Codex...${NC}"
-npm install -g @openai/codex
+if ! command -v codex &> /dev/null; then
+    echo -e "${CYAN}Installing OpenAI Codex...${NC}"
+    npm install -g @openai/codex
+else
+    echo -e "${GREEN}✓ OpenAI Codex already installed${NC}"
+fi
 
 # Install Google Gemini CLI
-echo -e "${CYAN}Installing Google Gemini CLI...${NC}"
-npm install -g @google/gemini-cli
+if ! command -v gemini &> /dev/null; then
+    echo -e "${CYAN}Installing Google Gemini CLI...${NC}"
+    npm install -g @google/gemini-cli
+else
+    echo -e "${GREEN}✓ Google Gemini CLI already installed${NC}"
+fi
 
 # Install pnpm
 if ! command -v pnpm &> /dev/null; then
