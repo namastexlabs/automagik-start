@@ -170,10 +170,10 @@ module.exports = {
     },
     
     // ================================
-    // Automagik-Spark (Workflow Engine)
+    // Automagik-Spark API (Workflow Engine)
     // ================================
     {
-      name: 'automagik-spark',
+      name: 'automagik-spark-api',
       cwd: path.join(INSTALL_ROOT, 'automagik-spark'),
       script: '.venv/bin/uvicorn',
       args: 'automagik_spark.api.app:app --host 0.0.0.0 --port ' + (envVars.AUTOMAGIK_SPARK_API_PORT || '8883'),
@@ -196,9 +196,42 @@ module.exports = {
       min_uptime: '10s',
       restart_delay: 1000,
       kill_timeout: 5000,
-      error_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/err.log'),
-      out_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/out.log'),
-      log_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/combined.log'),
+      error_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/api-err.log'),
+      out_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/api-out.log'),
+      log_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/api-combined.log'),
+      merge_logs: true,
+      time: true,
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    
+    // ================================
+    // Automagik-Spark Worker (Background Tasks)
+    // ================================
+    {
+      name: 'automagik-spark-worker',
+      cwd: path.join(INSTALL_ROOT, 'automagik-spark'),
+      script: '.venv/bin/python',
+      args: '-m automagik_spark.worker.app',
+      interpreter: 'none',
+      version: extractVersionFromPython(path.join(INSTALL_ROOT, 'automagik-spark')),
+      env: {
+        ...envVars,
+        PYTHONPATH: path.join(INSTALL_ROOT, 'automagik-spark'),
+        AUTOMAGIK_SPARK_API_KEY: envVars.AUTOMAGIK_SPARK_API_KEY || 'namastex888',
+        NODE_ENV: 'production'
+      },
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      max_restarts: 10,
+      min_uptime: '10s',
+      restart_delay: 1000,
+      kill_timeout: 5000,
+      error_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/worker-err.log'),
+      out_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/worker-out.log'),
+      log_file: path.join(INSTALL_ROOT, 'automagik-spark/logs/worker-combined.log'),
       merge_logs: true,
       time: true,
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
@@ -240,19 +273,19 @@ module.exports = {
     },
     
     // ================================
-    // Automagik-Tools (MCP Hub)
+    // Automagik-Tools SSE (MCP Hub - SSE Transport)
     // ================================
     {
-      name: 'automagik-tools',
+      name: 'automagik-tools-sse',
       cwd: path.join(INSTALL_ROOT, 'automagik-tools'),
       script: '.venv/bin/automagik-tools',
-      args: 'hub --host 0.0.0.0 --port ' + (envVars.AUTOMAGIK_TOOLS_PORT || '8884') + ' --transport sse',
+      args: 'hub --host 0.0.0.0 --port ' + (envVars.AUTOMAGIK_TOOLS_SSE_PORT || '8884') + ' --transport sse',
       interpreter: 'none',
       version: extractVersionFromPython(path.join(INSTALL_ROOT, 'automagik-tools')),
       env: {
         ...envVars,
         PYTHONPATH: path.join(INSTALL_ROOT, 'automagik-tools'),
-        AUTOMAGIK_TOOLS_PORT: envVars.AUTOMAGIK_TOOLS_PORT || '8884',
+        AUTOMAGIK_TOOLS_SSE_PORT: envVars.AUTOMAGIK_TOOLS_SSE_PORT || '8884',
         HOST: envVars.HOST || '0.0.0.0',
         NODE_ENV: 'production'
       },
@@ -265,9 +298,43 @@ module.exports = {
       min_uptime: '10s',
       restart_delay: 1000,
       kill_timeout: 5000,
-      error_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/err.log'),
-      out_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/out.log'),
-      log_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/combined.log'),
+      error_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/sse-err.log'),
+      out_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/sse-out.log'),
+      log_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/sse-combined.log'),
+      merge_logs: true,
+      time: true,
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    
+    // ================================
+    // Automagik-Tools HTTP (MCP Hub - HTTP Transport)
+    // ================================
+    {
+      name: 'automagik-tools-http',
+      cwd: path.join(INSTALL_ROOT, 'automagik-tools'),
+      script: '.venv/bin/automagik-tools',
+      args: 'hub --host 0.0.0.0 --port ' + (envVars.AUTOMAGIK_TOOLS_HTTP_PORT || '8885') + ' --transport http',
+      interpreter: 'none',
+      version: extractVersionFromPython(path.join(INSTALL_ROOT, 'automagik-tools')),
+      env: {
+        ...envVars,
+        PYTHONPATH: path.join(INSTALL_ROOT, 'automagik-tools'),
+        AUTOMAGIK_TOOLS_HTTP_PORT: envVars.AUTOMAGIK_TOOLS_HTTP_PORT || '8885',
+        HOST: envVars.HOST || '0.0.0.0',
+        NODE_ENV: 'production'
+      },
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      max_restarts: 10,
+      min_uptime: '10s',
+      restart_delay: 1000,
+      kill_timeout: 5000,
+      error_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/http-err.log'),
+      out_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/http-out.log'),
+      log_file: path.join(INSTALL_ROOT, 'automagik-tools/logs/http-combined.log'),
       merge_logs: true,
       time: true,
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'

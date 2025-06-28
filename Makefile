@@ -66,7 +66,7 @@ SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automa
 RUNNABLE_SERVICES := am-agents-labs automagik-spark automagik-omni automagik-ui
 
 # PM2 service names
-PM2_SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui
+PM2_SERVICES := am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui
 
 # Repository URLs
 AM_AGENTS_LABS_URL := https://github.com/namastexlabs/am-agents-labs.git
@@ -662,8 +662,8 @@ status-all-services: ## 📊 Check status of all services
 	@echo -e "$(FONT_PURPLE)$(CHART) Automagik Services Status:$(FONT_RESET)"
 	@pm2 list | sed -E \
 		-e 's/(am-agents-labs)/\x1b[94m\1\x1b[0m/g' \
-		-e 's/(automagik-spark)/\x1b[33m\1\x1b[0m/g' \
-		-e 's/(automagik-tools)/\x1b[34m\1\x1b[0m/g' \
+		-e 's/(automagik-spark-api|automagik-spark-worker)/\x1b[33m\1\x1b[0m/g' \
+		-e 's/(automagik-tools-sse|automagik-tools-http)/\x1b[34m\1\x1b[0m/g' \
 		-e 's/(automagik-omni)/\x1b[35m\1\x1b[0m/g' \
 		-e 's/(automagik-ui)/\x1b[32m\1\x1b[0m/g' \
 		-e 's/online/\x1b[32monline\x1b[0m/g' \
@@ -707,18 +707,21 @@ start-agents-dev: ## 🚀 Start am-agents-labs in dev mode (no sudo)
 	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) in dev mode on port 9991...)
 	@cd $(AM_AGENTS_LABS_DIR) && AM_PORT=9991 $(MAKE) dev
 
-start-spark: ## 🚀 Start automagik-spark service only
-	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	@pm2 start ecosystem.config.js --only automagik-spark
+start-spark: ## 🚀 Start automagik-spark services (API + Worker)
+	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)
+	@pm2 start ecosystem.config.js --only "automagik-spark-api" --only "automagik-spark-worker"
+	@echo -e "$(FONT_CYAN)   API: http://localhost:8883$(FONT_RESET)"
 
 start-spark-dev: ## 🚀 Start automagik-spark in dev mode (no sudo)
 	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) in dev mode...)
 	@echo -e "$(FONT_YELLOW)Starting on port 9993 with auto-reload...$(FONT_RESET)"
 	@cd $(AUTOMAGIK_SPARK_DIR) && source .venv/bin/activate && uvicorn automagik.api.app:app --host 0.0.0.0 --port 9993 --reload 2>/dev/null || echo "Failed to start dev mode - check dependencies"
 
-start-tools: ## 🚀 Start automagik-tools service only
-	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	@pm2 start ecosystem.config.js --only automagik-tools
+start-tools: ## 🚀 Start automagik-tools services (SSE + HTTP)
+	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) services...)
+	@pm2 start ecosystem.config.js --only "automagik-tools-sse" --only "automagik-tools-http"
+	@echo -e "$(FONT_CYAN)   SSE Transport: http://localhost:8884$(FONT_RESET)"
+	@echo -e "$(FONT_CYAN)   HTTP Transport: http://localhost:8885$(FONT_RESET)"
 
 start-tools-dev: ## 🚀 Start automagik-tools in dev mode (no sudo)
 	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) in dev mode on port 9994...)
@@ -745,13 +748,13 @@ stop-agents: ## 🛑 Stop am-agents-labs service only
 	$(call print_status,Stopping $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
 	@pm2 stop am-agents-labs 2>/dev/null || true
 
-stop-spark: ## 🛑 Stop automagik-spark service only
-	$(call print_status,Stopping $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	@pm2 stop automagik-spark 2>/dev/null || true
+stop-spark: ## 🛑 Stop automagik-spark services (API + Worker)
+	$(call print_status,Stopping $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)
+	@pm2 stop automagik-spark-api automagik-spark-worker 2>/dev/null || true
 
-stop-tools: ## 🛑 Stop automagik-tools service only
-	$(call print_status,Stopping $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	@pm2 stop automagik-tools 2>/dev/null || true
+stop-tools: ## 🛑 Stop automagik-tools services (SSE + HTTP)
+	$(call print_status,Stopping $(TOOLS_COLOR)automagik-tools$(FONT_RESET) services...)
+	@pm2 stop automagik-tools-sse automagik-tools-http 2>/dev/null || true
 
 stop-omni: ## 🛑 Stop automagik-omni service only
 	$(call print_status,Stopping $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
