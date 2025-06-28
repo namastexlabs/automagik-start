@@ -191,13 +191,15 @@ fi
 # Optional browser tools
 if [ "$INTERACTIVE_MODE" = true ]; then
     echo ""
-    echo -e "${YELLOW}Do you need browser automation tools for Genie Agent?${NC}"
-    echo -e "${CYAN}(Required for Playwright/Puppeteer automation)${NC}"
+    echo -e "${CYAN}🌐 Optional: Browser Tools (for Agent web automation)${NC}"
+    echo -e "${CYAN}   • Playwright/Puppeteer browser automation${NC}"
+    echo -e "${CYAN}   • Required for web scraping & browser control${NC}"
     read -p "Install browser tools? [y/N] " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${CYAN}Installing browser automation dependencies...${NC}"
+        echo -e "${GREEN}✓ Browser tools will be installed${NC}"
         if [ "$OS_TYPE" = "debian" ]; then
+            echo -e "${CYAN}Installing browser automation dependencies...${NC}"
             sudo apt-get install -y \
                 libnss3 \
                 libatk-bridge2.0-0 \
@@ -207,8 +209,22 @@ if [ "$INTERACTIVE_MODE" = true ]; then
                 libxdamage1 \
                 libxrandr2 \
                 libgbm1 \
-                libasound2t64
+                libasound2t64 2>/dev/null || \
+            sudo apt-get install -y \
+                libnss3 \
+                libatk-bridge2.0-0 \
+                libdrm2 \
+                libxkbcommon0 \
+                libxcomposite1 \
+                libxdamage1 \
+                libxrandr2 \
+                libgbm1 \
+                libasound2
+        elif [ "$OS_TYPE" = "macos" ]; then
+            echo -e "${YELLOW}Browser tools are included with browser installations on macOS${NC}"
         fi
+    else
+        echo -e "${YELLOW}⚠️  Skipping browser tools installation${NC}"
     fi
 else
     echo -e "${YELLOW}⚠️  Skipping browser tools (non-interactive mode)${NC}"
@@ -220,9 +236,8 @@ echo -e "${PURPLE}Running main installation...${NC}"
 echo ""
 
 # Call the main Makefile with environment variables
-export INSTALL_LANGFLOW
-export INSTALL_EVOLUTION
-make install
+# Pass environment variables directly to make command to ensure they're preserved
+INSTALL_LANGFLOW=$INSTALL_LANGFLOW INSTALL_EVOLUTION=$INSTALL_EVOLUTION make install
 
 echo ""
 echo -e "${GREEN}✅ Installation complete!${NC}"

@@ -477,37 +477,20 @@ setup-env-files: ## 📝 Setup main .env file from template
 
 build-essential-services: ## 🏗️ Build essential services only (fast - no UI)
 	$(call print_status,Building essential Automagik services...)
-	@echo -e "$(FONT_CYAN)$(INFO) Building backend services in parallel...$(FONT_RESET)"
-	@$(MAKE) build-agents &
-	@$(MAKE) build-spark &
-	@$(MAKE) build-tools &
-	@$(MAKE) build-omni &
-	@wait
-	@$(call print_success,Essential services built successfully!)
+	@echo -e "$(FONT_CYAN)$(INFO) UV-based services don't require building - they use 'uv sync' during installation$(FONT_RESET)"
+	@$(call print_success,Build step completed!)
 
 build-agents: ## Build am-agents-labs service
-	$(call print_status,Building $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@if [ -d "$(AM_AGENTS_LABS_DIR)" ] && [ -f "$(AM_AGENTS_LABS_DIR)/Makefile" ]; then \
-		cd "$(AM_AGENTS_LABS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for am-agents-labs$(FONT_RESET)"; \
-	fi
+	@echo -e "$(FONT_GRAY)$(INFO) No build needed for UV-based project am-agents-labs$(FONT_RESET)"
 
 build-spark: ## Build automagik-spark service
-	$(call print_status,Building $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	@if [ -d "$(AUTOMAGIK_SPARK_DIR)" ] && [ -f "$(AUTOMAGIK_SPARK_DIR)/Makefile" ]; then \
-		cd "$(AUTOMAGIK_SPARK_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for automagik-spark$(FONT_RESET)"; \
-	fi
+	@echo -e "$(FONT_GRAY)$(INFO) No build needed for UV-based project automagik-spark$(FONT_RESET)"
 
 build-tools: ## Build automagik-tools service
-	$(call print_status,Building $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	@if [ -d "$(AUTOMAGIK_TOOLS_DIR)" ] && [ -f "$(AUTOMAGIK_TOOLS_DIR)/Makefile" ]; then \
-		cd "$(AUTOMAGIK_TOOLS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for automagik-tools$(FONT_RESET)"; \
-	fi
+	@echo -e "$(FONT_GRAY)$(INFO) No build needed for UV-based project automagik-tools$(FONT_RESET)"
 
 build-omni: ## Build automagik-omni service
-	$(call print_status,Building $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	@if [ -d "$(AUTOMAGIK_OMNI_DIR)" ] && [ -f "$(AUTOMAGIK_OMNI_DIR)/Makefile" ]; then \
-		cd "$(AUTOMAGIK_OMNI_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for automagik-omni$(FONT_RESET)"; \
-	fi
+	@echo -e "$(FONT_GRAY)$(INFO) No build needed for UV-based project automagik-omni$(FONT_RESET)"
 
 # UI build logic moved to automagik-ui/Makefile install target
 
@@ -1090,9 +1073,9 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 		echo -e "$(FONT_GRAY)   • Available at: http://localhost:7860$(FONT_RESET)"; \
 		read -p "Install LangFlow? [y/N]: " langflow_choice; \
 		if [ "$$langflow_choice" = "y" ] || [ "$$langflow_choice" = "Y" ]; then \
-			INSTALL_LANGFLOW=true; \
+			export INSTALL_LANGFLOW=true; \
 		else \
-			INSTALL_LANGFLOW=false; \
+			export INSTALL_LANGFLOW=false; \
 		fi; \
 	fi
 	@if [ -z "$$INSTALL_EVOLUTION" ] && [ -f "$(EVOLUTION_COMPOSE)" ]; then \
@@ -1102,9 +1085,9 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 		echo -e "$(FONT_GRAY)   • Available at: http://localhost:9000$(FONT_RESET)"; \
 		read -p "Install Evolution API? [y/N]: " evolution_choice; \
 		if [ "$$evolution_choice" = "y" ] || [ "$$evolution_choice" = "Y" ]; then \
-			INSTALL_EVOLUTION=true; \
+			export INSTALL_EVOLUTION=true; \
 		else \
-			INSTALL_EVOLUTION=false; \
+			export INSTALL_EVOLUTION=false; \
 		fi; \
 	fi
 	@# Install optional services if requested
