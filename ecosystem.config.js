@@ -147,9 +147,10 @@ module.exports = {
       env: {
         ...envVars,
         PYTHONPATH: path.join(INSTALL_ROOT, 'am-agents-labs'),
-        AM_PORT: envVars.AM_PORT || '8881',
-        AM_HOST: envVars.AM_HOST || '0.0.0.0',
-        AM_ENV: envVars.AM_ENV || 'production',
+        AUTOMAGIK_AGENTS_API_PORT: envVars.AUTOMAGIK_AGENTS_API_PORT || '8881',
+        AUTOMAGIK_AGENTS_API_HOST: envVars.AUTOMAGIK_AGENTS_API_HOST || '0.0.0.0',
+        AUTOMAGIK_AGENTS_API_KEY: envVars.AUTOMAGIK_AGENTS_API_KEY || 'namastex888',
+        AUTOMAGIK_AGENTS_ENV: envVars.AUTOMAGIK_AGENTS_ENV || 'production',
         NODE_ENV: 'production'
       },
       instances: 1,

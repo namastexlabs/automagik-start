@@ -630,7 +630,7 @@ start-all-dev: ## 🚀 Start all services in dev mode (no sudo required)
 	@echo -e "$(FONT_YELLOW)$(WARNING) Dev mode: Services will run on 999x ports$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)Port mapping: agents(9991), omni(9992), spark(9993), tools(9994), ui(9998)$(FONT_RESET)"
 	@echo -e "$(AGENTS_COLOR)[1/5] Starting am-agents-labs on port 9991...$(FONT_RESET)"
-	@cd $(AM_AGENTS_LABS_DIR) && AM_PORT=9991 $(MAKE) dev &
+	@cd $(AM_AGENTS_LABS_DIR) && AUTOMAGIK_AGENTS_API_PORT=9991 $(MAKE) dev &
 	@sleep 3
 	@echo -e "$(OMNI_COLOR)[2/5] Starting automagik-omni on port 9992...$(FONT_RESET)"
 	@cd $(AUTOMAGIK_OMNI_DIR) && API_PORT=9992 $(MAKE) dev &
@@ -705,7 +705,7 @@ start-agents: ## 🚀 Start am-agents-labs service only
 
 start-agents-dev: ## 🚀 Start am-agents-labs in dev mode (no sudo)
 	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) in dev mode on port 9991...)
-	@cd $(AM_AGENTS_LABS_DIR) && AM_PORT=9991 $(MAKE) dev
+	@cd $(AM_AGENTS_LABS_DIR) && AUTOMAGIK_AGENTS_API_PORT=9991 $(MAKE) dev
 
 start-spark: ## 🚀 Start automagik-spark services (API + Worker)
 	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)

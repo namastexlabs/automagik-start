@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      POSTGRES_DB: am_agents_labs
+      POSTGRES_DB: automagik_agents
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
@@ -38,7 +38,7 @@ services:
     volumes:
       - am-agents-labs-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d am_agents_labs -p 5401"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_agents -p 5401"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -51,15 +51,15 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      POSTGRES_DB: automagik
-      POSTGRES_USER: automagik
-      POSTGRES_PASSWORD: automagik
+      POSTGRES_DB: automagik_spark
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
       PGPORT: 5402
     volumes:
       - automagik-spark-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U automagik -d automagik -p 5402"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_spark -p 5402"]
       interval: 10s
       timeout: 5s
       retries: 5
