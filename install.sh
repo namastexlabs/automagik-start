@@ -158,6 +158,22 @@ else
     echo -e "${GREEN}✓ PM2 already installed${NC}"
 fi
 
+# Install GitHub CLI
+if ! command -v gh &> /dev/null; then
+    echo -e "${CYAN}Installing GitHub CLI...${NC}"
+    if [ "$OS_TYPE" = "debian" ]; then
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+        sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        sudo apt update
+        sudo apt install -y gh
+    elif [ "$OS_TYPE" = "macos" ]; then
+        brew install gh
+    fi
+else
+    echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
+fi
+
 # Install Docker
 if ! command -v docker &> /dev/null; then
     echo -e "${CYAN}Installing Docker...${NC}"
