@@ -260,6 +260,10 @@ help: ## 🚀 Show this help message
 	@echo -e "  $(FONT_GRAY)stop-infrastructure$(FONT_RESET)        Stop infrastructure only"
 	@echo -e "  $(FONT_GRAY)uninstall-infrastructure$(FONT_RESET)   Uninstall infrastructure only"
 	@echo ""
+	@echo -e "$(FONT_CYAN)🔄 Git & Repository Management:$(FONT_RESET)"
+	@echo -e "  $(FONT_GRAY)git-status$(FONT_RESET)                 Check uncommitted changes in all repositories"
+	@echo -e "  $(FONT_GRAY)check-updates$(FONT_RESET)              Check if there are new pulls available from remote"
+	@echo ""
 	@echo -e "$(FONT_GRAY)Service Colors & Ports:$(FONT_RESET)"
 	@echo -e "  $(AGENTS_COLOR)AGENTS$(FONT_RESET) (🎨 Orange):  $(FONT_CYAN)8881$(FONT_RESET)  |  $(SPARK_COLOR)SPARK$(FONT_RESET) (🎨 Yellow):   $(FONT_CYAN)8883$(FONT_RESET)"
 	@echo -e "  $(TOOLS_COLOR)TOOLS$(FONT_RESET) (🎨 Blue):     $(FONT_CYAN)8884$(FONT_RESET)  |  $(OMNI_COLOR)OMNI$(FONT_RESET) (🎨 Purple):     $(FONT_CYAN)8882$(FONT_RESET)"
@@ -296,22 +300,47 @@ uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove con
 	$(call print_status,Uninstalling Docker infrastructure...)
 	@# Stop and remove main infrastructure
 	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down -v --rmi all --remove-orphans 2>/dev/null || true
-	@# Stop and remove optional services if they exist
-	@if [ -f "$(LANGFLOW_COMPOSE)" ]; then \
+	@# Stop and remove optional services only if they're actually running
+	@if [ -f "$(LANGFLOW_COMPOSE)" ] && docker ps -q --filter "label=com.docker.compose.project=langflow" 2>/dev/null | grep -q .; then \
 		echo -e "$(FONT_CYAN)$(INFO) Removing LangFlow containers and images...$(FONT_RESET)"; \
 		$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow down -v --rmi all --remove-orphans 2>/dev/null || true; \
 	fi
-	@if [ -f "$(EVOLUTION_COMPOSE)" ]; then \
+	@if [ -f "$(EVOLUTION_COMPOSE)" ] && docker ps -q --filter "label=com.docker.compose.project=evolution_api" 2>/dev/null | grep -q .; then \
 		echo -e "$(FONT_CYAN)$(INFO) Removing Evolution API containers and images...$(FONT_RESET)"; \
 		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans 2>/dev/null || true; \
 	fi
-	@# Clean up all Docker resources
-	@echo -e "$(FONT_CYAN)$(INFO) Removing unused containers, networks, images...$(FONT_RESET)"
-	@docker system prune -af --volumes 2>/dev/null || true
-	@echo -e "$(FONT_CYAN)$(INFO) Removing unused volumes...$(FONT_RESET)"
-	@docker volume prune -f 2>/dev/null || true
-	@echo -e "$(FONT_CYAN)$(INFO) Removing unused networks...$(FONT_RESET)"
-	@docker network prune -f 2>/dev/null || true
+	@# Clean up all Docker resources with detailed reporting
+	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
+		echo -e "$(FONT_CYAN)$(INFO) Removing unused containers, images, and volumes...$(FONT_RESET)"; \
+		prune_output=$$(docker system prune -af --volumes 2>&1 || echo "No resources to remove"); \
+		if echo "$$prune_output" | grep -q "deleted\|removed\|freed"; then \
+			echo "$$prune_output" | while IFS= read -r line; do \
+				if echo "$$line" | grep -q "Total reclaimed space"; then \
+					echo -e "$(FONT_GREEN)✓ $$line$(FONT_RESET)"; \
+				elif echo "$$line" | grep -q "deleted\|removed"; then \
+					echo -e "$(FONT_GRAY)  $$line$(FONT_RESET)"; \
+				fi; \
+			done; \
+		else \
+			echo -e "$(FONT_GRAY)✓ $$prune_output$(FONT_RESET)"; \
+		fi; \
+		echo -e "$(FONT_CYAN)$(INFO) Removing any remaining volumes...$(FONT_RESET)"; \
+		vol_output=$$(docker volume prune -f 2>&1 || echo "No volumes to remove"); \
+		if echo "$$vol_output" | grep -q "deleted\|removed"; then \
+			echo -e "$(FONT_GRAY)  $$vol_output$(FONT_RESET)"; \
+		else \
+			echo -e "$(FONT_GRAY)✓ $$vol_output$(FONT_RESET)"; \
+		fi; \
+		echo -e "$(FONT_CYAN)$(INFO) Removing any remaining networks...$(FONT_RESET)"; \
+		net_output=$$(docker network prune -f 2>&1 || echo "No networks to remove"); \
+		if echo "$$net_output" | grep -q "deleted\|removed"; then \
+			echo -e "$(FONT_GRAY)  $$net_output$(FONT_RESET)"; \
+		else \
+			echo -e "$(FONT_GRAY)✓ $$net_output$(FONT_RESET)"; \
+		fi; \
+	else \
+		echo -e "$(FONT_GRAY)$(INFO) Docker not running or not available$(FONT_RESET)"; \
+	fi
 	@$(call print_success,Docker infrastructure uninstalled!)
 
 restart-infrastructure: ## 🔄 Restart Docker infrastructure
@@ -425,25 +454,25 @@ build-essential-services: ## 🏗️ Build essential services only (fast - no UI
 build-agents: ## Build am-agents-labs service
 	$(call print_status,Building $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
 	@if [ -d "$(AM_AGENTS_LABS_DIR)" ] && [ -f "$(AM_AGENTS_LABS_DIR)/Makefile" ]; then \
-		cd "$(AM_AGENTS_LABS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for am-agents-labs$(FONT_RESET)"; \
+		cd "$(AM_AGENTS_LABS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for am-agents-labs$(FONT_RESET)"; \
 	fi
 
 build-spark: ## Build automagik-spark service
 	$(call print_status,Building $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
 	@if [ -d "$(AUTOMAGIK_SPARK_DIR)" ] && [ -f "$(AUTOMAGIK_SPARK_DIR)/Makefile" ]; then \
-		cd "$(AUTOMAGIK_SPARK_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-spark$(FONT_RESET)"; \
+		cd "$(AUTOMAGIK_SPARK_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for automagik-spark$(FONT_RESET)"; \
 	fi
 
 build-tools: ## Build automagik-tools service
 	$(call print_status,Building $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
 	@if [ -d "$(AUTOMAGIK_TOOLS_DIR)" ] && [ -f "$(AUTOMAGIK_TOOLS_DIR)/Makefile" ]; then \
-		cd "$(AUTOMAGIK_TOOLS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-tools$(FONT_RESET)"; \
+		cd "$(AUTOMAGIK_TOOLS_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for automagik-tools$(FONT_RESET)"; \
 	fi
 
 build-omni: ## Build automagik-omni service
 	$(call print_status,Building $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
 	@if [ -d "$(AUTOMAGIK_OMNI_DIR)" ] && [ -f "$(AUTOMAGIK_OMNI_DIR)/Makefile" ]; then \
-		cd "$(AUTOMAGIK_OMNI_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-omni$(FONT_RESET)"; \
+		cd "$(AUTOMAGIK_OMNI_DIR)" && make build 2>/dev/null || echo -e "$(FONT_GRAY)$(INFO) No build target for automagik-omni$(FONT_RESET)"; \
 	fi
 
 # UI build logic moved to automagik-ui/Makefile install target
@@ -483,6 +512,10 @@ setup-pm2: ## 📦 Setup PM2 with ecosystem file
 	@if ! pm2 startup -s 2>/dev/null; then \
 		echo -e "$(FONT_YELLOW)Warning: PM2 startup may already be configured$(FONT_RESET)"; \
 	fi
+	@echo -e "$(FONT_CYAN)$(INFO) Registering services with PM2 (ready to start)...$(FONT_RESET)"
+	@pm2 delete ecosystem.config.js 2>/dev/null || true
+	@pm2 save --force 2>/dev/null || true
+	@echo -e "$(FONT_GREEN)✓ PM2 ecosystem ready - use 'make start' to run services$(FONT_RESET)"
 	@$(call print_success,PM2 ecosystem configured!)
 
 install-dependencies-only: ## 📦 Install only dependencies (no systemd services)
@@ -557,7 +590,7 @@ uninstall: ## 🗑️ Complete uninstall (stop everything, remove services and i
 	@$(MAKE) stop
 	@$(MAKE) uninstall-all-services
 	@$(MAKE) uninstall-infrastructure
-	@$(call print_success_with_logo,Complete uninstall finished!)
+	@$(call print_success,Complete uninstall finished!)
 
 # ===========================================
 # 🎛️ Service Management
@@ -789,7 +822,7 @@ status-local: ## 📊 Check status of complete stack
 # ===========================================
 # 🔧 Maintenance & Health
 # ===========================================
-.PHONY: clean-all
+.PHONY: clean-all git-status check-updates
 
 
 clean-all: ## 🧹 Clean all service artifacts (parallel execution)
@@ -829,6 +862,130 @@ clean-uv-cache: ## 🧹 Clean UV cache to resolve installation issues
 	else \
 		$(call print_warning,UV not found - cache cleaning skipped); \
 	fi
+
+git-status: ## 📋 Check uncommitted changes in all repositories
+	$(call print_status,Checking git status across all repositories...)
+	@echo -e "$(FONT_PURPLE)$(INFO) Repository Status Overview:$(FONT_RESET)"
+	@echo -e "  $(FONT_GRAY)──────────────────────────────────────────────────────────────────────$(FONT_RESET)"
+	@# Check main repository
+	@repo_name="automagik-start"; \
+	if [ -d ".git" ]; then \
+		if git diff --quiet && git diff --cached --quiet; then \
+			if [ -z "$$(git status --porcelain)" ]; then \
+				echo -e "  $(FONT_GREEN)$(CHECKMARK) $$repo_name$(FONT_RESET) - Clean (no changes)"; \
+			else \
+				echo -e "  $(FONT_YELLOW)$(WARNING) $$repo_name$(FONT_RESET) - Has untracked files"; \
+			fi; \
+		else \
+			echo -e "  $(FONT_RED)$(ERROR) $$repo_name$(FONT_RESET) - Has uncommitted changes"; \
+		fi; \
+	else \
+		echo -e "  $(FONT_GRAY)$(INFO) $$repo_name$(FONT_RESET) - Not a git repository"; \
+	fi
+	@# Check all service repositories
+	@for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+		if [ -d "$$service_dir" ]; then \
+			repo_name=$$(basename $$service_dir); \
+			if [ -d "$$service_dir/.git" ]; then \
+				cd $$service_dir; \
+				if git diff --quiet && git diff --cached --quiet; then \
+					if [ -z "$$(git status --porcelain)" ]; then \
+						echo -e "  $(FONT_GREEN)$(CHECKMARK) $$repo_name$(FONT_RESET) - Clean (no changes)"; \
+					else \
+						echo -e "  $(FONT_YELLOW)$(WARNING) $$repo_name$(FONT_RESET) - Has untracked files"; \
+					fi; \
+				else \
+					echo -e "  $(FONT_RED)$(ERROR) $$repo_name$(FONT_RESET) - Has uncommitted changes"; \
+				fi; \
+				cd - >/dev/null; \
+			else \
+				echo -e "  $(FONT_GRAY)$(INFO) $$repo_name$(FONT_RESET) - Not a git repository"; \
+			fi; \
+		else \
+			repo_name=$$(basename $$service_dir); \
+			echo -e "  $(FONT_GRAY)$(WARNING) $$repo_name$(FONT_RESET) - Directory not found"; \
+		fi; \
+	done
+	@echo ""
+	@$(call print_success,Git status check completed!)
+
+check-updates: ## 🔄 Check if there are new pulls available from remote
+	$(call print_status,Checking for available updates from remote repositories...)
+	@echo -e "$(FONT_PURPLE)$(INFO) Remote Update Status:$(FONT_RESET)"
+	@echo -e "  $(FONT_GRAY)──────────────────────────────────────────────────────────────────────$(FONT_RESET)"
+	@# Check main repository
+	@repo_name="automagik-start"; \
+	if [ -d ".git" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Fetching latest from $$repo_name...$(FONT_RESET)"; \
+		if git fetch origin >/dev/null 2>&1; then \
+			current_branch=$$(git rev-parse --abbrev-ref HEAD); \
+			if git rev-parse --verify origin/$$current_branch >/dev/null 2>&1; then \
+				local_commit=$$(git rev-parse HEAD); \
+				remote_commit=$$(git rev-parse origin/$$current_branch); \
+				if [ "$$local_commit" = "$$remote_commit" ]; then \
+					echo -e "  $(FONT_GREEN)$(CHECKMARK) $$repo_name$(FONT_RESET) - Up to date"; \
+				else \
+					behind_count=$$(git rev-list --count HEAD..origin/$$current_branch 2>/dev/null || echo "0"); \
+					ahead_count=$$(git rev-list --count origin/$$current_branch..HEAD 2>/dev/null || echo "0"); \
+					if [ "$$behind_count" -gt 0 ] && [ "$$ahead_count" -gt 0 ]; then \
+						echo -e "  $(FONT_YELLOW)$(WARNING) $$repo_name$(FONT_RESET) - $$behind_count commits behind, $$ahead_count commits ahead"; \
+					elif [ "$$behind_count" -gt 0 ]; then \
+						echo -e "  $(FONT_YELLOW)$(WARNING) $$repo_name$(FONT_RESET) - $$behind_count commits behind remote"; \
+					elif [ "$$ahead_count" -gt 0 ]; then \
+						echo -e "  $(FONT_CYAN)$(INFO) $$repo_name$(FONT_RESET) - $$ahead_count commits ahead of remote"; \
+					fi; \
+				fi; \
+			else \
+				echo -e "  $(FONT_GRAY)$(WARNING) $$repo_name$(FONT_RESET) - No remote tracking branch"; \
+			fi; \
+		else \
+			echo -e "  $(FONT_RED)$(ERROR) $$repo_name$(FONT_RESET) - Failed to fetch from remote"; \
+		fi; \
+	else \
+		echo -e "  $(FONT_GRAY)$(INFO) $$repo_name$(FONT_RESET) - Not a git repository"; \
+	fi
+	@# Check all service repositories
+	@for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+		if [ -d "$$service_dir" ]; then \
+			repo_name=$$(basename $$service_dir); \
+			if [ -d "$$service_dir/.git" ]; then \
+				cd $$service_dir; \
+				echo -e "$(FONT_CYAN)$(INFO) Fetching latest from $$repo_name...$(FONT_RESET)"; \
+				if git fetch origin >/dev/null 2>&1; then \
+					current_branch=$$(git rev-parse --abbrev-ref HEAD); \
+					if git rev-parse --verify origin/$$current_branch >/dev/null 2>&1; then \
+						local_commit=$$(git rev-parse HEAD); \
+						remote_commit=$$(git rev-parse origin/$$current_branch); \
+						if [ "$$local_commit" = "$$remote_commit" ]; then \
+							echo -e "  $(FONT_GREEN)$(CHECKMARK) $$repo_name$(FONT_RESET) - Up to date"; \
+						else \
+							behind_count=$$(git rev-list --count HEAD..origin/$$current_branch 2>/dev/null || echo "0"); \
+							ahead_count=$$(git rev-list --count origin/$$current_branch..HEAD 2>/dev/null || echo "0"); \
+							if [ "$$behind_count" -gt 0 ] && [ "$$ahead_count" -gt 0 ]; then \
+								echo -e "  $(FONT_YELLOW)$(WARNING) $$repo_name$(FONT_RESET) - $$behind_count commits behind, $$ahead_count commits ahead"; \
+							elif [ "$$behind_count" -gt 0 ]; then \
+								echo -e "  $(FONT_YELLOW)$(WARNING) $$repo_name$(FONT_RESET) - $$behind_count commits behind remote"; \
+							elif [ "$$ahead_count" -gt 0 ]; then \
+								echo -e "  $(FONT_CYAN)$(INFO) $$repo_name$(FONT_RESET) - $$ahead_count commits ahead of remote"; \
+							fi; \
+						fi; \
+					else \
+						echo -e "  $(FONT_GRAY)$(WARNING) $$repo_name$(FONT_RESET) - No remote tracking branch"; \
+					fi; \
+				else \
+					echo -e "  $(FONT_RED)$(ERROR) $$repo_name$(FONT_RESET) - Failed to fetch from remote"; \
+				fi; \
+				cd - >/dev/null; \
+			else \
+				echo -e "  $(FONT_GRAY)$(INFO) $$repo_name$(FONT_RESET) - Not a git repository"; \
+			fi; \
+		else \
+			repo_name=$$(basename $$service_dir); \
+			echo -e "  $(FONT_GRAY)$(WARNING) $$repo_name$(FONT_RESET) - Directory not found"; \
+		fi; \
+	done
+	@echo ""
+	@$(call print_success,Update check completed!)
 
 # ===========================================
 # 📚 Docker Preservation (Legacy Support)
@@ -892,6 +1049,31 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
+	@# Interactive prompts for optional services (if not set via environment)
+	@if [ -z "$$INSTALL_LANGFLOW" ] && [ -f "$(LANGFLOW_COMPOSE)" ]; then \
+		echo ""; \
+		echo -e "$(FONT_YELLOW)🌊 Optional: LangFlow Visual Workflow Builder$(FONT_RESET)"; \
+		echo -e "$(FONT_GRAY)   • Visual AI workflow creation interface$(FONT_RESET)"; \
+		echo -e "$(FONT_GRAY)   • Available at: http://localhost:7860$(FONT_RESET)"; \
+		read -p "Install LangFlow? [y/N]: " langflow_choice; \
+		if [ "$$langflow_choice" = "y" ] || [ "$$langflow_choice" = "Y" ]; then \
+			INSTALL_LANGFLOW=true; \
+		else \
+			INSTALL_LANGFLOW=false; \
+		fi; \
+	fi
+	@if [ -z "$$INSTALL_EVOLUTION" ] && [ -f "$(EVOLUTION_COMPOSE)" ]; then \
+		echo ""; \
+		echo -e "$(FONT_YELLOW)📱 Optional: Evolution API (WhatsApp Integration)$(FONT_RESET)"; \
+		echo -e "$(FONT_GRAY)   • WhatsApp bot integration capabilities$(FONT_RESET)"; \
+		echo -e "$(FONT_GRAY)   • Available at: http://localhost:9000$(FONT_RESET)"; \
+		read -p "Install Evolution API? [y/N]: " evolution_choice; \
+		if [ "$$evolution_choice" = "y" ] || [ "$$evolution_choice" = "Y" ]; then \
+			INSTALL_EVOLUTION=true; \
+		else \
+			INSTALL_EVOLUTION=false; \
+		fi; \
+	fi
 	@# Install optional services if requested
 	@if [ "$$INSTALL_LANGFLOW" = "true" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Installing LangFlow...$(FONT_RESET)"; \
@@ -1041,11 +1223,7 @@ logs: ## 📋 Show logs from all services (N=lines FOLLOW=1 for follow mode)
 status: ## 📊 Check status of everything
 	@$(MAKE) status-all-services
 
-# Legacy aliases for compatibility
-start-local: start
-stop-local: stop
-status-local: status
-logs-all: logs
+# Legacy aliases removed to prevent duplicate target warnings
 
 # Ensure default goal shows help
 .DEFAULT_GOAL := help

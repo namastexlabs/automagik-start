@@ -141,56 +141,77 @@ else
     echo -e "${GREEN}✓ Docker already installed${NC}"
 fi
 
-# Optional services configuration
-echo ""
-echo -e "${YELLOW}=== Optional Services Configuration ===${NC}"
+# Check if we're running interactively
+if [[ -t 0 ]] && [[ -t 1 ]]; then
+    INTERACTIVE_MODE=true
+    echo ""
+    echo -e "${YELLOW}=== Optional Services Configuration ===${NC}"
+else
+    INTERACTIVE_MODE=false
+    echo ""
+    echo -e "${YELLOW}Non-interactive mode detected - using defaults for optional services${NC}"
+fi
 
 # Langflow option
-echo ""
-echo -e "${CYAN}LangFlow is a visual flow builder for creating AI workflows${NC}"
-read -p "Install LangFlow service? [y/N] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    export INSTALL_LANGFLOW=true
-    echo -e "${GREEN}✓ LangFlow will be installed${NC}"
+if [ "$INTERACTIVE_MODE" = true ]; then
+    echo ""
+    echo -e "${CYAN}LangFlow is a visual flow builder for creating AI workflows${NC}"
+    read -p "Install LangFlow service? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        export INSTALL_LANGFLOW=true
+        echo -e "${GREEN}✓ LangFlow will be installed${NC}"
+    else
+        export INSTALL_LANGFLOW=false
+        echo -e "${YELLOW}⚠️  Skipping LangFlow installation${NC}"
+    fi
 else
     export INSTALL_LANGFLOW=false
-    echo -e "${YELLOW}⚠️  Skipping LangFlow installation${NC}"
+    echo -e "${YELLOW}⚠️  Skipping LangFlow (non-interactive mode)${NC}"
 fi
 
 # Evolution API option
-echo ""
-echo -e "${CYAN}Evolution API provides WhatsApp integration capabilities${NC}"
-read -p "Install Evolution API service? [y/N] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    export INSTALL_EVOLUTION=true
-    echo -e "${GREEN}✓ Evolution API will be installed${NC}"
+if [ "$INTERACTIVE_MODE" = true ]; then
+    echo ""
+    echo -e "${CYAN}Evolution API provides WhatsApp integration capabilities${NC}"
+    read -p "Install Evolution API service? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        export INSTALL_EVOLUTION=true
+        echo -e "${GREEN}✓ Evolution API will be installed${NC}"
+    else
+        export INSTALL_EVOLUTION=false
+        echo -e "${YELLOW}⚠️  Skipping Evolution API installation${NC}"
+    fi
 else
     export INSTALL_EVOLUTION=false
-    echo -e "${YELLOW}⚠️  Skipping Evolution API installation${NC}"
+    echo -e "${YELLOW}⚠️  Skipping Evolution API (non-interactive mode)${NC}"
 fi
 
 # Optional browser tools
-echo ""
-echo -e "${YELLOW}Do you need browser automation tools for Genie Agent?${NC}"
-echo -e "${CYAN}(Required for Playwright/Puppeteer automation)${NC}"
-read -p "Install browser tools? [y/N] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${CYAN}Installing browser automation dependencies...${NC}"
-    if [ "$OS_TYPE" = "debian" ]; then
-        sudo apt-get install -y \
-            libnss3 \
-            libatk-bridge2.0-0 \
-            libdrm2 \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxrandr2 \
-            libgbm1 \
-            libasound2t64
+if [ "$INTERACTIVE_MODE" = true ]; then
+    echo ""
+    echo -e "${YELLOW}Do you need browser automation tools for Genie Agent?${NC}"
+    echo -e "${CYAN}(Required for Playwright/Puppeteer automation)${NC}"
+    read -p "Install browser tools? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${CYAN}Installing browser automation dependencies...${NC}"
+        if [ "$OS_TYPE" = "debian" ]; then
+            sudo apt-get install -y \
+                libnss3 \
+                libatk-bridge2.0-0 \
+                libdrm2 \
+                libxkbcommon0 \
+                libxcomposite1 \
+                libxdamage1 \
+                libxrandr2 \
+                libgbm1 \
+                libasound2t64
+        fi
     fi
+else
+    echo -e "${YELLOW}⚠️  Skipping browser tools (non-interactive mode)${NC}"
 fi
 
 echo ""
@@ -198,7 +219,9 @@ echo -e "${GREEN}✅ Pre-dependencies installed successfully!${NC}"
 echo -e "${PURPLE}Running main installation...${NC}"
 echo ""
 
-# Call the main Makefile
+# Call the main Makefile with environment variables
+export INSTALL_LANGFLOW
+export INSTALL_EVOLUTION
 make install
 
 echo ""
