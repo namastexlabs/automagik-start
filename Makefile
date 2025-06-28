@@ -670,7 +670,15 @@ restart-all-services: ## 🔄 Restart all services with PM2
 
 status-all-services: ## 📊 Check status of all services
 	@echo -e "$(FONT_PURPLE)$(CHART) Automagik Services Status:$(FONT_RESET)"
-	@pm2 list
+	@pm2 list | sed -E \
+		-e 's/(am-agents-labs)/\x1b[94m\1\x1b[0m/g' \
+		-e 's/(automagik-spark)/\x1b[33m\1\x1b[0m/g' \
+		-e 's/(automagik-tools)/\x1b[34m\1\x1b[0m/g' \
+		-e 's/(automagik-omni)/\x1b[35m\1\x1b[0m/g' \
+		-e 's/(automagik-ui)/\x1b[32m\1\x1b[0m/g' \
+		-e 's/online/\x1b[32monline\x1b[0m/g' \
+		-e 's/stopped/\x1b[33mstopped\x1b[0m/g' \
+		-e 's/errored/\x1b[31merrored\x1b[0m/g'
 	@echo ""
 	@$(call print_infrastructure_status)
 
