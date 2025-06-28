@@ -73,8 +73,8 @@ services:
     container_name: automagik-evolution
     restart: unless-stopped
     environment:
-      - SERVER_PORT=9000
-      - SERVER_URL=http://localhost:9000
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8080
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@localhost:5403/evolution_api
@@ -96,7 +96,7 @@ services:
       evolution-rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5

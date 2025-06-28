@@ -312,7 +312,7 @@ check_service_readiness() {
             ;;
         "automagik-evolution")
             # For Evolution API, check if API endpoint is responding
-            timeout 10 curl -s -f "http://localhost:9000/" >/dev/null 2>&1
+            timeout 10 curl -s -f "http://localhost:8080/" >/dev/null 2>&1
             ;;
         "am-agents-labs"|"automagik-spark-api"|"automagik-omni")
             # For application services, check health endpoints
@@ -469,7 +469,7 @@ check_service_connectivity() {
         ["automagik-spark-api"]="http://localhost:8883/health"
         ["automagik-tools"]="http://localhost:8885/health"
         # Note: Worker service doesn't have HTTP endpoint for health checks
-        # ["automagik-evolution"]="http://localhost:9000/health"
+        # ["automagik-evolution"]="http://localhost:8080/health"
         # ["automagik-omni"]="http://localhost:8882/health"
         # ["automagik-ui"]="http://localhost:8888"
         ["langflow"]="http://localhost:7860/health"
@@ -512,7 +512,7 @@ show_services_status() {
     echo -e "${BOLD}${YELLOW}   🎯 Main Interface:${NC}     ${BOLD}${GREEN}http://localhost:8888${NC}   ${GRAY}← Primary dashboard${NC}"
     echo -e "   🤖 AI Agents Labs:      ${GREEN}http://localhost:8881${NC}   ${GRAY}(13 agents available)${NC}" 
     echo -e "   ⚡ Workflow Engine:      ${GREEN}http://localhost:8883${NC}   ${GRAY}(Automagik Spark)${NC}"
-    echo -e "   📱 WhatsApp API:        ${GREEN}http://localhost:9000${NC}   ${GRAY}(Evolution API)${NC}"
+    echo -e "   📱 WhatsApp API:        ${GREEN}http://localhost:8080${NC}   ${GRAY}(Evolution API)${NC}"
     echo -e "   🌐 Multi-tenant Hub:    ${GREEN}http://localhost:8882${NC}   ${GRAY}(Omni)${NC}"
     echo -e "   🔧 MCP Tools (SSE):     ${GREEN}http://localhost:8884${NC}   ${GRAY}(Tools Hub)${NC}"
     echo -e "   🔧 MCP Tools (HTTP):    ${GREEN}http://localhost:8885${NC}   ${GRAY}(Alternative)${NC}"
@@ -628,7 +628,7 @@ deploy_all_services() {
     echo -e "${BOLD}${YELLOW}   Main Dashboard:${NC}     ${BOLD}${GREEN}http://localhost:8888${NC}   ${GRAY}← Start here!${NC}"
     echo -e "   AI Agents:           ${GREEN}http://localhost:8881${NC}   ${GRAY}(13 agents ready)${NC}"
     echo -e "   Workflow Engine:     ${GREEN}http://localhost:8883${NC}   ${GRAY}(API + Worker)${NC}"
-    echo -e "   WhatsApp API:        ${GREEN}http://localhost:9000${NC}   ${GRAY}(Evolution API)${NC}"
+    echo -e "   WhatsApp API:        ${GREEN}http://localhost:8080${NC}   ${GRAY}(Evolution API)${NC}"
     echo -e "   Multi-tenant Hub:    ${GREEN}http://localhost:8882${NC}   ${GRAY}(Omni)${NC}"
     echo -e "   MCP Tools (SSE):     ${GREEN}http://localhost:8884${NC}   ${GRAY}(Tools Hub)${NC}"
     echo -e "   MCP Tools (HTTP):    ${GREEN}http://localhost:8885${NC}   ${GRAY}(Alternative)${NC}"
@@ -636,7 +636,7 @@ deploy_all_services() {
     echo -e "${BOLD}${CYAN}📋 Next Steps:${NC}"
     echo -e "   1. Visit ${BOLD}${GREEN}http://localhost:8888${NC} for the main interface"
     echo -e "   2. Configure your AI agents at ${GREEN}http://localhost:8881${NC}"
-    echo -e "   3. Connect WhatsApp instances at ${GREEN}http://localhost:9000${NC}"
+    echo -e "   3. Connect WhatsApp instances at ${GREEN}http://localhost:8080${NC}"
     echo -e "   4. Monitor services: ${CYAN}./scripts/deploy/status-display.sh${NC}"
     echo ""
     

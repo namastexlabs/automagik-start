@@ -10,14 +10,15 @@ Complete migration from systemd to PM2 for all Automagik services, cleaning up o
 - [x] Create minimal install.sh script for pre-dependencies
 - [x] Start updating main Makefile with PM2 functions
 - [x] Remove systemd references from main Makefile service management
+- [x] Clean up remaining systemd references from main Makefile
+- [x] Update help text to reference PM2 instead of systemd
 
 ### 🔄 In Progress
 - [ ] Finish updating main Makefile
-  - [ ] Complete individual status commands
-  - [ ] Add setup-pm2 target
-  - [ ] Add PM2 log commands
-  - [ ] Update start-all-services to use PM2 ecosystem
-  - [ ] Clean up remaining systemd references
+  - [x] Complete individual status commands
+  - [x] Add setup-pm2 target
+  - [x] Add PM2 log commands
+  - [x] Update start-all-services to use PM2 ecosystem
 
 ### 📋 Pending Tasks
 

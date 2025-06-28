@@ -22,7 +22,7 @@ The Automagik Suite uses a hybrid architecture:
 
 ### Optional Services
 - **langflow** - Visual AI workflow builder (Port: 7860)
-- **automagik-evolution** - WhatsApp API integration (Port: 9000)
+- **automagik-evolution** - WhatsApp API integration (Port: 8080)
 
 ### Infrastructure (Docker)
 - **PostgreSQL** databases for each service (Ports: 5401-5403)
@@ -266,7 +266,7 @@ make start-infrastructure
 - Multi-tenant Hub: http://localhost:8882
 - Web Interface: http://localhost:8888
 - LangFlow (optional): http://localhost:7860
-- Evolution API (optional): http://localhost:9000
+- Evolution API (optional): http://localhost:8080
 
 ### Authentication
 All services use API key authentication via `x-api-key` header.

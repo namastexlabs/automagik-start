@@ -259,7 +259,7 @@ help: ## 🚀 Show this help message
 	@$(call show_automagik_logo)
 	@echo -e "$(FONT_BOLD)$(FONT_PURPLE)🚀 Automagik Suite$(FONT_RESET) - $(FONT_GRAY)Master Installation & Management$(FONT_RESET)"
 	@echo ""
-	@echo -e "$(FONT_YELLOW)🎯 Hybrid architecture: Docker infrastructure + Local systemd services$(FONT_RESET)"
+	@echo -e "$(FONT_YELLOW)🎯 Hybrid architecture: Docker infrastructure + Local PM2 services$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)📦 GitHub:$(FONT_RESET) https://github.com/namastexlabs/automagik-suite"
 	@echo ""
 	@echo -e "$(FONT_PURPLE)✨ \"Production-grade AI orchestration with native service performance\"$(FONT_RESET)"
@@ -309,7 +309,7 @@ help: ## 🚀 Show this help message
 	@echo -e "  $(AGENTS_COLOR)AGENTS$(FONT_RESET) (🎨 Orange):  $(FONT_CYAN)8881$(FONT_RESET)  |  $(SPARK_COLOR)SPARK$(FONT_RESET) (🎨 Yellow):   $(FONT_CYAN)8883$(FONT_RESET)"
 	@echo -e "  $(TOOLS_COLOR)TOOLS$(FONT_RESET) (🎨 Blue):     $(FONT_CYAN)8884$(FONT_RESET)  |  $(OMNI_COLOR)OMNI$(FONT_RESET) (🎨 Purple):     $(FONT_CYAN)8882$(FONT_RESET)"
 	@echo -e "  $(UI_COLOR)UI$(FONT_RESET) (🎨 Green):        $(FONT_CYAN)8888$(FONT_RESET)  |  Optional Services:"
-	@echo -e "  $(FONT_CYAN)LANGFLOW$(FONT_RESET):       $(FONT_CYAN)7860$(FONT_RESET)  |  $(FONT_CYAN)EVOLUTION$(FONT_RESET):       $(FONT_CYAN)9000$(FONT_RESET)"
+	@echo -e "  $(FONT_CYAN)LANGFLOW$(FONT_RESET):       $(FONT_CYAN)7860$(FONT_RESET)  |  $(FONT_CYAN)EVOLUTION$(FONT_RESET):       $(FONT_CYAN)8080$(FONT_RESET)"
 	@echo -e "  $(FONT_CYAN)📋 Use 'make logs' to see beautiful colorized output!$(FONT_RESET)"
 	@echo ""
 
@@ -334,7 +334,7 @@ start-infrastructure: ## 🚀 Start Docker infrastructure (idempotent)
 
 stop-infrastructure: ## 🛑 Stop Docker infrastructure
 	$(call print_status,Stopping Docker infrastructure...)
-	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down
+	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik stop
 	@$(call print_success,Docker infrastructure stopped!)
 
 uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove containers, images, volumes)
@@ -405,7 +405,7 @@ start-langflow: ## 🌊 Start LangFlow visual workflow builder
 
 stop-langflow: ## 🛑 Stop LangFlow
 	$(call print_status,Stopping LangFlow...)
-	@$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow down
+	@$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow stop
 	@$(call print_success,LangFlow stopped!)
 
 restart-langflow: ## 🔄 Restart LangFlow
@@ -432,12 +432,12 @@ start-evolution: ## 📱 Start Evolution API (WhatsApp integration)
 	@$(call print_status,Waiting for Evolution API to be ready...)
 	@sleep 20
 	@$(call print_success,Evolution API started successfully!)
-	@echo -e "$(FONT_CYAN)📱 Evolution API: http://localhost:9000$(FONT_RESET)"
+	@echo -e "$(FONT_CYAN)📱 Evolution API: http://localhost:8080$(FONT_RESET)"
 	@echo -e "$(FONT_YELLOW)   API Key: namastex888$(FONT_RESET)"
 
 stop-evolution: ## 🛑 Stop Evolution API
 	$(call print_status,Stopping Evolution API...)
-	@$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down
+	@$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api stop
 	@$(call print_success,Evolution API stopped!)
 
 restart-evolution: ## 🔄 Restart Evolution API
@@ -523,17 +523,23 @@ setup-pm2: ## 📦 Setup PM2 with ecosystem file
 	fi
 	@pm2 set pm2-logrotate:max_size 100M
 	@pm2 set pm2-logrotate:retain 7
+	@pm2 set pm2-logrotate:compress false
+	@pm2 set pm2-logrotate:dateFormat YYYY-MM-DD_HH-mm-ss
+	@pm2 set pm2-logrotate:workerInterval 30
+	@pm2 set pm2-logrotate:rotateInterval 0 0 * * *
+	@pm2 set pm2-logrotate:rotateModule true
 	@echo -e "$(FONT_CYAN)$(INFO) Setting up PM2 startup...$(FONT_RESET)"
 	@if ! pm2 startup -s 2>/dev/null; then \
 		echo -e "$(FONT_YELLOW)Warning: PM2 startup may already be configured$(FONT_RESET)"; \
 	fi
 	@echo -e "$(FONT_CYAN)$(INFO) Registering services with PM2 (ready to start)...$(FONT_RESET)"
-	@pm2 delete ecosystem.config.js 2>/dev/null || true
+	@pm2 delete all 2>/dev/null || true
+	@pm2 start ecosystem.config.js --env production || echo "Services will be available when started"
 	@pm2 save --force 2>/dev/null || true
 	@echo -e "$(FONT_GREEN)✓ PM2 ecosystem ready - use 'make start' to run services$(FONT_RESET)"
 	@$(call print_success,PM2 ecosystem configured!)
 
-install-dependencies-only: ## 📦 Install only dependencies (no systemd services)
+install-dependencies-only: ## 📦 Install only dependencies (no service registration)
 	$(call print_status,Installing dependencies for all services...)
 	@# Install Python dependencies for each service
 	@if [ -d "$(AM_AGENTS_LABS_DIR)" ]; then \
@@ -1102,10 +1108,19 @@ start-nosudo: ## 🚀 Start everything without sudo (dev mode)
 	@$(MAKE) start-all-dev
 	@$(call print_success,Complete dev stack started! All services on 999x ports.)
 
-stop: ## 🛑 Stop everything (services + infrastructure)
+stop: ## 🛑 Stop everything (services + infrastructure + optional services)
 	$(call print_status,🛑 Stopping complete Automagik stack...)
 	@$(MAKE) stop-all-services
 	@$(MAKE) stop-infrastructure
+	@# Stop optional services if they're running
+	@if $(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow ps -q 2>/dev/null | grep -q .; then \
+		echo -e "$(FONT_CYAN)$(INFO) Stopping LangFlow...$(FONT_RESET)"; \
+		$(MAKE) stop-langflow; \
+	fi
+	@if $(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api ps -q 2>/dev/null | grep -q .; then \
+		echo -e "$(FONT_CYAN)$(INFO) Stopping Evolution API...$(FONT_RESET)"; \
+		$(MAKE) stop-evolution; \
+	fi
 	@$(call print_success,Complete stack stopped!)
 
 restart: ## 🔄 Restart everything

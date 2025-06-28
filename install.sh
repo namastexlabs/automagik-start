@@ -173,7 +173,7 @@ echo -e "${YELLOW}=== Optional Services Configuration ===${NC}"
     echo ""
     echo -e "${CYAN}📱 Evolution API provides WhatsApp integration capabilities${NC}"
     echo -e "${CYAN}   • WhatsApp bot integration${NC}"
-    echo -e "${CYAN}   • Available at: http://localhost:9000${NC}"
+    echo -e "${CYAN}   • Available at: http://localhost:8080${NC}"
     read -p "Install Evolution API service? [y/N] " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -181,7 +181,7 @@ echo -e "${YELLOW}=== Optional Services Configuration ===${NC}"
         if [ -f "$SCRIPT_DIR/docker-evolution.yml" ]; then
             docker compose -f "$SCRIPT_DIR/docker-evolution.yml" -p evolution_api up -d
             echo -e "${GREEN}✓ Evolution API installed successfully!${NC}"
-            echo -e "${CYAN}   Access at: http://localhost:9000${NC}"
+            echo -e "${CYAN}   Access at: http://localhost:8080${NC}"
             echo -e "${CYAN}   API Key: namastex888${NC}"
         else
             echo -e "${RED}❌ docker-evolution.yml not found${NC}"
