@@ -418,14 +418,7 @@ install-dependencies-only: ## 📦 Install only dependencies (no systemd service
 		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-omni...$(FONT_RESET)"; \
 		cd "$(AUTOMAGIK_OMNI_DIR)" && make install 2>&1 | grep -v "sudo" || true; \
 	fi
-	@if [ -d "$(AUTOMAGIK_UI_DIR)" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-ui...$(FONT_RESET)"; \
-		cd "$(AUTOMAGIK_UI_DIR)" && pnpm install; \
-		if [ -f "$(AUTOMAGIK_UI_DIR)/.env.local.example" ] && [ ! -f "$(AUTOMAGIK_UI_DIR)/.env.local" ]; then \
-			cp "$(AUTOMAGIK_UI_DIR)/.env.local.example" "$(AUTOMAGIK_UI_DIR)/.env.local"; \
-			echo -e "$(FONT_GREEN)$(CHECKMARK) Created .env.local for UI$(FONT_RESET)"; \
-		fi; \
-	fi
+	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install)
 	@$(call print_success,All dependencies installed!)
 
 install-agents: ## Install am-agents-labs service
