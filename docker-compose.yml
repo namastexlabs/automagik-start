@@ -190,10 +190,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8881/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
 
   # automagik-spark API (Workflow Engine)
   automagik-spark-api:
@@ -227,10 +227,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8883/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
 
   # automagik-spark Worker (Celery)
   automagik-spark-worker:
@@ -278,10 +278,10 @@ services:
       automagik-network:
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.settimeout(2); s.connect(('localhost', 8884)); s.close()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 45s
 
   # automagik-evolution (WhatsApp API)
   automagik-evolution:
@@ -316,10 +316,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      interval: 20s
+      timeout: 8s
+      retries: 6
+      start_period: 90s
 
   # automagik-omni (Multi-tenant Hub)
   automagik-omni:
@@ -356,10 +356,10 @@ services:
       - automagik-evolution
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8882/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 90s
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   # automagik-ui (Frontend - Production Build)
   automagik-ui:
@@ -391,10 +391,10 @@ services:
       - automagik-evolution
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      interval: 20s
+      timeout: 8s
+      retries: 6
+      start_period: 90s
 
   # ================================
   # Optional Services
@@ -419,7 +419,7 @@ services:
       - optional
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      interval: 20s
+      timeout: 8s
+      retries: 4
+      start_period: 45s

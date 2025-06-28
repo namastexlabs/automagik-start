@@ -285,17 +285,26 @@ help: ## 🚀 Show this help message
 .PHONY: install-infrastructure start-infrastructure stop-infrastructure uninstall-infrastructure restart-infrastructure status-infrastructure
 install-infrastructure: start-infrastructure ## 🗄️ Install Docker infrastructure (alias for start)
 
-start-infrastructure: ## 🚀 Start Docker infrastructure
+start-infrastructure: ## 🚀 Start Docker infrastructure (idempotent)
 	$(call print_status,Starting Docker infrastructure...)
 	@if [ ! -f "$(INFRASTRUCTURE_COMPOSE)" ]; then \
 		$(call print_error,Infrastructure compose file not found: $(INFRASTRUCTURE_COMPOSE)); \
 		exit 1; \
 	fi
-	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) up -d
-	@$(call print_status,Waiting for infrastructure to be ready...)
-	@sleep 10
-	@$(call print_success,Docker infrastructure started successfully!)
-	@$(call print_infrastructure_status)
+	@# Check if infrastructure is already running and healthy
+	@running_containers=$$($(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) ps --services --filter "status=running" 2>/dev/null | wc -l); \
+	total_services=$$($(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) config --services | wc -l); \
+	if [ "$$running_containers" -eq "$$total_services" ]; then \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Infrastructure already running and healthy$(FONT_RESET)"; \
+		$(call print_infrastructure_status); \
+	else \
+		echo -e "$(FONT_CYAN)$(INFO) Starting infrastructure services ($$running_containers/$$total_services running)...$(FONT_RESET)"; \
+		$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) up -d; \
+		$(call print_status,Waiting for infrastructure to be ready...); \
+		sleep 10; \
+		$(call print_success,Docker infrastructure started successfully!); \
+		$(call print_infrastructure_status); \
+	fi
 
 stop-infrastructure: ## 🛑 Stop Docker infrastructure
 	$(call print_status,Stopping Docker infrastructure...)
@@ -461,15 +470,20 @@ install-ui: ## Install automagik-ui service
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install)
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install-service)
 
-uninstall-all-services: ## 🗑️ Uninstall all services (remove systemd services)
+uninstall-all-services: ## 🗑️ Uninstall all services (remove systemd and PM2 services)
 	$(call print_status,Uninstalling all Automagik services...)
 	@$(MAKE) stop-all-services
+	@# Remove systemd services
 	@for service in am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui; do \
 		echo -e "Removing $$service systemd service..."; \
 		sudo systemctl disable $$service 2>/dev/null || true; \
 		sudo rm -f /etc/systemd/system/$$service.service 2>/dev/null || true; \
 	done
 	@sudo systemctl daemon-reload
+	@# Remove PM2 services
+	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 services...$(FONT_RESET)"
+	@pm2 delete automagik-ui 2>/dev/null || true
+	@pm2 save 2>/dev/null || true
 	@$(call print_success,All services uninstalled!)
 
 uninstall: ## 🗑️ Complete uninstall (stop everything, remove services and infrastructure)

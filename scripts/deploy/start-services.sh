@@ -41,9 +41,11 @@ OPTIONAL_SERVICES=(
 ALL_SERVICES=("${INFRASTRUCTURE_SERVICES[@]}" "${APPLICATION_SERVICES[@]}")
 
 # Health check configuration
-HEALTH_CHECK_TIMEOUT=300  # 5 minutes
-HEALTH_CHECK_INTERVAL=10  # 10 seconds
-SERVICE_START_DELAY=5     # 5 seconds between service starts
+HEALTH_CHECK_TIMEOUT=180  # 3 minutes (reduced from 5)
+HEALTH_CHECK_INTERVAL=5   # 5 seconds (reduced for faster feedback)
+SERVICE_START_DELAY=2     # 2 seconds between service starts (reduced)
+CRITICAL_HEALTH_TIMEOUT=120  # 2 minutes for critical infrastructure
+APPLICATION_HEALTH_TIMEOUT=240 # 4 minutes for slower application services
 
 # Check Docker and Docker Compose availability
 check_docker_requirements() {
@@ -174,9 +176,9 @@ start_infrastructure() {
     log_info "Starting infrastructure services..."
     
     for service in "${INFRASTRUCTURE_SERVICES[@]}"; do
-        start_service "$service"
+        start_service "$service" "critical"
         
-        if ! wait_for_service_health "$service"; then
+        if ! wait_for_service_health "$service" "critical"; then
             log_error "Infrastructure service $service failed to start properly"
             return 1
         fi
@@ -195,9 +197,9 @@ start_applications() {
     log_info "Starting application services..."
     
     for service in "${APPLICATION_SERVICES[@]}"; do
-        start_service "$service"
+        start_service "$service" "application"
         
-        if ! wait_for_service_health "$service"; then
+        if ! wait_for_service_health "$service" "application"; then
             log_warning "Application service $service may not be fully ready"
         fi
         
@@ -250,7 +252,7 @@ start_optional_services() {
         
         # Wait for optional services to be ready
         for service in "${OPTIONAL_SERVICES[@]}"; do
-            if ! wait_for_service_health "$service"; then
+            if ! wait_for_service_health "$service" "optional"; then
                 log_warning "Optional service $service may not be fully ready"
             fi
         done
@@ -261,9 +263,97 @@ start_optional_services() {
     return 0
 }
 
-# Start a single service
+# Check comprehensive service readiness (beyond just health checks)
+check_service_readiness() {
+    local service="$1"
+    local service_type="${2:-application}"
+    
+    # Check if container exists and is running
+    local container_status=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null | xargs docker inspect --format '{{.State.Status}}' 2>/dev/null)
+    
+    if [ "$container_status" != "running" ]; then
+        return 1
+    fi
+    
+    # Check health status
+    local health_status=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null | xargs docker inspect --format '{{.State.Health.Status}}' 2>/dev/null)
+    
+    if [ "$health_status" = "unhealthy" ]; then
+        return 1
+    fi
+    
+    # Additional readiness checks based on service type
+    case "$service" in
+        *postgres*)
+            # For PostgreSQL services, check if they accept connections
+            local db_user=$(echo "$service" | grep -o "evolution\|spark\|agents" | head -1)
+            local port
+            case "$service" in
+                "am-agents-labs-postgres") port="5401"; db_user="postgres" ;;
+                "automagik-spark-postgres") port="5402"; db_user="automagik" ;;
+                "evolution-postgres") port="5403"; db_user="postgres" ;;
+            esac
+            timeout 5 docker exec "$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service")" pg_isready -h localhost -p 5432 -U "$db_user" >/dev/null 2>&1
+            ;;
+        *redis*)
+            # For Redis services, check if they respond to ping
+            timeout 5 docker exec "$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service")" redis-cli ping >/dev/null 2>&1
+            ;;
+        *rabbitmq*)
+            # For RabbitMQ, check if management interface responds
+            timeout 5 docker exec "$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service")" rabbitmq-diagnostics ping >/dev/null 2>&1
+            ;;
+        "automagik-evolution")
+            # For Evolution API, check if API endpoint is responding
+            timeout 10 curl -s -f "http://localhost:9000/" >/dev/null 2>&1
+            ;;
+        "am-agents-labs"|"automagik-spark-api"|"automagik-omni")
+            # For application services, check health endpoints
+            local port
+            case "$service" in
+                "am-agents-labs") port="8881" ;;
+                "automagik-spark-api") port="8883" ;;
+                "automagik-omni") port="8882" ;;
+            esac
+            timeout 5 curl -s -f "http://localhost:$port/health" >/dev/null 2>&1
+            ;;
+        "automagik-tools")
+            # For tools service, check if socket is listening
+            timeout 5 python3 -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('localhost', 8884)); s.close()" >/dev/null 2>&1
+            ;;
+        "automagik-ui")
+            # For UI service, check if Next.js is serving
+            timeout 10 curl -s -f "http://localhost:8888" >/dev/null 2>&1
+            ;;
+        *)
+            # Default: if health status is healthy or not defined, consider ready
+            [ "$health_status" = "healthy" ] || [ "$health_status" = "" ]
+            ;;
+    esac
+}
+
+# Check if service is already running and healthy (uses comprehensive readiness check)
+check_service_running_and_healthy() {
+    local service="$1"
+    local service_type="${2:-application}"
+    
+    if check_service_readiness "$service" "$service_type"; then
+        log_success "$service is already running and ready"
+        return 0
+    fi
+    
+    return 1
+}
+
+# Start a single service (with smart restart avoidance)
 start_service() {
     local service="$1"
+    local service_type="${2:-application}"
+    
+    # First check if service is already running and healthy
+    if check_service_running_and_healthy "$service" "$service_type"; then
+        return 0
+    fi
     
     log_info "Starting $service..."
     
@@ -276,45 +366,76 @@ start_service() {
     fi
 }
 
-# Wait for service health check
+# Wait for service health check with intelligent timeout
 wait_for_service_health() {
     local service="$1"
-    local timeout="$HEALTH_CHECK_TIMEOUT"
+    local service_type="${2:-application}"  # critical, application, or optional
+    
+    # Set timeout based on service type
+    local timeout
+    case "$service_type" in
+        "critical")
+            timeout="$CRITICAL_HEALTH_TIMEOUT"
+            ;;
+        "application")
+            timeout="$APPLICATION_HEALTH_TIMEOUT"
+            ;;
+        "optional")
+            timeout="$HEALTH_CHECK_TIMEOUT"
+            ;;
+        *)
+            timeout="$HEALTH_CHECK_TIMEOUT"
+            ;;
+    esac
+    
     local interval="$HEALTH_CHECK_INTERVAL"
     
-    log_info "Waiting for $service to become healthy..."
+    log_info "Waiting for $service to become healthy (timeout: ${timeout}s)..."
     
     local elapsed=0
+    local warning_shown=false
+    
     while [ $elapsed -lt $timeout ]; do
         # Check container status
-        local container_status=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" | xargs docker inspect --format '{{.State.Status}}' 2>/dev/null)
+        local container_status=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null | xargs docker inspect --format '{{.State.Status}}' 2>/dev/null)
         
         if [ "$container_status" = "running" ]; then
             # Check health status if available
-            local health_status=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" | xargs docker inspect --format '{{.State.Health.Status}}' 2>/dev/null)
+            local health_status=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null | xargs docker inspect --format '{{.State.Health.Status}}' 2>/dev/null)
             
             if [ "$health_status" = "healthy" ] || [ "$health_status" = "" ]; then
-                log_success "$service is healthy"
+                echo ""
+                log_success "$service is healthy (took ${elapsed}s)"
                 return 0
             elif [ "$health_status" = "unhealthy" ]; then
+                echo ""
                 log_error "$service is unhealthy"
                 show_service_logs "$service" 20
                 return 1
             fi
             # Continue waiting if starting
         elif [ "$container_status" = "exited" ]; then
+            echo ""
             log_error "$service exited unexpectedly"
             show_service_logs "$service" 20
             return 1
         fi
         
-        echo -ne "\\r${YELLOW}Waiting for $service... ${elapsed}s${NC}"
+        # Show warning at 75% of timeout
+        local warning_threshold=$((timeout * 3 / 4))
+        if [ $elapsed -gt $warning_threshold ] && [ "$warning_shown" = false ]; then
+            echo ""
+            log_warning "$service is taking longer than expected (${elapsed}s elapsed)"
+            warning_shown=true
+        fi
+        
+        echo -ne "\\r${YELLOW}Waiting for $service... ${elapsed}s / ${timeout}s${NC}"
         sleep $interval
         elapsed=$((elapsed + interval))
     done
     
     echo ""
-    log_warning "$service health check timeout after ${timeout}s"
+    log_warning "$service health check timeout after ${timeout}s - may still be starting"
     return 1
 }
 
@@ -553,9 +674,22 @@ main() {
             if ! check_docker_requirements || ! check_compose_file; then
                 exit 1
             fi
-            start_infrastructure
-            start_applications
-            show_services_status
+            log_section "Smart Service Startup"
+            log_info "Checking current service state before starting..."
+            
+            # Check if services are already running
+            running_services=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps --services --filter "status=running" 2>/dev/null | wc -l)
+            total_services=${#ALL_SERVICES[@]}
+            
+            if [ "$running_services" -eq "$total_services" ]; then
+                log_success "All services are already running!"
+                show_services_status
+            else
+                log_info "Starting services ($running_services/$total_services currently running)..."
+                start_infrastructure
+                start_applications
+                show_services_status
+            fi
             ;;
         "stop")
             stop_all_services
