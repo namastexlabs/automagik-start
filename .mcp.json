@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "git": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-git"
+      ]
+    },
+    "ask-repo-agent": {
+      "type": "sse",
+      "url": "https://mcp.deepwiki.com/sse"
+    },
+    "search-repo-docs": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "wait": {
+      "command": "uvx",
+      "args": [
+        "automagik-tools@latest",
+        "tool",
+        "wait"
+      ],
+      "env": {
+        "WAIT_MAX_DURATION": "3600",
+        "WAIT_DEFAULT_PROGRESS_INTERVAL": "1.0"
+      }
+    }
+  }
+}

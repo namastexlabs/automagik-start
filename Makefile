@@ -17,6 +17,7 @@ FONT_PURPLE := $(shell tput setaf 5)
 FONT_CYAN := $(shell tput setaf 6)
 FONT_GRAY := $(shell tput setaf 7)
 FONT_BLACK := $(shell tput setaf 8)
+FONT_BRIGHT_BLUE := $(shell tput setaf 12)
 FONT_BOLD := $(shell tput bold)
 FONT_RESET := $(shell tput sgr0)
 CHECKMARK := ✅
@@ -32,13 +33,16 @@ DATABASE := 🗄️
 TOOLS := 🛠️
 CHART := 📊
 
-# Service-specific colors for logging
-AGENTS_COLOR := $(FONT_BLUE)
-SPARK_COLOR := $(FONT_CYAN)
-TOOLS_COLOR := $(FONT_PURPLE)
-OMNI_COLOR := $(FONT_GREEN)
-UI_COLOR := $(FONT_YELLOW)
-INFRA_COLOR := $(FONT_RED)
+# ===========================================
+# 🎨 PROJECT COLOR SCHEME - SINGLE SOURCE OF TRUTH
+# ===========================================
+# Namastex Labs Repository Colors
+AGENTS_COLOR := $(FONT_BRIGHT_BLUE)  # am-agents-labs: Bright Blue (cyan blue)
+SPARK_COLOR := $(FONT_YELLOW)        # automagik-spark: Amber Yellow  
+TOOLS_COLOR := $(FONT_BLUE)          # automagik-tools: Dark Blue
+OMNI_COLOR := $(FONT_PURPLE)         # automagik-omni: Purple
+UI_COLOR := $(FONT_GREEN)            # automagik-ui: Green
+INFRA_COLOR := $(FONT_RED)           # infrastructure: Red
 
 # ===========================================
 # 📁 Paths & Configuration
@@ -139,29 +143,65 @@ define delegate_to_service
 	fi
 endef
 
-define check_service_health
+define check_service_health_pm2
 	@service_name="$(1)"; \
 	color="$(2)"; \
 	port="$(3)"; \
-	if pm2 list 2>/dev/null | grep -q "$$service_name.*online"; then \
-		status="$(FONT_GREEN)RUNNING$(FONT_RESET)"; \
-		pid=$$(pm2 list --no-color 2>/dev/null | awk "/$$service_name.*online/ {print \$$10}"); \
-		uptime=$$(pm2 show $$service_name 2>/dev/null | grep uptime | awk -F'│' '{print $$3}' | xargs); \
-	elif pm2 list 2>/dev/null | grep -q "$$service_name"; then \
-		status="$(FONT_YELLOW)STOPPED$(FONT_RESET)"; \
-		pid="-"; \
-		uptime="-"; \
+	pm2_data=$$(pm2 jlist 2>/dev/null | jq -r ".[] | select(.name == \"$$service_name\") | \"\(.pm_id)|\(.name)|\(.pm2_env.status)|\(.pid // \"N/A\")|\(.pm2_env.pm_uptime // 0)|\(.monit.cpu // 0)|\(.monit.memory // 0)|\(.pm2_env.restart_time // 0)\"" 2>/dev/null); \
+	if [ -n "$$pm2_data" ]; then \
+		IFS='|' read -r pm_id name status pid uptime cpu memory restarts <<< "$$pm2_data"; \
+		if [ "$$status" = "online" ]; then \
+			status_text="RUNNING"; \
+			status_color="$$color"; \
+		elif [ "$$status" = "stopped" ]; then \
+			status_text="STOPPED"; \
+			status_color="$(FONT_YELLOW)"; \
+		else \
+			status_text="$$status"; \
+			status_color="$(FONT_RED)"; \
+		fi; \
+		if [ "$$uptime" != "0" ] && [ "$$uptime" != "N/A" ]; then \
+			current_time_ms=$$(date +%s)000; \
+			uptime_sec=$$((current_time_ms - uptime)); \
+			uptime_sec=$$((uptime_sec / 1000)); \
+			if [ $$uptime_sec -ge 86400 ]; then \
+				uptime_display="$$((uptime_sec / 86400))d"; \
+			elif [ $$uptime_sec -ge 3600 ]; then \
+				uptime_display="$$((uptime_sec / 3600))h"; \
+			elif [ $$uptime_sec -ge 60 ]; then \
+				uptime_display="$$((uptime_sec / 60))m"; \
+			else \
+				uptime_display="$${uptime_sec}s"; \
+			fi; \
+		else \
+			uptime_display="N/A"; \
+		fi; \
+		if [ "$$memory" != "0" ] && [ "$$memory" != "N/A" ]; then \
+			memory_mb=$$((memory / 1024 / 1024)); \
+			memory_display="$${memory_mb}mb"; \
+		else \
+			memory_display="N/A"; \
+		fi; \
+		printf "%-20s %-13s %-8s %-10s %-10s %-8s %-10s %-8s\n" \
+			"$$color$$service_name$(FONT_RESET)" \
+			"$$status_color$$status_text$(FONT_RESET)" \
+			"$$color$$port$(FONT_RESET)" \
+			"$$color$$pid$(FONT_RESET)" \
+			"$$color$$uptime_display$(FONT_RESET)" \
+			"$$color$$cpu%$(FONT_RESET)" \
+			"$$color$$memory_display$(FONT_RESET)" \
+			"$$color$$restarts$(FONT_RESET)"; \
 	else \
-		status="$(FONT_RED)NOT INSTALLED$(FONT_RESET)"; \
-		pid="-"; \
-		uptime="-"; \
-	fi; \
-	printf "  %s%-20s%s %-15s %s%-8s%s %s%-10s%s %s%s%s\n" \
-		"$$color" "$$service_name" "$(FONT_RESET)" \
-		"$$status" \
-		"$(FONT_CYAN)" "$$port" "$(FONT_RESET)" \
-		"$(FONT_GRAY)" "$${pid:-N/A}" "$(FONT_RESET)" \
-		"$(FONT_GRAY)" "$${uptime:-N/A}" "$(FONT_RESET)"
+		printf "%-20s %-13s %-8s %-10s %-10s %-8s %-10s %-8s\n" \
+			"$$color$$service_name$(FONT_RESET)" \
+			"$(FONT_RED)NOT FOUND$(FONT_RESET)" \
+			"$$color$$port$(FONT_RESET)" \
+			"$$color""N/A""$(FONT_RESET)" \
+			"$$color""N/A""$(FONT_RESET)" \
+			"$$color""N/A""$(FONT_RESET)" \
+			"$$color""N/A""$(FONT_RESET)" \
+			"$$color""N/A""$(FONT_RESET)"; \
+	fi
 endef
 
 
@@ -209,6 +249,7 @@ define print_success_with_logo
 	@echo -e "$(FONT_GREEN)$(CHECKMARK) $(1)$(FONT_RESET)"
 	@$(call show_automagik_logo)
 endef
+
 
 # ===========================================
 # 📋 Help System
@@ -309,35 +350,28 @@ uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove con
 		echo -e "$(FONT_CYAN)$(INFO) Removing Evolution API containers and images...$(FONT_RESET)"; \
 		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans 2>/dev/null || true; \
 	fi
-	@# Clean up all Docker resources with detailed reporting
+	@# Cleanup only our Docker containers and resources
 	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
-		echo -e "$(FONT_CYAN)$(INFO) Removing unused containers, images, and volumes...$(FONT_RESET)"; \
-		prune_output=$$(docker system prune -af --volumes 2>&1 || echo "No resources to remove"); \
-		if echo "$$prune_output" | grep -q "deleted\|removed\|freed"; then \
-			echo "$$prune_output" | while IFS= read -r line; do \
-				if echo "$$line" | grep -q "Total reclaimed space"; then \
-					echo -e "$(FONT_GREEN)✓ $$line$(FONT_RESET)"; \
-				elif echo "$$line" | grep -q "deleted\|removed"; then \
-					echo -e "$(FONT_GRAY)  $$line$(FONT_RESET)"; \
-				fi; \
-			done; \
-		else \
-			echo -e "$(FONT_GRAY)✓ $$prune_output$(FONT_RESET)"; \
-		fi; \
-		echo -e "$(FONT_CYAN)$(INFO) Removing any remaining volumes...$(FONT_RESET)"; \
-		vol_output=$$(docker volume prune -f 2>&1 || echo "No volumes to remove"); \
-		if echo "$$vol_output" | grep -q "deleted\|removed"; then \
-			echo -e "$(FONT_GRAY)  $$vol_output$(FONT_RESET)"; \
-		else \
-			echo -e "$(FONT_GRAY)✓ $$vol_output$(FONT_RESET)"; \
-		fi; \
-		echo -e "$(FONT_CYAN)$(INFO) Removing any remaining networks...$(FONT_RESET)"; \
-		net_output=$$(docker network prune -f 2>&1 || echo "No networks to remove"); \
-		if echo "$$net_output" | grep -q "deleted\|removed"; then \
-			echo -e "$(FONT_GRAY)  $$net_output$(FONT_RESET)"; \
-		else \
-			echo -e "$(FONT_GRAY)✓ $$net_output$(FONT_RESET)"; \
-		fi; \
+		echo -e "$(FONT_CYAN)$(INFO) Current Docker disk usage:$(FONT_RESET)"; \
+		docker system df; \
+		echo ""; \
+		echo -e "$(FONT_CYAN)$(INFO) Stopping and removing Automagik containers...$(FONT_RESET)"; \
+		docker ps -aq --filter "label=com.docker.compose.project=automagik" | xargs -r docker stop; \
+		docker ps -aq --filter "label=com.docker.compose.project=automagik" | xargs -r docker rm; \
+		docker ps -aq --filter "label=com.docker.compose.project=langflow" | xargs -r docker stop; \
+		docker ps -aq --filter "label=com.docker.compose.project=langflow" | xargs -r docker rm; \
+		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker stop; \
+		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker rm; \
+		echo -e "$(FONT_CYAN)$(INFO) Cleaning up Automagik images, volumes, and networks...$(FONT_RESET)"; \
+		docker system prune -f --filter "label=com.docker.compose.project=automagik"; \
+		docker system prune -f --filter "label=com.docker.compose.project=langflow"; \
+		docker system prune -f --filter "label=com.docker.compose.project=evolution_api"; \
+		docker volume prune -f --filter "label=com.docker.compose.project=automagik"; \
+		docker volume prune -f --filter "label=com.docker.compose.project=langflow"; \
+		docker volume prune -f --filter "label=com.docker.compose.project=evolution_api"; \
+		echo ""; \
+		echo -e "$(FONT_CYAN)$(INFO) Final Docker disk usage:$(FONT_RESET)"; \
+		docker system df; \
 	else \
 		echo -e "$(FONT_GRAY)$(INFO) Docker not running or not available$(FONT_RESET)"; \
 	fi
@@ -636,13 +670,7 @@ restart-all-services: ## 🔄 Restart all services with PM2
 
 status-all-services: ## 📊 Check status of all services
 	@echo -e "$(FONT_PURPLE)$(CHART) Automagik Services Status:$(FONT_RESET)"
-	@echo -e "  $(FONT_BOLD)Service Name         Status          Port     PID        Uptime$(FONT_RESET)"
-	@echo -e "  $(FONT_GRAY)──────────────────────────────────────────────────────────────────────$(FONT_RESET)"
-	$(call check_service_health,am-agents-labs,$(AGENTS_COLOR),8881)
-	$(call check_service_health,automagik-spark,$(SPARK_COLOR),8883)
-	$(call check_service_health,automagik-tools,$(TOOLS_COLOR),8884)
-	$(call check_service_health,automagik-omni,$(OMNI_COLOR),8882)
-	$(call check_service_health,automagik-ui,$(UI_COLOR),8888)
+	@pm2 list
 	@echo ""
 	@$(call print_infrastructure_status)
 
@@ -763,10 +791,7 @@ status-ui: ## 📊 Check automagik-ui status only
 # 📋 Logging & Monitoring
 # ===========================================
 .PHONY: logs-all logs-agents logs-spark logs-tools logs-omni logs-ui logs-infrastructure
-logs-all: ## 📋 Follow logs from all services
-	$(call print_status,Following logs from all services...)
-	@echo -e "$(FONT_YELLOW)Press Ctrl+C to stop following logs$(FONT_RESET)"
-	@pm2 logs
+logs-all: logs ## 📋 Follow logs from all services (alias for logs)
 
 logs-agents: ## 📋 Follow am-agents-labs logs
 	$(call print_status,Following $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) logs...)
@@ -1199,23 +1224,24 @@ pull-ui: ## 🔄 Pull automagik-ui repository only
 
 logs: ## 📋 Show logs from all services (N=lines FOLLOW=1 for follow mode)
 	$(eval N := $(or $(N),30))
-	$(eval FOLLOW_MODE := $(if $(FOLLOW),-f,--no-pager))
 	$(call print_status,📋 Showing last $(N) lines from all services...)
 	@if [ "$(FOLLOW)" = "1" ]; then \
 		echo -e "$(FONT_YELLOW)Press Ctrl+C to stop following logs$(FONT_RESET)"; \
-		(journalctl -u automagik-agents $(FOLLOW_MODE) --lines $(N) 2>/dev/null | sed "s/^/$(AGENTS_COLOR)[AGENTS]$(FONT_RESET) /" &); \
-		(journalctl -u automagik-spark $(FOLLOW_MODE) --lines $(N) 2>/dev/null | sed "s/^/$(SPARK_COLOR)[SPARK]$(FONT_RESET)  /" &); \
-		(journalctl -u automagik-omni $(FOLLOW_MODE) --lines $(N) 2>/dev/null | sed "s/^/$(OMNI_COLOR)[OMNI]$(FONT_RESET)   /" &); \
-		(pm2 logs automagik-ui -f --lines $(N) 2>/dev/null | sed "s/^/$(UI_COLOR)[UI]$(FONT_RESET)     /" &); \
-		wait; \
+		pm2 logs | sed -E \
+			-e 's/(am-agents-labs)/$(AGENTS_COLOR)\1$(FONT_RESET)/g' \
+			-e 's/(automagik-spark)/$(SPARK_COLOR)\1$(FONT_RESET)/g' \
+			-e 's/(automagik-tools)/$(TOOLS_COLOR)\1$(FONT_RESET)/g' \
+			-e 's/(automagik-omni)/$(OMNI_COLOR)\1$(FONT_RESET)/g' \
+			-e 's/(automagik-ui)/$(UI_COLOR)\1$(FONT_RESET)/g'; \
 	else \
 		echo -e "$(AGENTS_COLOR)[AGENTS] Last $(N) lines:$(FONT_RESET)"; \
-		journalctl -u automagik-agents -n $(N) --no-pager 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		pm2 logs am-agents-labs --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(SPARK_COLOR)[SPARK] Last $(N) lines:$(FONT_RESET)"; \
-		journalctl -u automagik-spark -n $(N) --no-pager 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
-		echo -e "$(TOOLS_COLOR)[TOOLS] automagik-tools is a library, not a service$(FONT_RESET)"; \
+		pm2 logs automagik-spark --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(TOOLS_COLOR)[TOOLS] Last $(N) lines:$(FONT_RESET)"; \
+		pm2 logs automagik-tools --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(TOOLS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(OMNI_COLOR)[OMNI] Last $(N) lines:$(FONT_RESET)"; \
-		journalctl -u automagik-omni -n $(N) --no-pager 2>/dev/null | sed "s/^/$(OMNI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		pm2 logs automagik-omni --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(OMNI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(UI_COLOR)[UI] Last $(N) lines:$(FONT_RESET)"; \
 		pm2 logs automagik-ui --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(UI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 	fi
