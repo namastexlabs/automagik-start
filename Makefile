@@ -806,7 +806,7 @@ status-ui: ## 📊 Check automagik-ui status only
 # ===========================================
 # 📋 Logging & Monitoring
 # ===========================================
-.PHONY: logs-all logs-agents logs-spark logs-tools logs-omni logs-ui logs-infrastructure
+.PHONY: logs-all logs-agents logs-spark logs-spark-api logs-spark-worker logs-tools logs-tools-sse logs-tools-http logs-omni logs-ui logs-infrastructure
 logs-all: logs ## 📋 Follow logs from all services (alias for logs)
 
 logs-agents: ## 📋 Follow am-agents-labs logs
@@ -817,9 +817,25 @@ logs-spark: ## 📋 Follow automagik-spark logs (API + Worker)
 	$(call print_status,Following $(SPARK_COLOR)automagik-spark$(FONT_RESET) logs...)
 	@pm2 logs automagik-spark-api automagik-spark-worker
 
+logs-spark-api: ## 📋 Follow automagik-spark-api logs
+	$(call print_status,Following $(SPARK_COLOR)automagik-spark-api$(FONT_RESET) logs...)
+	@pm2 logs automagik-spark-api
+
+logs-spark-worker: ## 📋 Follow automagik-spark-worker logs
+	$(call print_status,Following $(SPARK_COLOR)automagik-spark-worker$(FONT_RESET) logs...)
+	@pm2 logs automagik-spark-worker
+
 logs-tools: ## 📋 Follow automagik-tools logs (SSE + HTTP)
 	$(call print_status,Following $(TOOLS_COLOR)automagik-tools$(FONT_RESET) logs...)
 	@pm2 logs automagik-tools-sse automagik-tools-http
+
+logs-tools-sse: ## 📋 Follow automagik-tools-sse logs
+	$(call print_status,Following $(TOOLS_COLOR)automagik-tools-sse$(FONT_RESET) logs...)
+	@pm2 logs automagik-tools-sse
+
+logs-tools-http: ## 📋 Follow automagik-tools-http logs
+	$(call print_status,Following $(TOOLS_COLOR)automagik-tools-http$(FONT_RESET) logs...)
+	@pm2 logs automagik-tools-http
 
 logs-omni: ## 📋 Follow automagik-omni logs
 	$(call print_status,Following $(OMNI_COLOR)automagik-omni$(FONT_RESET) logs...)
@@ -1124,7 +1140,7 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@echo -e "  $(AGENTS_COLOR)Agents:$(FONT_RESET)  $(FONT_CYAN)http://localhost:8881/api/v1/docs$(FONT_RESET)"
 	@echo -e "  $(OMNI_COLOR)Omni:$(FONT_RESET)    $(FONT_CYAN)http://localhost:8882/api/v1/docs$(FONT_RESET)"
 	@echo -e "  $(SPARK_COLOR)Spark:$(FONT_RESET)   $(FONT_CYAN)http://localhost:8883/api/v1/docs$(FONT_RESET)"
-	@echo -e "  $(TOOLS_COLOR)Tools:$(FONT_RESET)   $(FONT_CYAN)http://localhost:8884/sse$(FONT_RESET) | $(FONT_CYAN)http://localhost:8885/http$(FONT_RESET)"
+	@echo -e "  $(TOOLS_COLOR)Tools:$(FONT_RESET)   $(FONT_CYAN)http://localhost:8884/sse$(FONT_RESET) | $(FONT_CYAN)http://localhost:8885/mcp$(FONT_RESET)"
 	@echo ""
 	@echo -e "$(FONT_YELLOW)💡 Services are installed but not started automatically$(FONT_RESET)"
 	@echo -e "$(FONT_YELLOW)   Run '$(FONT_BOLD)make start$(FONT_RESET)$(FONT_YELLOW)' to begin using Automagik!$(FONT_RESET)"
