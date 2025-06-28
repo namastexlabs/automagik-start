@@ -144,19 +144,10 @@ else
     echo -e "${GREEN}✓ Docker already installed${NC}"
 fi
 
-# Check if we're running interactively
-if [[ -t 0 ]] && [[ -t 1 ]]; then
-    INTERACTIVE_MODE=true
-    echo ""
-    echo -e "${YELLOW}=== Optional Services Configuration ===${NC}"
-else
-    INTERACTIVE_MODE=false
-    echo ""
-    echo -e "${YELLOW}Non-interactive mode detected - using defaults for optional services${NC}"
-fi
+echo ""
+echo -e "${YELLOW}=== Optional Services Configuration ===${NC}"
 
 # Langflow option
-if [ "$INTERACTIVE_MODE" = true ]; then
     echo ""
     echo -e "${CYAN}🌊 LangFlow is a visual flow builder for creating AI workflows${NC}"
     echo -e "${CYAN}   • Visual interface for building AI pipelines${NC}"
@@ -177,12 +168,8 @@ if [ "$INTERACTIVE_MODE" = true ]; then
     else
         echo -e "${YELLOW}⚠️  Skipping LangFlow installation${NC}"
     fi
-else
-    echo -e "${YELLOW}⚠️  Skipping LangFlow (non-interactive mode)${NC}"
-fi
 
 # Evolution API option
-if [ "$INTERACTIVE_MODE" = true ]; then
     echo ""
     echo -e "${CYAN}📱 Evolution API provides WhatsApp integration capabilities${NC}"
     echo -e "${CYAN}   • WhatsApp bot integration${NC}"
@@ -202,12 +189,8 @@ if [ "$INTERACTIVE_MODE" = true ]; then
     else
         echo -e "${YELLOW}⚠️  Skipping Evolution API installation${NC}"
     fi
-else
-    echo -e "${YELLOW}⚠️  Skipping Evolution API (non-interactive mode)${NC}"
-fi
 
 # Optional browser tools
-if [ "$INTERACTIVE_MODE" = true ]; then
     echo ""
     echo -e "${CYAN}🌐 Optional: Browser Tools (for Agent web automation)${NC}"
     echo -e "${CYAN}   • Playwright/Puppeteer browser automation${NC}"
@@ -244,9 +227,6 @@ if [ "$INTERACTIVE_MODE" = true ]; then
     else
         echo -e "${YELLOW}⚠️  Skipping browser tools installation${NC}"
     fi
-else
-    echo -e "${YELLOW}⚠️  Skipping browser tools (non-interactive mode)${NC}"
-fi
 
 echo ""
 echo -e "${GREEN}✅ Pre-dependencies installed successfully!${NC}"
