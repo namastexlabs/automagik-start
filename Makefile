@@ -485,16 +485,19 @@ uninstall: ## 🗑️ Complete uninstall (stop everything, remove services and i
 .PHONY: start-all-services stop-all-services restart-all-services status-all-services
 start-all-services: ## 🚀 Start all services
 	$(call print_status,Starting all Automagik services...)
-	@echo -e "$(AGENTS_COLOR)[1/4] Starting am-agents-labs (core orchestrator)...$(FONT_RESET)"
+	@echo -e "$(AGENTS_COLOR)[1/5] Starting am-agents-labs (core orchestrator)...$(FONT_RESET)"
 	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),start-service)
 	@sleep 2
-	@echo -e "$(SPARK_COLOR)[2/4] Starting automagik-spark (workflow engine)...$(FONT_RESET)"
+	@echo -e "$(SPARK_COLOR)[2/5] Starting automagik-spark (workflow engine)...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),start-service)
 	@sleep 2
-	@echo -e "$(OMNI_COLOR)[3/4] Starting automagik-omni (multi-tenant hub)...$(FONT_RESET)"
+	@echo -e "$(TOOLS_COLOR)[3/5] Starting automagik-tools (MCP hub)...$(FONT_RESET)"
+	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),start-service)
+	@sleep 2
+	@echo -e "$(OMNI_COLOR)[4/5] Starting automagik-omni (multi-tenant hub)...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),start-service)
 	@sleep 2
-	@echo -e "$(UI_COLOR)[4/4] Starting automagik-ui (frontend - PM2)...$(FONT_RESET)"
+	@echo -e "$(UI_COLOR)[5/5] Starting automagik-ui (frontend - PM2)...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),start-service)
 	@sleep 3
 	@$(call print_success,All services started!)
@@ -528,6 +531,8 @@ stop-all-services: ## 🛑 Stop all services
 	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),stop-service)
 	@echo -e "$(SPARK_COLOR)Stopping automagik-spark...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),stop-service)
+	@echo -e "$(TOOLS_COLOR)Stopping automagik-tools...$(FONT_RESET)"
+	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),stop-service)
 	@echo -e "$(OMNI_COLOR)Stopping automagik-omni...$(FONT_RESET)"
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),stop-service)
 	@echo -e "$(UI_COLOR)Stopping automagik-ui...$(FONT_RESET)"
@@ -546,9 +551,9 @@ status-all-services: ## 📊 Check status of all services
 	@echo -e "  $(FONT_GRAY)──────────────────────────────────────────────────────────────────────$(FONT_RESET)"
 	$(call check_service_health,automagik-agents,$(AGENTS_COLOR),8881)
 	$(call check_service_health,automagik-spark,$(SPARK_COLOR),8883)
+	$(call check_service_health,automagik-tools,$(TOOLS_COLOR),8884)
 	$(call check_service_health,omni-hub,$(OMNI_COLOR),8882)
 	$(call check_pm2_service_health,automagik-ui,$(UI_COLOR),8888)
-	@echo -e "  $(FONT_GRAY)automagik-tools      [LIBRARY]       8884     -          -$(FONT_RESET)"
 	@echo ""
 	@$(call print_infrastructure_status)
 
@@ -587,7 +592,8 @@ start-spark-user: ## 🚀 Start automagik-spark with user systemd (no sudo)
 	@systemctl --user start automagik-spark 2>/dev/null || echo "User service not installed. Use 'make install-user-services' first."
 
 start-tools: ## 🚀 Start automagik-tools service only
-	$(call print_warning,automagik-tools is a library, not a service)
+	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
+	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),start-service)
 
 start-tools-dev: ## 🚀 Start automagik-tools in dev mode (no sudo)
 	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) in dev mode on port 9994...)
@@ -623,7 +629,8 @@ stop-spark: ## 🛑 Stop automagik-spark service only
 	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),stop-service)
 
 stop-tools: ## 🛑 Stop automagik-tools service only
-	$(call print_warning,automagik-tools is a library, not a service)
+	$(call print_status,Stopping $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
+	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),stop-service)
 
 stop-omni: ## 🛑 Stop automagik-omni service only
 	$(call print_status,Stopping $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
@@ -643,7 +650,8 @@ restart-spark: ## 🔄 Restart automagik-spark service only
 	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),restart-service)
 
 restart-tools: ## 🔄 Restart automagik-tools service only
-	$(call print_warning,automagik-tools is a library, not a service)
+	$(call print_status,Restarting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
+	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),restart-service)
 
 restart-omni: ## 🔄 Restart automagik-omni service only
 	$(call print_status,Restarting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
@@ -661,7 +669,7 @@ status-spark: ## 📊 Check automagik-spark status only
 	$(call show_service_status,$(AUTOMAGIK_SPARK_DIR),$(SPARK_COLOR))
 
 status-tools: ## 📊 Check automagik-tools status only
-	$(call print_warning,automagik-tools is a library, not a service)
+	$(call show_service_status,$(AUTOMAGIK_TOOLS_DIR),$(TOOLS_COLOR))
 
 status-omni: ## 📊 Check automagik-omni status only
 	$(call show_service_status,$(AUTOMAGIK_OMNI_DIR),$(OMNI_COLOR))
@@ -691,7 +699,8 @@ logs-spark: ## 📋 Follow automagik-spark logs
 	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),logs)
 
 logs-tools: ## 📋 Follow automagik-tools logs
-	$(call print_warning,automagik-tools is a library, not a service)
+	$(call print_status,Following $(TOOLS_COLOR)automagik-tools$(FONT_RESET) logs...)
+	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),logs FOLLOW=1)
 
 logs-omni: ## 📋 Follow automagik-omni logs
 	$(call print_status,Following $(OMNI_COLOR)automagik-omni$(FONT_RESET) logs...)
