@@ -307,7 +307,7 @@ help: ## 🚀 Show this help message
 	@echo ""
 	@echo -e "$(FONT_GRAY)Service Colors & Ports:$(FONT_RESET)"
 	@echo -e "  $(AGENTS_COLOR)AGENTS$(FONT_RESET) (🎨 Orange):  $(FONT_CYAN)8881$(FONT_RESET)  |  $(SPARK_COLOR)SPARK$(FONT_RESET) (🎨 Yellow):   $(FONT_CYAN)8883$(FONT_RESET)"
-	@echo -e "  $(TOOLS_COLOR)TOOLS$(FONT_RESET) (🎨 Blue):     $(FONT_CYAN)8884$(FONT_RESET)  |  $(OMNI_COLOR)OMNI$(FONT_RESET) (🎨 Purple):     $(FONT_CYAN)8882$(FONT_RESET)"
+	@echo -e "  $(TOOLS_COLOR)TOOLS$(FONT_RESET) (🎨 Blue):     $(FONT_CYAN)8884,8885$(FONT_RESET) |  $(OMNI_COLOR)OMNI$(FONT_RESET) (🎨 Purple):     $(FONT_CYAN)8882$(FONT_RESET)"
 	@echo -e "  $(UI_COLOR)UI$(FONT_RESET) (🎨 Green):        $(FONT_CYAN)8888$(FONT_RESET)  |  Optional Services:"
 	@echo -e "  $(FONT_CYAN)LANGFLOW$(FONT_RESET):       $(FONT_CYAN)7860$(FONT_RESET)  |  $(FONT_CYAN)EVOLUTION$(FONT_RESET):       $(FONT_CYAN)8080$(FONT_RESET)"
 	@echo -e "  $(FONT_CYAN)📋 Use 'make logs' to see beautiful colorized output!$(FONT_RESET)"
@@ -769,13 +769,13 @@ restart-agents: ## 🔄 Restart am-agents-labs service only
 	$(call print_status,Restarting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
 	@pm2 restart am-agents-labs 2>/dev/null || pm2 start ecosystem.config.js --only am-agents-labs
 
-restart-spark: ## 🔄 Restart automagik-spark service only
-	$(call print_status,Restarting $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	@pm2 restart automagik-spark 2>/dev/null || pm2 start ecosystem.config.js --only automagik-spark
+restart-spark: ## 🔄 Restart automagik-spark services (API + Worker)
+	$(call print_status,Restarting $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)
+	@pm2 restart automagik-spark-api automagik-spark-worker 2>/dev/null || pm2 start ecosystem.config.js --only "automagik-spark-api" --only "automagik-spark-worker"
 
-restart-tools: ## 🔄 Restart automagik-tools service only
-	$(call print_status,Restarting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	@pm2 restart automagik-tools 2>/dev/null || pm2 start ecosystem.config.js --only automagik-tools
+restart-tools: ## 🔄 Restart automagik-tools services (SSE + HTTP)
+	$(call print_status,Restarting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) services...)
+	@pm2 restart automagik-tools-sse automagik-tools-http 2>/dev/null || pm2 start ecosystem.config.js --only "automagik-tools-sse" --only "automagik-tools-http"
 
 restart-omni: ## 🔄 Restart automagik-omni service only
 	$(call print_status,Restarting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
@@ -790,13 +790,21 @@ status-agents: ## 📊 Check am-agents-labs status only
 	$(call print_status,Checking $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) status...)
 	@pm2 show am-agents-labs 2>/dev/null || echo "Service not found"
 
-status-spark: ## 📊 Check automagik-spark status only
+status-spark: ## 📊 Check automagik-spark status (API + Worker)
 	$(call print_status,Checking $(SPARK_COLOR)automagik-spark$(FONT_RESET) status...)
-	@pm2 show automagik-spark 2>/dev/null || echo "Service not found"
+	@echo -e "$(FONT_CYAN)API Service:$(FONT_RESET)"
+	@pm2 show automagik-spark-api 2>/dev/null || echo "API service not found"
+	@echo ""
+	@echo -e "$(FONT_CYAN)Worker Service:$(FONT_RESET)"
+	@pm2 show automagik-spark-worker 2>/dev/null || echo "Worker service not found"
 
-status-tools: ## 📊 Check automagik-tools status only
+status-tools: ## 📊 Check automagik-tools status (SSE + HTTP)
 	$(call print_status,Checking $(TOOLS_COLOR)automagik-tools$(FONT_RESET) status...)
-	@pm2 show automagik-tools 2>/dev/null || echo "Service not found"
+	@echo -e "$(FONT_CYAN)SSE Service (port 8884):$(FONT_RESET)"
+	@pm2 show automagik-tools-sse 2>/dev/null || echo "SSE service not found"
+	@echo ""
+	@echo -e "$(FONT_CYAN)HTTP Service (port 8885):$(FONT_RESET)"
+	@pm2 show automagik-tools-http 2>/dev/null || echo "HTTP service not found"
 
 status-omni: ## 📊 Check automagik-omni status only
 	$(call print_status,Checking $(OMNI_COLOR)automagik-omni$(FONT_RESET) status...)
@@ -816,13 +824,13 @@ logs-agents: ## 📋 Follow am-agents-labs logs
 	$(call print_status,Following $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) logs...)
 	@pm2 logs am-agents-labs
 
-logs-spark: ## 📋 Follow automagik-spark logs
+logs-spark: ## 📋 Follow automagik-spark logs (API + Worker)
 	$(call print_status,Following $(SPARK_COLOR)automagik-spark$(FONT_RESET) logs...)
-	@pm2 logs automagik-spark
+	@pm2 logs automagik-spark-api automagik-spark-worker
 
-logs-tools: ## 📋 Follow automagik-tools logs
+logs-tools: ## 📋 Follow automagik-tools logs (SSE + HTTP)
 	$(call print_status,Following $(TOOLS_COLOR)automagik-tools$(FONT_RESET) logs...)
-	@pm2 logs automagik-tools
+	@pm2 logs automagik-tools-sse automagik-tools-http
 
 logs-omni: ## 📋 Follow automagik-omni logs
 	$(call print_status,Following $(OMNI_COLOR)automagik-omni$(FONT_RESET) logs...)
@@ -1270,17 +1278,21 @@ logs: ## 📋 Show logs from all services (N=lines FOLLOW=1 for follow mode)
 		echo -e "$(FONT_YELLOW)Press Ctrl+C to stop following logs$(FONT_RESET)"; \
 		pm2 logs | sed -E \
 			-e 's/(am-agents-labs)/$(AGENTS_COLOR)\1$(FONT_RESET)/g' \
-			-e 's/(automagik-spark)/$(SPARK_COLOR)\1$(FONT_RESET)/g' \
-			-e 's/(automagik-tools)/$(TOOLS_COLOR)\1$(FONT_RESET)/g' \
+			-e 's/(automagik-spark-api|automagik-spark-worker)/$(SPARK_COLOR)\1$(FONT_RESET)/g' \
+			-e 's/(automagik-tools-sse|automagik-tools-http)/$(TOOLS_COLOR)\1$(FONT_RESET)/g' \
 			-e 's/(automagik-omni)/$(OMNI_COLOR)\1$(FONT_RESET)/g' \
 			-e 's/(automagik-ui)/$(UI_COLOR)\1$(FONT_RESET)/g'; \
 	else \
 		echo -e "$(AGENTS_COLOR)[AGENTS] Last $(N) lines:$(FONT_RESET)"; \
 		pm2 logs am-agents-labs --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
-		echo -e "$(SPARK_COLOR)[SPARK] Last $(N) lines:$(FONT_RESET)"; \
-		pm2 logs automagik-spark --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
-		echo -e "$(TOOLS_COLOR)[TOOLS] Last $(N) lines:$(FONT_RESET)"; \
-		pm2 logs automagik-tools --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(TOOLS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(SPARK_COLOR)[SPARK-API] Last $(N) lines:$(FONT_RESET)"; \
+		pm2 logs automagik-spark-api --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(SPARK_COLOR)[SPARK-WORKER] Last $(N) lines:$(FONT_RESET)"; \
+		pm2 logs automagik-spark-worker --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(TOOLS_COLOR)[TOOLS-SSE] Last $(N) lines:$(FONT_RESET)"; \
+		pm2 logs automagik-tools-sse --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(TOOLS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(TOOLS_COLOR)[TOOLS-HTTP] Last $(N) lines:$(FONT_RESET)"; \
+		pm2 logs automagik-tools-http --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(TOOLS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(OMNI_COLOR)[OMNI] Last $(N) lines:$(FONT_RESET)"; \
 		pm2 logs automagik-omni --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(OMNI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(UI_COLOR)[UI] Last $(N) lines:$(FONT_RESET)"; \
