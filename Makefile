@@ -456,11 +456,17 @@ setup-pm2: ## 📦 Setup PM2 with ecosystem file
 		exit 1; \
 	fi
 	@echo -e "$(FONT_CYAN)$(INFO) Installing PM2 log rotation...$(FONT_RESET)"
-	@pm2 install pm2-logrotate
+	@if ! pm2 list | grep -q pm2-logrotate; then \
+		pm2 install pm2-logrotate; \
+	else \
+		echo -e "$(FONT_GREEN)✓ PM2 logrotate already installed$(FONT_RESET)"; \
+	fi
 	@pm2 set pm2-logrotate:max_size 100M
 	@pm2 set pm2-logrotate:retain 7
 	@echo -e "$(FONT_CYAN)$(INFO) Setting up PM2 startup...$(FONT_RESET)"
-	@pm2 startup -s
+	@if ! pm2 startup -s 2>/dev/null; then \
+		echo -e "$(FONT_YELLOW)Warning: PM2 startup may already be configured$(FONT_RESET)"; \
+	fi
 	@$(call print_success,PM2 ecosystem configured!)
 
 install-dependencies-only: ## 📦 Install only dependencies (no systemd services)

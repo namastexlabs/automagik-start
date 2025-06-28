@@ -44,20 +44,39 @@ echo ""
 # Install essential packages
 echo -e "${CYAN}Installing essential packages...${NC}"
 if [ "$OS_TYPE" = "debian" ]; then
-    sudo apt-get update
-    sudo apt-get install -y \
-        curl \
-        git \
-        make \
-        build-essential \
-        ca-certificates \
-        gnupg
+    # Check if essential packages are already installed
+    MISSING_PACKAGES=()
+    for pkg in curl git make build-essential ca-certificates gnupg; do
+        if ! dpkg -l | grep -q "^ii  $pkg "; then
+            MISSING_PACKAGES+=("$pkg")
+        fi
+    done
+    
+    if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+        sudo apt-get update
+        sudo apt-get install -y "${MISSING_PACKAGES[@]}"
+    else
+        echo -e "${GREEN}✓ All essential packages already installed${NC}"
+    fi
 elif [ "$OS_TYPE" = "macos" ]; then
     if ! command -v brew &> /dev/null; then
         echo -e "${YELLOW}Installing Homebrew...${NC}"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
-    brew install curl git make
+    
+    # Check if essential packages are already installed
+    MISSING_PACKAGES=()
+    for pkg in curl git make; do
+        if ! brew list "$pkg" &> /dev/null; then
+            MISSING_PACKAGES+=("$pkg")
+        fi
+    done
+    
+    if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+        brew install "${MISSING_PACKAGES[@]}"
+    else
+        echo -e "${GREEN}✓ All essential packages already installed${NC}"
+    fi
 fi
 
 # Install Python 3.12 if not present
@@ -108,9 +127,6 @@ fi
 if ! command -v pm2 &> /dev/null; then
     echo -e "${CYAN}Installing PM2...${NC}"
     npm install -g pm2
-    pm2 install pm2-logrotate
-    pm2 set pm2-logrotate:max_size 100M
-    pm2 set pm2-logrotate:retain 7
 else
     echo -e "${GREEN}✓ PM2 already installed${NC}"
 fi
@@ -173,7 +189,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
             libxdamage1 \
             libxrandr2 \
             libgbm1 \
-            libasound2
+            libasound2t64
     fi
 fi
 
