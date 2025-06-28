@@ -294,8 +294,24 @@ stop-infrastructure: ## 🛑 Stop Docker infrastructure
 
 uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove containers, images, volumes)
 	$(call print_status,Uninstalling Docker infrastructure...)
+	@# Stop and remove main infrastructure
 	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down -v --rmi all --remove-orphans 2>/dev/null || true
-	@docker system prune -f 2>/dev/null || true
+	@# Stop and remove optional services if they exist
+	@if [ -f "$(LANGFLOW_COMPOSE)" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Removing LangFlow containers and images...$(FONT_RESET)"; \
+		$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow down -v --rmi all --remove-orphans 2>/dev/null || true; \
+	fi
+	@if [ -f "$(EVOLUTION_COMPOSE)" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Removing Evolution API containers and images...$(FONT_RESET)"; \
+		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans 2>/dev/null || true; \
+	fi
+	@# Clean up all Docker resources
+	@echo -e "$(FONT_CYAN)$(INFO) Removing unused containers, networks, images...$(FONT_RESET)"
+	@docker system prune -af --volumes 2>/dev/null || true
+	@echo -e "$(FONT_CYAN)$(INFO) Removing unused volumes...$(FONT_RESET)"
+	@docker volume prune -f 2>/dev/null || true
+	@echo -e "$(FONT_CYAN)$(INFO) Removing unused networks...$(FONT_RESET)"
+	@docker network prune -f 2>/dev/null || true
 	@$(call print_success,Docker infrastructure uninstalled!)
 
 restart-infrastructure: ## 🔄 Restart Docker infrastructure
@@ -528,10 +544,11 @@ install-ui: ## Install automagik-ui service
 
 uninstall-all-services: ## 🗑️ Uninstall all services (remove PM2 services)
 	$(call print_status,Uninstalling all Automagik services...)
-	@$(MAKE) stop-all-services
 	@# Remove PM2 services
 	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 services...$(FONT_RESET)"
 	@pm2 delete ecosystem.config.js 2>/dev/null || true
+	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 logrotate module...$(FONT_RESET)"
+	@pm2 uninstall pm2-logrotate 2>/dev/null || true
 	@pm2 save --force 2>/dev/null || true
 	@$(call print_success,All services uninstalled!)
 
