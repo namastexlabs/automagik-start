@@ -16,7 +16,6 @@ volumes:
   automagik-spark-postgres-data: 
   
   # Redis Data
-  am-agents-labs-redis-data:
   automagik-spark-redis-data:
 
 services:
@@ -65,21 +64,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # Redis for am-agents-labs
-  am-agents-labs-redis:
-    image: redis:7-alpine
-    container_name: am-agents-labs-redis
-    restart: unless-stopped
-    network_mode: host
-    command: redis-server --port 5411 --appendonly yes --requirepass ""
-    volumes:
-      - am-agents-labs-redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "5411", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   # Redis for automagik-spark
   automagik-spark-redis:

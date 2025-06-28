@@ -19,7 +19,6 @@ LANGFLOW_COMPOSE_FILE="$BASE_DIR/docker-langflow.yml"
 INFRASTRUCTURE_SERVICES=(
     "am-agents-labs-postgres"
     "automagik-spark-postgres"
-    "am-agents-labs-redis"
     "automagik-spark-redis"
 )
 
