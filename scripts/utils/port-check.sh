@@ -17,7 +17,7 @@ declare -A REQUIRED_PORTS=(
     ["8883"]="automagik-spark (Workflow Engine)"
     ["8884"]="automagik-tools-sse (MCP Tools SSE)"
     ["8885"]="automagik-tools-http (MCP Tools HTTP)"
-    ["9000"]="evolution-api (WhatsApp API)"
+    ["8080"]="evolution-api (WhatsApp API)"
     
     # Infrastructure Services  
     ["5401"]="am-agents-labs-postgres"

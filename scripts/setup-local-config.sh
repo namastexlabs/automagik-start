@@ -142,7 +142,7 @@ GROQ_API_KEY=gsk_your-groq-api-key-here
 
 # Evolution API Configuration
 EVOLUTION_API_KEY=namastex888
-EVOLUTION_API_URL=http://localhost:9000
+EVOLUTION_API_URL=http://localhost:8080
 
 # MCP Configuration
 MCP_LOG_LEVEL=info
@@ -169,7 +169,7 @@ AGENT_API_KEY=namastex888
 DEFAULT_AGENT_NAME=simple_agent
 
 # Evolution API Configuration (WhatsApp)
-EVOLUTION_TRANSCRIPT_API=http://localhost:9000
+EVOLUTION_TRANSCRIPT_API=http://localhost:8080
 EVOLUTION_TRANSCRIPT_API_KEY=namastex888
 WHATSAPP_INSTANCE=default
 
@@ -203,7 +203,7 @@ NEXT_PUBLIC_SPARK_URL=http://127.0.0.1:8883
 NEXT_PUBLIC_OMNI_URL=http://127.0.0.1:8882
 NEXT_PUBLIC_TOOLS_SSE_URL=http://127.0.0.1:8884
 NEXT_PUBLIC_TOOLS_HTTP_URL=http://127.0.0.1:8885
-NEXT_PUBLIC_EVOLUTION_URL=http://localhost:9000
+NEXT_PUBLIC_EVOLUTION_URL=http://localhost:8080
 
 # Database (SQLite for frontend data)
 DATABASE_URL=sqlite:///./data/automagik-ui.db
@@ -258,7 +258,7 @@ echo -e "  PostgreSQL (evolution):       ${GREEN}localhost:5403${RESET}"
 echo -e "  Redis (automagik-spark):      ${GREEN}localhost:5412${RESET}"
 echo -e "  Redis (evolution):            ${GREEN}localhost:5413${RESET}"
 echo -e "  RabbitMQ:                     ${GREEN}localhost:5431${RESET}"
-echo -e "  Evolution API:                ${GREEN}localhost:9000${RESET}"
+echo -e "  Evolution API:                ${GREEN}localhost:8080${RESET}"
 echo ""
 echo -e "${CYAN}Local Services:${RESET}"
 echo -e "  am-agents-labs:               ${GREEN}localhost:8881${RESET}"
@@ -273,6 +273,6 @@ echo ""
 echo -e "${GREEN}Next steps:${RESET}"
 echo -e "  1. Update API keys in the .env files"
 echo -e "  2. Run: ${CYAN}make setup-infrastructure${RESET} to start Docker infrastructure"
-echo -e "  3. Run: ${CYAN}make install-all-services${RESET} to install systemd services"
+echo -e "  3. Run: ${CYAN}make install-all-services${RESET} to install PM2 services"
 echo -e "  4. Run: ${CYAN}make start-all-services${RESET} to start all services"
 echo ""
