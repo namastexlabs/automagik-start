@@ -118,6 +118,22 @@ else
     echo -e "${GREEN}✓ Node.js already installed: $(node --version)${NC}"
 fi
 
+# Install Claude Code
+if ! command -v claude-code &> /dev/null; then
+    echo -e "${CYAN}Installing Claude Code...${NC}"
+    npm install -g @anthropic-ai/claude-code
+else
+    echo -e "${GREEN}✓ Claude Code already installed${NC}"
+fi
+
+# Install OpenAI Codex
+echo -e "${CYAN}Installing OpenAI Codex...${NC}"
+npm install -g @openai/codex
+
+# Install Google Gemini CLI
+echo -e "${CYAN}Installing Google Gemini CLI...${NC}"
+npm install -g @google/gemini-cli
+
 # Install pnpm
 if ! command -v pnpm &> /dev/null; then
     echo -e "${CYAN}Installing pnpm...${NC}"
