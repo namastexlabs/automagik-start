@@ -362,13 +362,11 @@ uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove con
 		docker ps -aq --filter "label=com.docker.compose.project=langflow" | xargs -r docker rm; \
 		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker stop; \
 		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker rm; \
-		echo -e "$(FONT_CYAN)$(INFO) Cleaning up Automagik images, volumes, and networks...$(FONT_RESET)"; \
-		docker system prune -f --filter "label=com.docker.compose.project=automagik"; \
-		docker system prune -f --filter "label=com.docker.compose.project=langflow"; \
-		docker system prune -f --filter "label=com.docker.compose.project=evolution_api"; \
-		docker volume prune -f --filter "label=com.docker.compose.project=automagik"; \
-		docker volume prune -f --filter "label=com.docker.compose.project=langflow"; \
-		docker volume prune -f --filter "label=com.docker.compose.project=evolution_api"; \
+		echo -e "$(FONT_CYAN)$(INFO) Cleaning up Automagik volumes and orphaned resources...$(FONT_RESET)"; \
+		docker volume ls -q --filter "label=com.docker.compose.project=automagik" | xargs -r docker volume rm 2>/dev/null || true; \
+		docker volume ls -q --filter "label=com.docker.compose.project=langflow" | xargs -r docker volume rm 2>/dev/null || true; \
+		docker volume ls -q --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker volume rm 2>/dev/null || true; \
+		docker system prune -f --volumes 2>/dev/null || true; \
 		echo ""; \
 		echo -e "$(FONT_CYAN)$(INFO) Final Docker disk usage:$(FONT_RESET)"; \
 		docker system df; \

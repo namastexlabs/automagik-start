@@ -7,6 +7,9 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Colors
 PURPLE='\033[0;35m'
 GREEN='\033[0;32m'
@@ -162,8 +165,8 @@ if [ "$INTERACTIVE_MODE" = true ]; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${GREEN}✓ Installing LangFlow...${NC}"
-        if [ -f "docker-langflow.yml" ]; then
-            docker compose -f docker-langflow.yml -p langflow up -d
+        if [ -f "$SCRIPT_DIR/docker-langflow.yml" ]; then
+            docker compose -f "$SCRIPT_DIR/docker-langflow.yml" -p langflow up -d
             echo -e "${GREEN}✓ LangFlow installed successfully!${NC}"
             echo -e "${CYAN}   Access at: http://localhost:7860${NC}"
             echo -e "${CYAN}   Username: admin${NC}"
@@ -188,8 +191,8 @@ if [ "$INTERACTIVE_MODE" = true ]; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${GREEN}✓ Installing Evolution API...${NC}"
-        if [ -f "docker-evolution.yml" ]; then
-            docker compose -f docker-evolution.yml -p evolution_api up -d
+        if [ -f "$SCRIPT_DIR/docker-evolution.yml" ]; then
+            docker compose -f "$SCRIPT_DIR/docker-evolution.yml" -p evolution_api up -d
             echo -e "${GREEN}✓ Evolution API installed successfully!${NC}"
             echo -e "${CYAN}   Access at: http://localhost:9000${NC}"
             echo -e "${CYAN}   API Key: namastex888${NC}"
