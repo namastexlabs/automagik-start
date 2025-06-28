@@ -38,9 +38,24 @@ The Automagik Suite uses a hybrid architecture:
 
 ### One-Command Installation
 
+Choose your preferred installation method:
+
+#### Option 1: Source Script (Recommended - auto-cd)
 ```bash
-git clone https://github.com/namastexlabs/automagik-suite.git
-cd automagik-suite
+source <(curl -sSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/install-and-cd.sh)
+```
+*This method automatically changes to the automagik directory after installation.*
+
+#### Option 2: Standard curl installation
+```bash
+curl -sSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/start.sh | bash
+cd automagik  # Manual directory change required
+```
+
+#### Option 3: Clone and install locally
+```bash
+git clone https://github.com/namastexlabs/automagik-start.git automagik
+cd automagik
 ./install.sh
 ```
 
