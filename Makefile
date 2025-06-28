@@ -134,7 +134,7 @@ define delegate_to_service
 	if [ -f "$$repo_dir/Makefile" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Running $$target for $$service_name...$(FONT_RESET)"; \
 		if cd "$$repo_dir" && make -n "$$target" >/dev/null 2>&1; then \
-			cd "$$repo_dir" && make "$$target"; \
+			cd "$$repo_dir" && AUTOMAGIK_QUIET_LOGO=1 make "$$target"; \
 		else \
 			echo -e "$(FONT_YELLOW)$(WARNING) No $$target target found in $$service_name - skipping$(FONT_RESET)"; \
 		fi; \
@@ -502,7 +502,7 @@ install-all-services: ## ⚙️ Install all services and setup PM2
 	@$(MAKE) install-tools
 	@# Setup PM2 ecosystem
 	@$(MAKE) setup-pm2
-	@$(call print_success_with_logo,All services installed successfully!)
+	@$(call print_success,All services installed successfully!)
 
 setup-pm2: ## 📦 Setup PM2 with ecosystem file
 	$(call print_status,Setting up PM2 ecosystem...)
