@@ -112,8 +112,23 @@ define ensure_repository
 	repo_url="$(3)"; \
 	if [ ! -d "$$repo_dir" ]; then \
 		echo -e "$(FONT_YELLOW)$(WARNING) Repository $$repo_name not found$(FONT_RESET)"; \
+		echo -e "$(FONT_CYAN)$(INFO) Checking GitHub authentication...$(FONT_RESET)"; \
+		if command -v gh >/dev/null 2>&1; then \
+			if ! gh auth status >/dev/null 2>&1; then \
+				echo -e "$(FONT_YELLOW)$(WARNING) GitHub CLI not authenticated$(FONT_RESET)"; \
+				echo -e "$(FONT_CYAN)$(INFO) Please authenticate with GitHub CLI:$(FONT_RESET)"; \
+				echo -e "$(FONT_CYAN)   gh auth login$(FONT_RESET)"; \
+				echo -e "$(FONT_CYAN)Then re-run the installation.$(FONT_RESET)"; \
+				exit 1; \
+			else \
+				echo -e "$(FONT_GREEN)$(CHECKMARK) GitHub CLI authenticated$(FONT_RESET)"; \
+			fi; \
+		else \
+			echo -e "$(FONT_RED)$(ERROR) GitHub CLI not found but required for private repositories$(FONT_RESET)"; \
+			exit 1; \
+		fi; \
 		echo -e "$(FONT_CYAN)$(INFO) Cloning $$repo_name from $$repo_url...$(FONT_RESET)"; \
-		if git clone "$$repo_url" "$$repo_dir"; then \
+		if gh repo clone "$$repo_url" "$$repo_dir"; then \
 			echo -e "$(FONT_GREEN)$(CHECKMARK) Successfully cloned $$repo_name$(FONT_RESET)"; \
 		else \
 			echo -e "$(FONT_RED)$(ERROR) Failed to clone $$repo_name$(FONT_RESET)"; \
