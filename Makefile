@@ -229,20 +229,20 @@ define print_infrastructure_status
 endef
 
 define show_automagik_logo
-	@echo ""
-	@echo -e "$(FONT_PURPLE)                                                                                            $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)                                                                                            $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)     -+*         -=@%*@@@@@@*  -#@@@%*  =@@*      -%@#+   -*       +%@@@@*-%@*-@@*  -+@@*   $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)     =@#*  -@@*  -=@%+@@@@@@*-%@@#%*%@@+=@@@*    -+@@#+  -@@*   -#@@%%@@@*-%@+-@@* -@@#*    $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)    -%@@#* -@@*  -=@@* -@%* -@@**   --@@=@@@@*  -+@@@#+ -#@@%* -*@%*-@@@@*-%@+:@@+#@@*      $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)   -#@+%@* -@@*  -=@@* -@%* -@@*-+@#*-%@+@@=@@* +@%#@#+ =@##@* -%@#*-@@@@*-%@+-@@@@@*       $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)  -*@#==@@*-@@*  -+@%* -@%* -%@#*   -+@@=@@++@%-@@=*@#=-@@*-@@*:+@@*  -%@*-%@+-@@#*@@**     $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)  -@@* -+@%-+@@@@@@@*  -@%*  -#@@@@%@@%+=@@+-=@@@*    -%@*  -@@*-*@@@@%@@*#@@#=%*  -%@@*    $(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE) -@@*+  -%@*  -#@%+    -@%+     =#@@*   =@@+          +@%+  -#@#   -*%@@@*@@@@%+     =@@+   $(FONT_RESET)"
-	@echo ""
-	@echo -e "$(FONT_CYAN)🏢 Built by$(FONT_RESET) $(FONT_BOLD)Namastex Labs$(FONT_RESET) | $(FONT_YELLOW)📄 MIT Licensed$(FONT_RESET) | $(FONT_YELLOW)🌟 Open Source Forever$(FONT_RESET)"
-	@echo -e "$(FONT_PURPLE)✨ \"Automagik Suite - Local Installation Made Simple\"$(FONT_RESET)"
-	@echo ""
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo "")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)                                                                                            $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)                                                                                            $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)     -+*         -=@%*@@@@@@*  -#@@@%*  =@@*      -%@#+   -*       +%@@@@*-%@*-@@*  -+@@*   $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)     =@#*  -@@*  -=@%+@@@@@@*-%@@#%*%@@+=@@@*    -+@@#+  -@@*   -#@@%%@@@*-%@+-@@* -@@#*    $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)    -%@@#* -@@*  -=@@* -@%* -@@**   --@@=@@@@*  -+@@@#+ -#@@%* -*@%*-@@@@*-%@+:@@+#@@*      $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)   -#@+%@* -@@*  -=@@* -@%* -@@*-+@#*-%@+@@=@@* +@%#@#+ =@##@* -%@#*-@@@@*-%@+-@@@@@*       $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)  -*@#==@@*-@@*  -+@%* -@%* -%@#*   -+@@=@@++@%-@@=*@#=-@@*-@@*:+@@*  -%@*-%@+-@@#*@@**     $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)  -@@* -+@%-+@@@@@@@*  -@%*  -#@@@@%@@%+=@@+-=@@@*    -%@*  -@@*-*@@@@%@@*#@@#=%*  -%@@*    $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE) -@@*+  -%@*  -#@%+    -@%+     =#@@*   =@@+          +@%+  -#@#   -*%@@@*@@@@%+     =@@+   $(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo "")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_CYAN)🏢 Built by$(FONT_RESET) $(FONT_BOLD)Namastex Labs$(FONT_RESET) | $(FONT_YELLOW)📄 MIT Licensed$(FONT_RESET) | $(FONT_YELLOW)🌟 Open Source Forever$(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo -e "$(FONT_PURPLE)✨ \"Automagik Suite - Local Installation Made Simple\"$(FONT_RESET)")
+	$(if $(AUTOMAGIK_QUIET_LOGO),,@echo "")
 endef
 
 define print_success_with_logo
@@ -339,42 +339,34 @@ stop-infrastructure: ## 🛑 Stop Docker infrastructure
 
 uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove containers, images, volumes)
 	$(call print_status,Uninstalling Docker infrastructure...)
-	@# Stop and remove main infrastructure
-	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down -v --rmi all --remove-orphans 2>/dev/null || true
-	@# Remove optional services (whether running or not)
+	@# Capture initial disk usage
+	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
+		before_size=$$(docker system df --format "table {{.Size}}" | tail -n +2 | head -n 1 | sed 's/[^0-9.]//g' || echo "0"); \
+	else \
+		before_size="0"; \
+	fi
+	@# Remove all Automagik Docker resources quietly
+	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down -v --rmi all --remove-orphans >/dev/null 2>&1 || true
 	@if [ -f "$(LANGFLOW_COMPOSE)" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Removing LangFlow containers, volumes and images...$(FONT_RESET)"; \
-		$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow down -v --rmi all --remove-orphans 2>/dev/null || true; \
+		$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow down -v --rmi all --remove-orphans >/dev/null 2>&1 || true; \
 	fi
 	@if [ -f "$(EVOLUTION_COMPOSE)" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Removing Evolution API containers, volumes and images...$(FONT_RESET)"; \
-		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans 2>/dev/null || true; \
+		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans >/dev/null 2>&1 || true; \
 	fi
-	@# Cleanup only our Docker containers and resources
+	@# Clean up any remaining resources
 	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
-		echo -e "$(FONT_CYAN)$(INFO) Current Docker disk usage:$(FONT_RESET)"; \
-		docker system df; \
-		echo ""; \
-		echo -e "$(FONT_CYAN)$(INFO) Stopping and removing Automagik containers...$(FONT_RESET)"; \
-		docker ps -aq --filter "label=com.docker.compose.project=automagik" | xargs -r docker stop; \
-		docker ps -aq --filter "label=com.docker.compose.project=automagik" | xargs -r docker rm; \
-		docker ps -aq --filter "label=com.docker.compose.project=langflow" | xargs -r docker stop; \
-		docker ps -aq --filter "label=com.docker.compose.project=langflow" | xargs -r docker rm; \
-		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker stop; \
-		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker rm; \
-		echo -e "$(FONT_CYAN)$(INFO) Cleaning up Automagik volumes and orphaned resources...$(FONT_RESET)"; \
-		docker volume ls -q --filter "label=com.docker.compose.project=automagik" | xargs -r docker volume rm 2>/dev/null || true; \
-		docker volume ls -q --filter "label=com.docker.compose.project=langflow" | xargs -r docker volume rm 2>/dev/null || true; \
-		docker volume ls -q --filter "label=com.docker.compose.project=evolution_api" | xargs -r docker volume rm 2>/dev/null || true; \
-		docker volume ls -q | grep -E "langflow|evolution" | xargs -r docker volume rm 2>/dev/null || true; \
-		echo -e "$(FONT_CYAN)$(INFO) Removing unused images...$(FONT_RESET)"; \
-		docker images | grep -E "langflow|evolution" | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true; \
-		docker system prune -f --volumes 2>/dev/null || true; \
-		echo ""; \
-		echo -e "$(FONT_CYAN)$(INFO) Final Docker disk usage:$(FONT_RESET)"; \
-		docker system df; \
-	else \
-		echo -e "$(FONT_GRAY)$(INFO) Docker not running or not available$(FONT_RESET)"; \
+		docker ps -aq --filter "label=com.docker.compose.project=automagik" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true; \
+		docker ps -aq --filter "label=com.docker.compose.project=langflow" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true; \
+		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true; \
+		docker volume ls -q --filter "label=com.docker.compose.project=automagik" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true; \
+		docker volume ls -q --filter "label=com.docker.compose.project=langflow" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true; \
+		docker volume ls -q --filter "label=com.docker.compose.project=evolution_api" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true; \
+		docker images --filter "reference=*langflow*" --filter "reference=*evolution*" --filter "reference=*postgres*" --filter "reference=*redis*" -q 2>/dev/null | xargs -r docker rmi -f >/dev/null 2>&1 || true; \
+		docker system prune -f --volumes >/dev/null 2>&1 || true; \
+		after_size=$$(docker system df --format "table {{.Size}}" | tail -n +2 | head -n 1 | sed 's/[^0-9.]//g' || echo "0"); \
+		if [ "$$before_size" != "$$after_size" ]; then \
+			echo -e "$(FONT_GREEN)✓ Freed Docker disk space$(FONT_RESET)"; \
+		fi; \
 	fi
 	@$(call print_success,Docker infrastructure uninstalled!)
 
@@ -520,46 +512,43 @@ setup-pm2: ## 📦 Setup PM2 with ecosystem file
 	fi
 	@echo -e "$(FONT_CYAN)$(INFO) Installing PM2 log rotation...$(FONT_RESET)"
 	@if ! pm2 list | grep -q pm2-logrotate; then \
-		pm2 install pm2-logrotate; \
+		pm2 install pm2-logrotate >/dev/null 2>&1; \
 	else \
 		echo -e "$(FONT_GREEN)✓ PM2 logrotate already installed$(FONT_RESET)"; \
 	fi
-	@pm2 set pm2-logrotate:max_size 100M
-	@pm2 set pm2-logrotate:retain 7
-	@pm2 set pm2-logrotate:compress false
-	@pm2 set pm2-logrotate:dateFormat YYYY-MM-DD_HH-mm-ss
-	@pm2 set pm2-logrotate:workerInterval 30
-	@pm2 set pm2-logrotate:rotateInterval 0 0 * * *
-	@pm2 set pm2-logrotate:rotateModule true
+	@pm2 set pm2-logrotate:max_size 100M >/dev/null 2>&1
+	@pm2 set pm2-logrotate:retain 7 >/dev/null 2>&1
+	@pm2 set pm2-logrotate:compress false >/dev/null 2>&1
+	@pm2 set pm2-logrotate:dateFormat YYYY-MM-DD_HH-mm-ss >/dev/null 2>&1
+	@pm2 set pm2-logrotate:workerInterval 30 >/dev/null 2>&1
+	@pm2 set pm2-logrotate:rotateInterval 0 0 * * * >/dev/null 2>&1
+	@pm2 set pm2-logrotate:rotateModule true >/dev/null 2>&1
 	@echo -e "$(FONT_CYAN)$(INFO) Setting up PM2 startup...$(FONT_RESET)"
-	@if ! pm2 startup -s 2>/dev/null; then \
-		echo -e "$(FONT_YELLOW)Warning: PM2 startup may already be configured$(FONT_RESET)"; \
-	fi
-	@echo -e "$(FONT_CYAN)$(INFO) Registering services with PM2 (ready to start)...$(FONT_RESET)"
-	@pm2 delete all 2>/dev/null || true
-	@pm2 start ecosystem.config.js --env production || echo "Services will be available when started"
-	@pm2 save --force 2>/dev/null || true
-	@echo -e "$(FONT_GREEN)✓ PM2 ecosystem ready - use 'make start' to run services$(FONT_RESET)"
-	@$(call print_success,PM2 ecosystem configured!)
+	@pm2 startup -s >/dev/null 2>&1 || echo -e "$(FONT_GRAY)✓ PM2 startup already configured$(FONT_RESET)"
+	@echo -e "$(FONT_CYAN)$(INFO) Registering services with PM2...$(FONT_RESET)"
+	@pm2 delete all >/dev/null 2>&1 || true
+	@pm2 start ecosystem.config.js >/dev/null 2>&1 || echo -e "$(FONT_GRAY)Services registered (will start when needed)$(FONT_RESET)"
+	@pm2 save --force >/dev/null 2>&1 || true
+	@echo -e "$(FONT_GREEN)✓ PM2 ecosystem configured$(FONT_RESET)"
 
 install-dependencies-only: ## 📦 Install only dependencies (no service registration)
 	$(call print_status,Installing dependencies for all services...)
 	@# Install Python dependencies for each service
 	@if [ -d "$(AM_AGENTS_LABS_DIR)" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for am-agents-labs...$(FONT_RESET)"; \
-		cd "$(AM_AGENTS_LABS_DIR)" && make install 2>&1 | grep -v "sudo" || true; \
+		cd "$(AM_AGENTS_LABS_DIR)" && AUTOMAGIK_QUIET_LOGO=1 make install >/dev/null 2>&1 || true; \
 	fi
 	@if [ -d "$(AUTOMAGIK_SPARK_DIR)" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-spark...$(FONT_RESET)"; \
-		cd "$(AUTOMAGIK_SPARK_DIR)" && make install 2>&1 | grep -v "sudo" || true; \
+		cd "$(AUTOMAGIK_SPARK_DIR)" && AUTOMAGIK_QUIET_LOGO=1 make install >/dev/null 2>&1 || true; \
 	fi
 	@if [ -d "$(AUTOMAGIK_TOOLS_DIR)" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-tools...$(FONT_RESET)"; \
-		cd "$(AUTOMAGIK_TOOLS_DIR)" && make install 2>&1 | grep -v "sudo" || true; \
+		cd "$(AUTOMAGIK_TOOLS_DIR)" && AUTOMAGIK_QUIET_LOGO=1 make install >/dev/null 2>&1 || true; \
 	fi
 	@if [ -d "$(AUTOMAGIK_OMNI_DIR)" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-omni...$(FONT_RESET)"; \
-		cd "$(AUTOMAGIK_OMNI_DIR)" && make install 2>&1 | grep -v "sudo" || true; \
+		cd "$(AUTOMAGIK_OMNI_DIR)" && AUTOMAGIK_QUIET_LOGO=1 make install >/dev/null 2>&1 || true; \
 	fi
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install)
 	@$(call print_success,All dependencies installed!)
@@ -1100,18 +1089,45 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
-	@$(MAKE) start-infrastructure
+	@# Verify infrastructure health before service installation
+	@echo -e "$(FONT_CYAN)🔄 Verifying infrastructure health before service installation...$(FONT_RESET)"
+	@if docker ps --filter "name=am-agents-labs-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "am-agents-labs-postgres" && \
+	   docker ps --filter "name=automagik-spark-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "automagik-spark-postgres" && \
+	   docker ps --filter "name=automagik-spark-redis" --filter "status=running" --format "{{.Names}}" | grep -q "automagik-spark-redis"; then \
+		echo -e "$(FONT_GREEN)✓ Infrastructure containers are running and ready$(FONT_RESET)"; \
+	else \
+		echo -e "$(FONT_RED)❌ Infrastructure containers are not running!$(FONT_RESET)"; \
+		echo -e "$(FONT_RED)   Required: am-agents-labs-postgres, automagik-spark-postgres, automagik-spark-redis$(FONT_RESET)"; \
+		echo -e "$(FONT_YELLOW)💡 Please check Docker installation and container status:$(FONT_RESET)"; \
+		echo -e "$(FONT_CYAN)   docker ps$(FONT_RESET)"; \
+		echo -e "$(FONT_CYAN)   docker logs am-agents-labs-postgres$(FONT_RESET)"; \
+		echo -e "$(FONT_CYAN)   docker logs automagik-spark-postgres$(FONT_RESET)"; \
+		echo -e "$(FONT_CYAN)   docker logs automagik-spark-redis$(FONT_RESET)"; \
+		exit 1; \
+	fi
 	@$(MAKE) build-essential-services
+	@echo ""
 	@$(MAKE) install-all-services
 	@$(call print_success_with_logo,Installation completed!)
-	@echo -e "$(FONT_CYAN)🌐 Frontend: http://localhost:8888$(FONT_RESET)"
-	@echo -e "$(FONT_CYAN)🔧 APIs:$(FONT_RESET)"
-	@echo -e "$(FONT_CYAN)   - Agents: http://localhost:8881$(FONT_RESET)"
-	@echo -e "$(FONT_CYAN)   - Omni: http://localhost:8882$(FONT_RESET)"
-	@echo -e "$(FONT_CYAN)   - Spark: http://localhost:8883$(FONT_RESET)"
-	@echo -e "$(FONT_CYAN)   - Tools: http://localhost:8884$(FONT_RESET)"
-	@echo -e "$(FONT_YELLOW)💡 Start services with: make start$(FONT_RESET)"
-	@echo -e "$(FONT_YELLOW)💡 Check status with: make status$(FONT_RESET)"
+	@echo -e "$(FONT_CYAN)🎯 Next Steps:$(FONT_RESET)"
+	@echo -e "  $(FONT_BOLD)$(FONT_GREEN)make start$(FONT_RESET)    - Start all services"
+	@echo -e "  $(FONT_BOLD)$(FONT_YELLOW)make stop$(FONT_RESET)     - Stop all services"
+	@echo -e "  $(FONT_BOLD)$(FONT_PURPLE)make restart$(FONT_RESET)  - Restart all services"
+	@echo -e "  $(FONT_BOLD)$(FONT_CYAN)make status$(FONT_RESET)   - Check service status"
+	@echo -e "  $(FONT_BOLD)$(FONT_BLUE)make logs$(FONT_RESET)     - View service logs"
+	@echo -e "  $(FONT_BOLD)$(FONT_GRAY)make help$(FONT_RESET)     - See all available commands"
+	@echo ""
+	@echo -e "$(FONT_CYAN)🌐 Access URLs (after running 'make start'):$(FONT_RESET)"
+	@echo -e "  $(FONT_BOLD)Frontend:$(FONT_RESET) $(FONT_CYAN)http://localhost:8888$(FONT_RESET)"
+	@echo ""
+	@echo -e "$(FONT_CYAN)📚 API Documentation:$(FONT_RESET)"
+	@echo -e "  $(AGENTS_COLOR)Agents:$(FONT_RESET)  $(FONT_CYAN)http://localhost:8881/api/v1/docs$(FONT_RESET)"
+	@echo -e "  $(OMNI_COLOR)Omni:$(FONT_RESET)    $(FONT_CYAN)http://localhost:8882/api/v1/docs$(FONT_RESET)"
+	@echo -e "  $(SPARK_COLOR)Spark:$(FONT_RESET)   $(FONT_CYAN)http://localhost:8883/api/v1/docs$(FONT_RESET)"
+	@echo -e "  $(TOOLS_COLOR)Tools:$(FONT_RESET)   $(FONT_CYAN)http://localhost:8884/sse$(FONT_RESET) | $(FONT_CYAN)http://localhost:8885/http$(FONT_RESET)"
+	@echo ""
+	@echo -e "$(FONT_YELLOW)💡 Services are installed but not started automatically$(FONT_RESET)"
+	@echo -e "$(FONT_YELLOW)   Run '$(FONT_BOLD)make start$(FONT_RESET)$(FONT_YELLOW)' to begin using Automagik!$(FONT_RESET)"
 
 install-full: ## 🚀 Complete installation (includes UI build - slower but fully ready)
 	$(call print_status,🚀 Installing complete Automagik suite with UI build...)

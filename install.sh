@@ -145,88 +145,182 @@ else
 fi
 
 echo ""
+echo -e "${CYAN}=== Core Infrastructure Setup ===${NC}"
+echo -e "${CYAN}Starting core infrastructure containers (PostgreSQL, Redis)...${NC}"
+
+# Function to check infrastructure health
+check_infrastructure_health() {
+    local max_attempts=30
+    local attempt=1
+    
+    echo -e "${CYAN}⏳ Waiting for infrastructure to be healthy...${NC}"
+    
+    while [ $attempt -le $max_attempts ]; do
+        local all_healthy=true
+        
+        # Check PostgreSQL containers
+        if ! docker exec am-agents-labs-postgres pg_isready -U postgres -d automagik_agents -p 5401 >/dev/null 2>&1; then
+            all_healthy=false
+        fi
+        
+        if ! docker exec automagik-spark-postgres pg_isready -U postgres -d automagik_spark -p 5402 >/dev/null 2>&1; then
+            all_healthy=false
+        fi
+        
+        # Check Redis container
+        if ! docker exec automagik-spark-redis redis-cli -p 5412 ping >/dev/null 2>&1; then
+            all_healthy=false
+        fi
+        
+        if [ "$all_healthy" = true ]; then
+            echo -e "${GREEN}✓ All infrastructure containers are healthy!${NC}"
+            return 0
+        fi
+        
+        echo -n "."
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+    
+    echo -e "${RED}❌ Infrastructure failed to become healthy after $max_attempts attempts${NC}"
+    return 1
+}
+
+# Start infrastructure containers
+if [ -f "$SCRIPT_DIR/docker-infrastructure.yml" ]; then
+    echo -e "${CYAN}Starting core infrastructure...${NC}"
+    docker compose -f "$SCRIPT_DIR/docker-infrastructure.yml" -p automagik up -d
+    
+    # Wait for infrastructure health
+    if check_infrastructure_health; then
+        echo -e "${GREEN}✓ Core infrastructure ready${NC}"
+    else
+        echo -e "${RED}❌ Failed to start core infrastructure. Services may not work properly.${NC}"
+        echo -e "${YELLOW}⚠️  Continuing with installation...${NC}"
+    fi
+else
+    echo -e "${RED}❌ docker-infrastructure.yml not found${NC}"
+    echo -e "${YELLOW}⚠️  Core infrastructure setup skipped${NC}"
+fi
+
+echo ""
 echo -e "${YELLOW}=== Optional Services Configuration ===${NC}"
 
-# Langflow option
-    echo ""
-    echo -e "${CYAN}🌊 LangFlow is a visual flow builder for creating AI workflows${NC}"
-    echo -e "${CYAN}   • Visual interface for building AI pipelines${NC}"
-    echo -e "${CYAN}   • Available at: http://localhost:7860${NC}"
-    read -p "Install LangFlow service? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${GREEN}✓ Installing LangFlow...${NC}"
+# Arrays to track parallel installations
+declare -a PARALLEL_PIDS=()
+declare -a PARALLEL_NAMES=()
+declare -a PARALLEL_MESSAGES=()
+
+# Function to install LangFlow in background
+install_langflow() {
+    {
         if [ -f "$SCRIPT_DIR/docker-langflow.yml" ]; then
-            docker compose -f "$SCRIPT_DIR/docker-langflow.yml" -p langflow up -d
-            echo -e "${GREEN}✓ LangFlow installed successfully!${NC}"
-            echo -e "${CYAN}   Access at: http://localhost:7860${NC}"
-            echo -e "${CYAN}   Username: admin${NC}"
-            echo -e "${CYAN}   Password: automagik123${NC}"
+            docker compose -f "$SCRIPT_DIR/docker-langflow.yml" -p langflow up -d >/dev/null 2>&1
         else
-            echo -e "${RED}❌ docker-langflow.yml not found${NC}"
+            exit 1
         fi
-    else
-        echo -e "${YELLOW}⚠️  Skipping LangFlow installation${NC}"
+    } &
+    local pid=$!
+    PARALLEL_PIDS+=($pid)
+    PARALLEL_NAMES+=("LangFlow")
+    PARALLEL_MESSAGES+=("Access at: http://localhost:7860 | Username: admin | Password: automagik123")
+}
+
+# Function to install Evolution API in background
+install_evolution() {
+    {
+        if [ -f "$SCRIPT_DIR/docker-evolution.yml" ]; then
+            docker compose -f "$SCRIPT_DIR/docker-evolution.yml" -p evolution_api up -d >/dev/null 2>&1
+        else
+            exit 1
+        fi
+    } &
+    local pid=$!
+    PARALLEL_PIDS+=($pid)
+    PARALLEL_NAMES+=("Evolution API")
+    PARALLEL_MESSAGES+=("Access at: http://localhost:8080 | API Key: namastex888")
+}
+
+# Function to install browser tools (foreground due to sudo requirement)
+install_browser_tools_foreground() {
+    if [ "$OS_TYPE" = "debian" ]; then
+        echo -e "${CYAN}Installing browser automation dependencies...${NC}"
+        sudo apt-get install -y \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2t64 >/dev/null 2>&1 || \
+        sudo apt-get install -y \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2 >/dev/null 2>&1
+        echo -e "${GREEN}✓ Browser tools installed successfully!${NC}"
+        echo -e "${CYAN}   Browser automation dependencies installed${NC}"
+    elif [ "$OS_TYPE" = "macos" ]; then
+        echo -e "${GREEN}✓ Browser tools configured successfully!${NC}"
+        echo -e "${CYAN}   Browser automation dependencies included with macOS${NC}"
     fi
+}
+
+# LangFlow option
+echo ""
+echo -e "${CYAN}🌊 LangFlow is a visual flow builder for creating AI workflows${NC}"
+echo -e "${CYAN}   • Visual interface for building AI pipelines${NC}"
+echo -e "${CYAN}   • Available at: http://localhost:7860${NC}"
+read -p "Install LangFlow service? [y/N] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${GREEN}✓ Starting LangFlow installation in background...${NC}"
+    install_langflow
+else
+    echo -e "${YELLOW}⚠️  Skipping LangFlow installation${NC}"
+fi
 
 # Evolution API option
-    echo ""
-    echo -e "${CYAN}📱 Evolution API provides WhatsApp integration capabilities${NC}"
-    echo -e "${CYAN}   • WhatsApp bot integration${NC}"
-    echo -e "${CYAN}   • Available at: http://localhost:8080${NC}"
-    read -p "Install Evolution API service? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${GREEN}✓ Installing Evolution API...${NC}"
-        if [ -f "$SCRIPT_DIR/docker-evolution.yml" ]; then
-            docker compose -f "$SCRIPT_DIR/docker-evolution.yml" -p evolution_api up -d
-            echo -e "${GREEN}✓ Evolution API installed successfully!${NC}"
-            echo -e "${CYAN}   Access at: http://localhost:8080${NC}"
-            echo -e "${CYAN}   API Key: namastex888${NC}"
-        else
-            echo -e "${RED}❌ docker-evolution.yml not found${NC}"
-        fi
-    else
-        echo -e "${YELLOW}⚠️  Skipping Evolution API installation${NC}"
-    fi
+echo ""
+echo -e "${CYAN}📱 Evolution API provides WhatsApp integration capabilities${NC}"
+echo -e "${CYAN}   • WhatsApp bot integration${NC}"
+echo -e "${CYAN}   • Available at: http://localhost:8080${NC}"
+read -p "Install Evolution API service? [y/N] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${GREEN}✓ Starting Evolution API installation in background...${NC}"
+    install_evolution
+else
+    echo -e "${YELLOW}⚠️  Skipping Evolution API installation${NC}"
+fi
 
-# Optional browser tools
+# Browser tools option
+echo ""
+echo -e "${CYAN}🌐 Optional: Browser Tools (for Agent web automation)${NC}"
+echo -e "${CYAN}   • Playwright/Puppeteer browser automation${NC}"
+echo -e "${CYAN}   • Required for web scraping & browser control${NC}"
+read -p "Install browser tools? [y/N] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    install_browser_tools_foreground
+else
+    echo -e "${YELLOW}⚠️  Skipping browser tools installation${NC}"
+fi
+
+# Don't wait for optional services - they can finish in background
+if [ ${#PARALLEL_PIDS[@]} -gt 0 ]; then
     echo ""
-    echo -e "${CYAN}🌐 Optional: Browser Tools (for Agent web automation)${NC}"
-    echo -e "${CYAN}   • Playwright/Puppeteer browser automation${NC}"
-    echo -e "${CYAN}   • Required for web scraping & browser control${NC}"
-    read -p "Install browser tools? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${GREEN}✓ Browser tools will be installed${NC}"
-        if [ "$OS_TYPE" = "debian" ]; then
-            echo -e "${CYAN}Installing browser automation dependencies...${NC}"
-            sudo apt-get install -y \
-                libnss3 \
-                libatk-bridge2.0-0 \
-                libdrm2 \
-                libxkbcommon0 \
-                libxcomposite1 \
-                libxdamage1 \
-                libxrandr2 \
-                libgbm1 \
-                libasound2t64 2>/dev/null || \
-            sudo apt-get install -y \
-                libnss3 \
-                libatk-bridge2.0-0 \
-                libdrm2 \
-                libxkbcommon0 \
-                libxcomposite1 \
-                libxdamage1 \
-                libxrandr2 \
-                libgbm1 \
-                libasound2
-        elif [ "$OS_TYPE" = "macos" ]; then
-            echo -e "${YELLOW}Browser tools are included with browser installations on macOS${NC}"
-        fi
-    else
-        echo -e "${YELLOW}⚠️  Skipping browser tools installation${NC}"
-    fi
+    echo -e "${CYAN}Optional services are installing in background...${NC}"
+    echo -e "${YELLOW}💡 Check their status later with: make status${NC}"
+    echo ""
+fi
 
 echo ""
 echo -e "${GREEN}✅ Pre-dependencies installed successfully!${NC}"
@@ -235,15 +329,3 @@ echo ""
 
 # Call the main Makefile for core services installation
 make install
-
-echo ""
-echo -e "${GREEN}✅ Installation complete!${NC}"
-echo -e "${YELLOW}Next steps:${NC}"
-if ! groups $USER | grep -q docker; then
-    echo -e "  1. Log out and back in for Docker permissions"
-    echo -e "  2. Run: ${CYAN}make start${NC}"
-else
-    echo -e "  1. Run: ${CYAN}make start${NC}"
-fi
-echo -e "  2. Access UI at ${CYAN}http://localhost:8888${NC}"
-echo ""
