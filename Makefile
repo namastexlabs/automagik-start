@@ -346,12 +346,7 @@ setup-env-files: ## 📝 Setup and sync .env files from central configuration
 # ===========================================
 # 🏗️ Service Building (Optimized)
 # ===========================================
-.PHONY: build-all-services build-essential-services build-agents build-spark build-tools build-omni build-ui
-build-all-services: ## 🏗️ Build all services (includes UI - can be slow)
-	$(call print_status,Building all Automagik services...)
-	@$(MAKE) build-essential-services
-	@$(MAKE) build-ui
-	@$(call print_success,All services built successfully!)
+.PHONY: build-essential-services build-agents build-spark build-tools build-omni
 
 build-essential-services: ## 🏗️ Build essential services only (fast - no UI)
 	$(call print_status,Building essential Automagik services...)
@@ -387,18 +382,7 @@ build-omni: ## Build automagik-omni service
 		cd "$(AUTOMAGIK_OMNI_DIR)" && make build 2>/dev/null || echo -e "$(FONT_YELLOW)$(WARNING) No build target for automagik-omni$(FONT_RESET)"; \
 	fi
 
-build-ui: ## Build automagik-ui service (can be slow)
-	$(call print_status,Building $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
-	@if [ -d "$(AUTOMAGIK_UI_DIR)" ] && [ -f "$(AUTOMAGIK_UI_DIR)/Makefile" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Building UI (this may take a few minutes)...$(FONT_RESET)"; \
-		cd "$(AUTOMAGIK_UI_DIR)" && make build || echo -e "$(FONT_RED)$(ERROR) Failed to build automagik-ui$(FONT_RESET)"; \
-	fi
-
-build-ui-fast: ## Build automagik-ui service (smart - skip if recent)
-	$(call print_status,Building $(UI_COLOR)automagik-ui$(FONT_RESET) service (smart mode)...)
-	@if [ -d "$(AUTOMAGIK_UI_DIR)" ] && [ -f "$(AUTOMAGIK_UI_DIR)/Makefile" ]; then \
-		cd "$(AUTOMAGIK_UI_DIR)" && make build-fast; \
-	fi
+# UI build logic moved to automagik-ui/Makefile install target
 
 # ===========================================
 # ⚙️ Service Installation
@@ -884,7 +868,7 @@ install-full: ## 🚀 Complete installation (includes UI build - slower but full
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
-	@$(MAKE) build-all-services
+	@$(MAKE) build-essential-services
 	@$(MAKE) install-all-services
 	@$(MAKE) start-all-services
 	@$(call print_success_with_logo,Complete installation finished!)
@@ -976,17 +960,28 @@ pull-ui: ## 🔄 Pull automagik-ui repository only
 	@cd $(AUTOMAGIK_UI_DIR) && git pull
 	@$(call print_success,automagik-ui updated!)
 
-logs: ## 📋 Show last 30 lines from all services (colorized)
-	$(call print_status,📋 Showing last 30 lines from all services...)
-	@echo -e "$(AGENTS_COLOR)[AGENTS] Last 30 lines:$(FONT_RESET)"
-	@journalctl -u automagik-agents -n 30 --no-pager 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"
-	@echo -e "$(SPARK_COLOR)[SPARK] Last 30 lines:$(FONT_RESET)"
-	@journalctl -u automagik-spark -n 30 --no-pager 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"
-	@echo -e "$(TOOLS_COLOR)[TOOLS] automagik-tools is a library, not a service$(FONT_RESET)"
-	@echo -e "$(OMNI_COLOR)[OMNI] Last 30 lines:$(FONT_RESET)"
-	@journalctl -u automagik-omni -n 30 --no-pager 2>/dev/null | sed "s/^/$(OMNI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"
-	@echo -e "$(UI_COLOR)[UI] Last 30 lines:$(FONT_RESET)"
-	@pm2 logs automagik-ui --lines 30 2>/dev/null | sed "s/^/$(UI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"
+logs: ## 📋 Show logs from all services (N=lines FOLLOW=1 for follow mode)
+	$(eval N := $(or $(N),30))
+	$(eval FOLLOW_MODE := $(if $(FOLLOW),-f,--no-pager))
+	$(call print_status,📋 Showing last $(N) lines from all services...)
+	@if [ "$(FOLLOW)" = "1" ]; then \
+		echo -e "$(FONT_YELLOW)Press Ctrl+C to stop following logs$(FONT_RESET)"; \
+		(journalctl -u automagik-agents $(FOLLOW_MODE) --lines $(N) 2>/dev/null | sed "s/^/$(AGENTS_COLOR)[AGENTS]$(FONT_RESET) /" &); \
+		(journalctl -u automagik-spark $(FOLLOW_MODE) --lines $(N) 2>/dev/null | sed "s/^/$(SPARK_COLOR)[SPARK]$(FONT_RESET)  /" &); \
+		(journalctl -u automagik-omni $(FOLLOW_MODE) --lines $(N) 2>/dev/null | sed "s/^/$(OMNI_COLOR)[OMNI]$(FONT_RESET)   /" &); \
+		(pm2 logs automagik-ui -f --lines $(N) 2>/dev/null | sed "s/^/$(UI_COLOR)[UI]$(FONT_RESET)     /" &); \
+		wait; \
+	else \
+		echo -e "$(AGENTS_COLOR)[AGENTS] Last $(N) lines:$(FONT_RESET)"; \
+		journalctl -u automagik-agents -n $(N) --no-pager 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(SPARK_COLOR)[SPARK] Last $(N) lines:$(FONT_RESET)"; \
+		journalctl -u automagik-spark -n $(N) --no-pager 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(TOOLS_COLOR)[TOOLS] automagik-tools is a library, not a service$(FONT_RESET)"; \
+		echo -e "$(OMNI_COLOR)[OMNI] Last $(N) lines:$(FONT_RESET)"; \
+		journalctl -u automagik-omni -n $(N) --no-pager 2>/dev/null | sed "s/^/$(OMNI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		echo -e "$(UI_COLOR)[UI] Last $(N) lines:$(FONT_RESET)"; \
+		pm2 logs automagik-ui --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(UI_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+	fi
 
 status: ## 📊 Check status of everything
 	@$(MAKE) status-all-services
