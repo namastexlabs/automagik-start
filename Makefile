@@ -787,6 +787,18 @@ clean-fast: ## 🧹 Clean essential services only (skip UI for speed)
 	@wait
 	@$(call print_success,Essential services cleaned!)
 
+clean-uv-cache: ## 🧹 Clean UV cache to resolve installation issues
+	$(call print_status,Cleaning UV cache...)
+	@if command -v uv >/dev/null 2>&1; then \
+		uv cache clean; \
+		$(call print_success,UV cache cleaned!); \
+	elif [ -f "$$HOME/.local/bin/uv" ]; then \
+		$$HOME/.local/bin/uv cache clean; \
+		$(call print_success,UV cache cleaned!); \
+	else \
+		$(call print_warning,UV not found - cache cleaning skipped); \
+	fi
+
 # ===========================================
 # 📚 Docker Preservation (Legacy Support)
 # ===========================================
