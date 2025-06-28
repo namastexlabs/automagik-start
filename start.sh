@@ -10,10 +10,10 @@ echo "🚀 Starting Automagik installation..."
 # Check if git is installed, install if not
 if ! command -v git &> /dev/null; then
     echo "📦 Git not found, installing..."
-    if command -v apt-get &> /dev/null; then
-        apt-get update && apt-get install -y git
+    if command -v apt &> /dev/null; then
+        sudo apt update && sudo apt install -y git
     elif command -v yum &> /dev/null; then
-        yum install -y git
+        sudo yum install -y git
     elif command -v brew &> /dev/null; then
         brew install git
     else
