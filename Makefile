@@ -1065,40 +1065,6 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
-	@# Interactive prompts for optional services (if not set via environment)
-	@if [ -z "$$INSTALL_LANGFLOW" ] && [ -f "$(LANGFLOW_COMPOSE)" ]; then \
-		echo ""; \
-		echo -e "$(FONT_YELLOW)🌊 Optional: LangFlow Visual Workflow Builder$(FONT_RESET)"; \
-		echo -e "$(FONT_GRAY)   • Visual AI workflow creation interface$(FONT_RESET)"; \
-		echo -e "$(FONT_GRAY)   • Available at: http://localhost:7860$(FONT_RESET)"; \
-		read -p "Install LangFlow? [y/N]: " langflow_choice; \
-		if [ "$$langflow_choice" = "y" ] || [ "$$langflow_choice" = "Y" ]; then \
-			export INSTALL_LANGFLOW=true; \
-		else \
-			export INSTALL_LANGFLOW=false; \
-		fi; \
-	fi
-	@if [ -z "$$INSTALL_EVOLUTION" ] && [ -f "$(EVOLUTION_COMPOSE)" ]; then \
-		echo ""; \
-		echo -e "$(FONT_YELLOW)📱 Optional: Evolution API (WhatsApp Integration)$(FONT_RESET)"; \
-		echo -e "$(FONT_GRAY)   • WhatsApp bot integration capabilities$(FONT_RESET)"; \
-		echo -e "$(FONT_GRAY)   • Available at: http://localhost:9000$(FONT_RESET)"; \
-		read -p "Install Evolution API? [y/N]: " evolution_choice; \
-		if [ "$$evolution_choice" = "y" ] || [ "$$evolution_choice" = "Y" ]; then \
-			export INSTALL_EVOLUTION=true; \
-		else \
-			export INSTALL_EVOLUTION=false; \
-		fi; \
-	fi
-	@# Install optional services if requested
-	@if [ "$$INSTALL_LANGFLOW" = "true" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Installing LangFlow...$(FONT_RESET)"; \
-		$(MAKE) start-langflow; \
-	fi
-	@if [ "$$INSTALL_EVOLUTION" = "true" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Installing Evolution API...$(FONT_RESET)"; \
-		$(MAKE) start-evolution; \
-	fi
 	@$(MAKE) build-essential-services
 	@$(MAKE) install-all-services
 	@$(call print_success_with_logo,Installation completed!)
@@ -1108,12 +1074,6 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@echo -e "$(FONT_CYAN)   - Omni: http://localhost:8882$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)   - Spark: http://localhost:8883$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)   - Tools: http://localhost:8884$(FONT_RESET)"
-	@if [ "$$INSTALL_EVOLUTION" = "true" ]; then \
-		echo -e "$(FONT_CYAN)   - Evolution: http://localhost:9000$(FONT_RESET)"; \
-	fi
-	@if [ "$$INSTALL_LANGFLOW" = "true" ]; then \
-		echo -e "$(FONT_CYAN)   - LangFlow: http://localhost:7860$(FONT_RESET)"; \
-	fi
 	@echo -e "$(FONT_YELLOW)💡 Start services with: make start$(FONT_RESET)"
 	@echo -e "$(FONT_YELLOW)💡 Check status with: make status$(FONT_RESET)"
 

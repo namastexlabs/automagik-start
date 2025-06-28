@@ -155,36 +155,51 @@ fi
 # Langflow option
 if [ "$INTERACTIVE_MODE" = true ]; then
     echo ""
-    echo -e "${CYAN}LangFlow is a visual flow builder for creating AI workflows${NC}"
+    echo -e "${CYAN}🌊 LangFlow is a visual flow builder for creating AI workflows${NC}"
+    echo -e "${CYAN}   • Visual interface for building AI pipelines${NC}"
+    echo -e "${CYAN}   • Available at: http://localhost:7860${NC}"
     read -p "Install LangFlow service? [y/N] " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        export INSTALL_LANGFLOW=true
-        echo -e "${GREEN}✓ LangFlow will be installed${NC}"
+        echo -e "${GREEN}✓ Installing LangFlow...${NC}"
+        if [ -f "docker-langflow.yml" ]; then
+            docker compose -f docker-langflow.yml -p langflow up -d
+            echo -e "${GREEN}✓ LangFlow installed successfully!${NC}"
+            echo -e "${CYAN}   Access at: http://localhost:7860${NC}"
+            echo -e "${CYAN}   Username: admin${NC}"
+            echo -e "${CYAN}   Password: automagik123${NC}"
+        else
+            echo -e "${RED}❌ docker-langflow.yml not found${NC}"
+        fi
     else
-        export INSTALL_LANGFLOW=false
         echo -e "${YELLOW}⚠️  Skipping LangFlow installation${NC}"
     fi
 else
-    export INSTALL_LANGFLOW=false
     echo -e "${YELLOW}⚠️  Skipping LangFlow (non-interactive mode)${NC}"
 fi
 
 # Evolution API option
 if [ "$INTERACTIVE_MODE" = true ]; then
     echo ""
-    echo -e "${CYAN}Evolution API provides WhatsApp integration capabilities${NC}"
+    echo -e "${CYAN}📱 Evolution API provides WhatsApp integration capabilities${NC}"
+    echo -e "${CYAN}   • WhatsApp bot integration${NC}"
+    echo -e "${CYAN}   • Available at: http://localhost:9000${NC}"
     read -p "Install Evolution API service? [y/N] " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        export INSTALL_EVOLUTION=true
-        echo -e "${GREEN}✓ Evolution API will be installed${NC}"
+        echo -e "${GREEN}✓ Installing Evolution API...${NC}"
+        if [ -f "docker-evolution.yml" ]; then
+            docker compose -f docker-evolution.yml -p evolution_api up -d
+            echo -e "${GREEN}✓ Evolution API installed successfully!${NC}"
+            echo -e "${CYAN}   Access at: http://localhost:9000${NC}"
+            echo -e "${CYAN}   API Key: namastex888${NC}"
+        else
+            echo -e "${RED}❌ docker-evolution.yml not found${NC}"
+        fi
     else
-        export INSTALL_EVOLUTION=false
         echo -e "${YELLOW}⚠️  Skipping Evolution API installation${NC}"
     fi
 else
-    export INSTALL_EVOLUTION=false
     echo -e "${YELLOW}⚠️  Skipping Evolution API (non-interactive mode)${NC}"
 fi
 
@@ -235,9 +250,8 @@ echo -e "${GREEN}✅ Pre-dependencies installed successfully!${NC}"
 echo -e "${PURPLE}Running main installation...${NC}"
 echo ""
 
-# Call the main Makefile with environment variables
-# Pass environment variables directly to make command to ensure they're preserved
-INSTALL_LANGFLOW=$INSTALL_LANGFLOW INSTALL_EVOLUTION=$INSTALL_EVOLUTION make install
+# Call the main Makefile for core services installation
+make install
 
 echo ""
 echo -e "${GREEN}✅ Installation complete!${NC}"
