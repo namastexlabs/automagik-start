@@ -1,0 +1,103 @@
+# ===================================================================
+# 📱 Evolution API - WhatsApp Integration (Optional Service)
+# ===================================================================
+
+# Note: Using host network mode for better connectivity
+# All services can access localhost and external LAN directly
+
+volumes:
+  evolution-postgres-data:
+  evolution-redis-data:
+  evolution-rabbitmq-data:
+  evolution_instances:
+
+services:
+  # PostgreSQL for Evolution API
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evolution_api
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+      PGPORT: 5403
+    volumes:
+      - evolution-postgres-data:/var/lib/postgresql/data
+    network_mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d evolution_api -p 5403"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for Evolution API
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: evolution-redis
+    restart: unless-stopped
+    command: redis-server --port 5413 --appendonly yes --requirepass ""
+    volumes:
+      - evolution-redis-data:/data
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "5413", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # RabbitMQ for Evolution API
+  evolution-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: evolution-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_NODE_PORT: 5431
+    volumes:
+      - evolution-rabbitmq-data:/var/lib/rabbitmq
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Evolution API (WhatsApp)
+  automagik-evolution:
+    image: evoapicloud/evolution-api:v2.3.0
+    container_name: automagik-evolution
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=9000
+      - SERVER_URL=http://localhost:9000
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@localhost:5403/evolution_api
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://localhost:5413
+      - RABBITMQ_ENABLED=true
+      - RABBITMQ_URI=amqp://rabbitmq:rabbitmq@localhost:5431
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=namastex888
+      - LOG_LEVEL=info
+    volumes:
+      - evolution_instances:/evolution/instances
+    network_mode: host
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_healthy
+      evolution-rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s

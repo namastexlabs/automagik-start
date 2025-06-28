@@ -1,223 +1,296 @@
-# 🚀 Automagik Start
+# 🚀 Automagik Suite
 
-**One-command installation for the complete Automagik Suite**
+**Production-grade AI orchestration platform with unified installation**
 
-Automagik Start is the unified installer that sets up the entire Automagik ecosystem on your system with a single command. It handles dependency installation, repository cloning, environment configuration, and service deployment automatically.
+Automagik Suite is a comprehensive AI workflow automation platform that combines multiple services into a cohesive ecosystem. This repository provides a streamlined installation process that sets up the entire suite with minimal configuration.
 
-## ✨ What's Included
+## ✨ Architecture Overview
 
-- **am-agents-labs** - Main Orchestrator (PostgreSQL)
-- **automagik-spark** - Workflow Engine (PostgreSQL + Redis)
-- **automagik-tools** - MCP Tools (SSE + HTTP)
-- **automagik-evolution** - WhatsApp API (PostgreSQL + Redis + RabbitMQ)
-- **automagik-omni** - Multi-tenant Hub
-- **automagik-ui** - Main Interface (Production Build)
-- **langflow** - Visual Flow Builder (Optional)
+The Automagik Suite uses a hybrid architecture:
+- **Infrastructure**: Docker containers with host networking for databases and message queues
+- **Application Services**: PM2-managed processes for better performance and native integration
+- **Optional Services**: LangFlow and Evolution API can be enabled during installation
+
+## 📦 Components
+
+### Core Services
+- **am-agents-labs** - Main AI orchestrator and agent management (Port: 8881)
+- **automagik-spark** - Workflow engine with Celery workers (Port: 8883)
+- **automagik-tools** - MCP tools hub with SSE/HTTP endpoints (Ports: 8884/8885)
+- **automagik-omni** - Multi-tenant hub for instance management (Port: 8882)
+- **automagik-ui** - Next.js web interface (Port: 8888)
+
+### Optional Services
+- **langflow** - Visual AI workflow builder (Port: 7860)
+- **automagik-evolution** - WhatsApp API integration (Port: 9000)
+
+### Infrastructure (Docker)
+- **PostgreSQL** databases for each service (Ports: 5401-5403)
+- **Redis** instances for caching and queues (Ports: 5411-5413)
+- **RabbitMQ** for Evolution API messaging (Port: 5431)
 
 ## 🎯 Quick Start
 
-### One-Command Installation (Recommended)
+### Prerequisites
+- Ubuntu/Debian or macOS
+- Git
+- Sudo access (for system dependencies only)
+
+### One-Command Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash
-```
-
-**That's it!** This single command will:
-- Detect any `.env` file in your current directory
-- Download the complete installer
-- Set up all services with your configuration
-- Launch the full Automagik suite
-
-### With Your Own Configuration
-
-```bash
-# 1. Create your .env file with API keys
-echo "OPENAI_API_KEY=sk-your-key-here" > .env
-echo "ANTHROPIC_API_KEY=sk-ant-your-key" >> .env
-
-# 2. Run the installer (it will find and use your .env)
-curl -fsSL https://raw.githubusercontent.com/namastexlabs/automagik-start/main/interactive.sh | bash
-```
-*Downloads and runs installer with step-by-step prompts and full customization.*
-
-### Manual Installation
-
-```bash
-git clone https://github.com/namastexlabs/automagik-start.git
-cd automagik-start
-./install.sh
-```
-*Manual download with full control over the installation process.*
-
-## 📋 System Requirements
-
-- **OS**: Ubuntu/Debian, macOS, or WSL
-- **RAM**: 4GB+ recommended
-- **Disk**: 10GB+ available space
-- **Network**: Internet connection required
-
-## 🔧 Installation Options
-
-### Interactive Installation (Default)
-```bash
+git clone https://github.com/namastexlabs/automagik-suite.git
+cd automagik-suite
 ./install.sh
 ```
 
-### Non-Interactive Installation
+The installer will:
+1. Install system dependencies (Python 3.12, Node.js 22 LTS, Docker, PM2)
+2. Prompt for optional services (LangFlow, Evolution API)
+3. Clone all service repositories
+4. Set up Docker infrastructure
+5. Build and configure all services
+6. Start everything with PM2
+
+## 🔧 Configuration
+
+### Environment Variables
+
+All configuration is managed through a single `.env` file in the root directory:
+
 ```bash
-./install.sh --non-interactive
+# Copy the example file
+cp .env.example .env
+
+# Edit with your API keys
+nano .env
 ```
 
-### Skip Specific Components
+Key configurations:
+- **AI Providers**: OpenAI, Anthropic, Google Gemini API keys
+- **Database URLs**: All use localhost with specific ports
+- **Service URLs**: All services accessible on localhost
+- **API Keys**: Internal service authentication keys
+
+### PM2 Process Management
+
+Services are managed by PM2 using `ecosystem.config.js`:
+
 ```bash
-./install.sh --skip-deps          # Skip dependency installation
-./install.sh --skip-browser       # Skip browser tools
-./install.sh --skip-clone         # Skip repository cloning
-./install.sh --skip-envs          # Skip environment setup
-./install.sh --skip-deploy        # Skip service deployment
+# View all services
+make status
+
+# Start all services
+make start
+
+# Stop all services
+make stop
+
+# View logs
+make logs
+
+# Restart specific service
+make restart-agents
 ```
 
-### Install Specific Components Only
-```bash
-./install.sh dependencies         # Install dependencies only
-./install.sh clone               # Clone repositories only
-./install.sh keys                # Collect API keys only
-./install.sh envs                # Setup environments only
-./install.sh deploy              # Deploy services only
-```
+## 📋 Makefile Commands
 
-## 🎛️ Access Your Services
+### Essential Commands
+- `make install` - Complete installation (infrastructure + services)
+- `make start` - Start everything
+- `make stop` - Stop everything
+- `make restart` - Restart all services
+- `make update` - Git pull and restart
+- `make logs` - View colorized logs
+- `make status` - Check service status
 
-After installation, access your Automagik Suite at:
+### Service-Specific Commands
+- `make start-[service]` - Start specific service (agents, spark, tools, omni, ui)
+- `make stop-[service]` - Stop specific service
+- `make restart-[service]` - Restart specific service
+- `make logs-[service]` - View specific service logs
 
-- **Main Interface**: http://localhost:8888
-- **AM Agents Labs**: http://localhost:8881
-- **Automagik Spark**: http://localhost:8883
-- **Automagik Omni**: http://localhost:8882
-- **MCP Tools SSE**: http://localhost:8884
-- **MCP Tools HTTP**: http://localhost:8885
-- **Evolution API**: http://localhost:9000
-- **Langflow** (Optional): http://localhost:7860
+### Optional Services
+- `make start-langflow` - Start LangFlow
+- `make stop-langflow` - Stop LangFlow
+- `make start-evolution` - Start Evolution API
+- `make stop-evolution` - Stop Evolution API
 
-## 🛠️ Management Commands
+### Infrastructure
+- `make start-infrastructure` - Start Docker containers
+- `make stop-infrastructure` - Stop Docker containers
 
-### Status and Monitoring
-```bash
-./scripts/deploy/status-display.sh         # Interactive dashboard
-./scripts/deploy/start-services.sh status  # Quick status check
-```
+## 🐳 Docker Architecture
 
-### Service Control
-```bash
-./scripts/deploy/start-services.sh start   # Start all services
-./scripts/deploy/start-services.sh stop    # Stop all services
-./scripts/deploy/start-services.sh restart # Restart all services
-```
+All Docker services use **host network mode** for simplified networking:
+- No port mapping required
+- Direct access to localhost
+- Full LAN connectivity (e.g., 192.168.x.x)
+- Better performance
 
-### System Verification
-```bash
-./install.sh verify                        # Verify installation
-./scripts/system/detect-system.sh          # System compatibility check
-```
-
-## 🔑 API Key Configuration
-
-During installation, you'll be prompted to configure API keys for:
-
-- **OpenAI API** (Required for most agents)
-- **Anthropic API** (For Claude integration)
-- **Google API** (For Google services)
-- **Azure OpenAI** (For Azure integration)
-- **Groq API** (For Groq models)
-- **Perplexity API** (For search capabilities)
-
-API keys can be updated later by editing the `.env` files in each service directory.
-
-## 🐳 Docker Services
-
-The installer sets up these Docker services:
-
-### Core Services
-- **am-agents-labs-postgres** (Port: 5432)
-- **automagik-spark-postgres** (Port: 5433)
-- **automagik-spark-redis** (Port: 6379)
-- **automagik-evolution-postgres** (Port: 5434)
-- **automagik-evolution-redis** (Port: 6380)
-- **automagik-evolution-rabbitmq** (Port: 5672, 15672)
-
-### Application Services
-- **am-agents-labs** (Port: 8881)
-- **automagik-spark** (Port: 8883)
-- **automagik-omni** (Port: 8882)
-- **automagik-tools-sse** (Port: 8884)
-- **automagik-tools-http** (Port: 8885)
-- **automagik-evolution** (Port: 9000)
-- **automagik-ui** (Port: 8888)
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **Port Conflicts**: The installer automatically detects and resolves port conflicts
-2. **Permission Issues**: Ensure you have sudo privileges for dependency installation
-3. **Docker Issues**: Make sure Docker is running and accessible
-4. **Network Issues**: Check internet connectivity for downloading dependencies
-
-### Logs and Debugging
-
-- Installation logs: `./automagik-install.log`
-- Service logs: `docker-compose logs [service-name]`
-- System detection: `./scripts/system/detect-system.sh`
-
-### Getting Help
-
-1. Check the logs for error details
-2. Verify system compatibility: `./install.sh verify`
-3. Run individual installation steps to isolate issues
-4. Check service status: `./scripts/deploy/status-display.sh`
+Docker compose files:
+- `docker-infrastructure.yml` - Core databases and Redis
+- `docker-langflow.yml` - LangFlow service (optional)
+- `docker-evolution.yml` - Evolution API and dependencies (optional)
 
 ## 🗂️ Project Structure
 
 ```
-automagik-start/
-├── install.sh                 # Main installer
-├── docker-compose.yml         # Service definitions
-├── scripts/
-│   ├── utils/                 # Utility functions
-│   │   ├── colors.sh         # Terminal colors
-│   │   ├── logging.sh        # Logging system
-│   │   └── port-check.sh     # Port management
-│   ├── system/               # System detection & deps
-│   │   ├── detect-system.sh  # OS/hardware detection
-│   │   ├── install-deps-ubuntu.sh
-│   │   └── install-deps-macos.sh
-│   ├── setup/                # Repository & environment setup
-│   │   ├── clone-repos.sh    # Repository cloning
-│   │   ├── collect-keys.sh   # API key collection
-│   │   └── setup-envs.sh     # Environment generation
-│   └── deploy/               # Deployment & monitoring
-│       ├── start-services.sh # Service management
-│       └── status-display.sh # Status dashboard
-└── README.md
+automagik-suite/
+├── .env                        # Main configuration file
+├── .env.example               # Configuration template
+├── Makefile                   # Service orchestration commands
+├── ecosystem.config.js        # PM2 configuration
+├── install.sh                 # Installation script
+├── docker-infrastructure.yml  # Core Docker services
+├── docker-langflow.yml       # LangFlow Docker service
+├── docker-evolution.yml      # Evolution API Docker services
+├── scripts/                   # Utility scripts
+│   ├── utils/                # Shared utilities
+│   ├── system/              # OS-specific installers
+│   └── deploy/              # Deployment scripts
+├── am-agents-labs/           # Main orchestrator
+├── automagik-spark/         # Workflow engine
+├── automagik-tools/         # MCP tools
+├── automagik-omni/          # Multi-tenant hub
+└── automagik-ui/            # Web interface
 ```
 
-## 🤝 Contributing
+## 🔍 Service Details
 
-We welcome contributions! Please feel free to submit issues, feature requests, or pull requests.
+### am-agents-labs (Port 8881)
+- Main AI orchestration service
+- Agent management and routing
+- PostgreSQL database on port 5401
+- Redis cache on port 5411
+
+### automagik-spark (Port 8883)
+- Workflow automation engine
+- Celery task processing
+- PostgreSQL database on port 5402
+- Redis queue on port 5412
+
+### automagik-tools (Ports 8884/8885)
+- MCP (Model Context Protocol) tools
+- SSE endpoint on port 8884
+- HTTP endpoint on port 8885
+- No database required
+
+### automagik-omni (Port 8882)
+- Multi-tenant instance management
+- API gateway for multiple services
+- Uses spark database
+
+### automagik-ui (Port 8888)
+- Next.js 15 web interface
+- Real-time updates via SSE
+- Production build served by PM2
+
+## 🚀 Development Workflow
+
+### Local Development
+```bash
+# Start in development mode
+make dev
+
+# Follow logs
+make logs-follow
+
+# Check specific service
+make status-spark
+```
+
+### Updating Services
+```bash
+# Pull latest changes
+make pull
+
+# Update and restart
+make update
+```
+
+### Adding New Services
+1. Clone repository to root directory
+2. Add to `ecosystem.config.js`
+3. Update Makefile targets
+4. Run `make install-[service]`
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+**Port Conflicts**
+```bash
+# Check what's using a port
+lsof -i :8881
+
+# Kill process using port
+kill -9 $(lsof -t -i:8881)
+```
+
+**PM2 Issues**
+```bash
+# Reset PM2
+pm2 kill
+pm2 resurrect
+
+# Clear logs
+pm2 flush
+```
+
+**Docker Issues**
+```bash
+# Reset Docker containers
+make stop-infrastructure
+docker system prune -a
+make start-infrastructure
+```
+
+### Logs Location
+- PM2 logs: `~/.pm2/logs/`
+- Service logs: `[service]/logs/`
+- Install log: `automagik-install.log`
+
+### Health Checks
+- Infrastructure: `make status-infrastructure`
+- Services: `make status`
+- Specific service: `curl http://localhost:[port]/health`
+
+## 📡 API Endpoints
+
+### Service URLs
+- Main Orchestrator: http://localhost:8881
+- Workflow Engine: http://localhost:8883
+- Tools SSE: http://localhost:8884
+- Tools HTTP: http://localhost:8885
+- Multi-tenant Hub: http://localhost:8882
+- Web Interface: http://localhost:8888
+- LangFlow (optional): http://localhost:7860
+- Evolution API (optional): http://localhost:9000
+
+### Authentication
+All services use API key authentication via `x-api-key` header.
+Default key: `namastex888` (configure in `.env`)
+
+## 🔐 Security Notes
+
+- Change default API keys in production
+- Use strong database passwords
+- Configure firewall rules for exposed ports
+- Enable HTTPS in production environments
+- Regularly update dependencies
+
+## 📚 Additional Resources
+
+- [Service Documentation](docs/)
+- [API Reference](docs/api/)
+- [Deployment Guide](docs/deployment.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the individual repository licenses for component-specific terms.
-
-## 🔗 Related Projects
-
-- [am-agents-labs](https://github.com/namastexlabs/am-agents-labs) - Main Orchestrator
-- [automagik-ui](https://github.com/namastexlabs/automagik-ui) - Main Interface
-- [automagik-omni](https://github.com/namastexlabs/automagik-omni) - Multi-tenant Hub
-- [automagik-spark](https://github.com/namastexlabs/automagik-spark) - Workflow Engine
-- [automagik-tools](https://github.com/namastexlabs/automagik-tools) - MCP Tools
-- [automagik-evolution](https://github.com/namastexlabs/automagik-evolution) - WhatsApp API
+MIT License - see LICENSE file for details.
 
 ---
 
-**Made with ❤️ by the Namastex Labs team**
+Built with ❤️ by NamasteX Labs

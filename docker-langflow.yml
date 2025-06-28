@@ -1,0 +1,36 @@
+# ===================================================================
+# 🌊 LangFlow - Visual AI Workflow Builder (Optional Service)
+# ===================================================================
+
+# Note: Using host network mode for better connectivity
+# All services can access localhost and external LAN directly
+
+services:
+  # LangFlow Visual Workflow Builder
+  langflow:
+    image: langflowai/langflow:latest
+    container_name: automagik-langflow
+    restart: unless-stopped
+    environment:
+      - LANGFLOW_PORT=7860
+      - LANGFLOW_HOST=0.0.0.0
+      - LANGFLOW_DATABASE_URL=postgresql://postgres:postgres@localhost:5402/langflow
+      - LANGFLOW_REDIS_URL=redis://localhost:5412
+      - LANGFLOW_AUTO_LOGIN=false
+      - LANGFLOW_SUPERUSER=admin
+      - LANGFLOW_SUPERUSER_PASSWORD=automagik123
+      - LANGFLOW_SECRET_KEY=automagik-langflow-secret-key
+      - LANGFLOW_LOG_LEVEL=info
+    volumes:
+      - langflow-data:/app/langflow
+    network_mode: host
+    # Note: Dependencies are managed externally since we're using host network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  langflow-data:

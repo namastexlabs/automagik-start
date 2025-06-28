@@ -12,33 +12,40 @@ source "$SCRIPT_DIR/../utils/port-check.sh"
 
 # Deployment configuration
 BASE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DOCKER_COMPOSE_FILE="$BASE_DIR/docker-compose.yml"
+DOCKER_COMPOSE_FILE="$BASE_DIR/docker-infrastructure.yml"
+LANGFLOW_COMPOSE_FILE="$BASE_DIR/docker-langflow.yml"
 
-# Service startup order (infrastructure first, then applications)
+# Service startup order (infrastructure only - applications use PM2)
 INFRASTRUCTURE_SERVICES=(
     "am-agents-labs-postgres"
     "automagik-spark-postgres"
+    "am-agents-labs-redis"
     "automagik-spark-redis"
+)
+
+# Optional infrastructure services
+OPTIONAL_INFRASTRUCTURE=(
     "evolution-postgres"
     "evolution-redis"
     "evolution-rabbitmq"
+    "automagik-evolution"
 )
 
-APPLICATION_SERVICES=(
+# PM2 managed services (not Docker)
+PM2_SERVICES=(
     "am-agents-labs"
-    "automagik-spark-api"
-    "automagik-spark-worker"
+    "automagik-spark"
     "automagik-tools"
-    "automagik-evolution"
     "automagik-omni"
     "automagik-ui"
 )
 
+# Optional services with separate compose files
 OPTIONAL_SERVICES=(
     "langflow"
 )
 
-ALL_SERVICES=("${INFRASTRUCTURE_SERVICES[@]}" "${APPLICATION_SERVICES[@]}")
+ALL_INFRASTRUCTURE=("${INFRASTRUCTURE_SERVICES[@]}")
 
 # Health check configuration
 HEALTH_CHECK_TIMEOUT=180  # 3 minutes (reduced from 5)

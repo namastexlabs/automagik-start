@@ -1,29 +1,23 @@
 # ===================================================================
-# 🐳 Automagik Suite - Infrastructure Only (Docker Compose)
+# 🐳 Automagik Suite - Core Infrastructure Only (Docker Compose)
 # ===================================================================
-# This file contains only the infrastructure services (databases, message queues)
-# Application services run as local systemd services
+# This file contains only the core Automagik infrastructure dependencies
+# - PostgreSQL databases for am-agents-labs and automagik-spark
+# - Redis instances for am-agents-labs and automagik-spark
+# Application services run via PM2
+# Optional services (Evolution, LangFlow) have separate docker compose files
 
-networks:
-  automagik-network:
-    driver: bridge
+# Note: Using host network mode for better connectivity
+# All services can access localhost and external LAN directly
 
 volumes:
   # PostgreSQL Data
   am-agents-labs-postgres-data:
   automagik-spark-postgres-data: 
-  evolution-postgres-data:
   
   # Redis Data
   am-agents-labs-redis-data:
   automagik-spark-redis-data:
-  evolution-redis-data:
-  
-  # RabbitMQ Data
-  evolution-rabbitmq-data:
-  
-  # Evolution API Data
-  evolution_instances:
 
 services:
   # ================================
@@ -35,19 +29,17 @@ services:
     image: postgres:15-alpine
     container_name: am-agents-labs-postgres
     restart: unless-stopped
+    network_mode: host
     environment:
       POSTGRES_DB: am_agents_labs
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5401:5432"
+      PGPORT: 5401
     volumes:
       - am-agents-labs-postgres-data:/var/lib/postgresql/data
-    networks:
-      automagik-network:
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d am_agents_labs"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d am_agents_labs -p 5401"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,19 +50,17 @@ services:
     image: postgres:15-alpine
     container_name: automagik-spark-postgres
     restart: unless-stopped
+    network_mode: host
     environment:
       POSTGRES_DB: automagik
       POSTGRES_USER: automagik
       POSTGRES_PASSWORD: automagik
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5402:5432"
+      PGPORT: 5402
     volumes:
       - automagik-spark-postgres-data:/var/lib/postgresql/data
-    networks:
-      automagik-network:
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U automagik -d automagik"]
+      test: ["CMD-SHELL", "pg_isready -U automagik -d automagik -p 5402"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -81,15 +71,12 @@ services:
     image: redis:7-alpine
     container_name: am-agents-labs-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ""
-    ports:
-      - "5411:6379"
+    network_mode: host
+    command: redis-server --port 5411 --appendonly yes --requirepass ""
     volumes:
       - am-agents-labs-redis-data:/data
-    networks:
-      automagik-network:
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-p", "5411", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -99,120 +86,13 @@ services:
     image: redis:7-alpine
     container_name: automagik-spark-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ""
-    ports:
-      - "5412:6379"
+    network_mode: host
+    command: redis-server --port 5412 --appendonly yes --requirepass ""
     volumes:
       - automagik-spark-redis-data:/data
-    networks:
-      automagik-network:
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-p", "5412", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
 
-  # PostgreSQL for Evolution API (WhatsApp)
-  evolution-postgres:
-    image: postgres:15-alpine
-    container_name: evolution-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: evolution_api
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5403:5432"
-    volumes:
-      - evolution-postgres-data:/var/lib/postgresql/data
-    networks:
-      automagik-network:
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d evolution_api"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  # Redis for Evolution API
-  evolution-redis:
-    image: redis:7-alpine
-    container_name: evolution-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ""
-    ports:
-      - "5413:6379"
-    volumes:
-      - evolution-redis-data:/data
-    networks:
-      automagik-network:
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  # RabbitMQ for Evolution API
-  evolution-rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: evolution-rabbitmq
-    restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbitmq
-      RABBITMQ_DEFAULT_PASS: rabbitmq
-      RABBITMQ_DEFAULT_VHOST: /
-    ports:
-      - "5431:5672"    # AMQP port
-      # Management UI disabled as per requirements
-    volumes:
-      - evolution-rabbitmq-data:/var/lib/rabbitmq
-    networks:
-      automagik-network:
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # ================================
-  # External Application Services
-  # ================================
-
-  # automagik-evolution (WhatsApp API) - Remains in Docker
-  automagik-evolution:
-    image: evoapicloud/evolution-api:v2.3.0
-    container_name: automagik-evolution
-    restart: unless-stopped
-    environment:
-      - SERVER_PORT=8080
-      - SERVER_URL=http://localhost:9000
-      - DATABASE_ENABLED=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@evolution-postgres:5432/evolution_api
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://evolution-redis:6379
-      - RABBITMQ_ENABLED=true
-      - RABBITMQ_URI=amqp://rabbitmq:rabbitmq@evolution-rabbitmq:5672
-      - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=namastex888
-      - LOG_LEVEL=info
-    ports:
-      - "9000:8080"
-    volumes:
-      - evolution_instances:/evolution/instances
-    networks:
-      automagik-network:
-    depends_on:
-      evolution-postgres:
-        condition: service_healthy
-      evolution-redis:
-        condition: service_healthy
-      evolution-rabbitmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s

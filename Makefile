@@ -61,8 +61,8 @@ SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automa
 # Actual runnable services (excludes automagik-tools which is a library)
 RUNNABLE_SERVICES := am-agents-labs automagik-spark automagik-omni automagik-ui
 
-# Systemd service names (for backward compatibility)
-SYSTEMD_SERVICES := automagik-agents automagik-spark automagik-omni
+# PM2 service names
+PM2_SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui
 
 # Repository URLs
 AM_AGENTS_LABS_URL := https://github.com/namastexlabs/am-agents-labs.git
@@ -74,6 +74,10 @@ AUTOMAGIK_UI_URL := https://github.com/namastexlabs/automagik-ui.git
 # Configuration
 CONFIG_DIR := $(PROJECT_ROOT)/config
 ENV_FILE := $(CONFIG_DIR)/local-services.env
+
+# Docker compose files
+LANGFLOW_COMPOSE := docker-langflow.yml
+EVOLUTION_COMPOSE := docker-evolution.yml
 
 # ===========================================
 # 🛠️ Utility Functions
@@ -139,34 +143,9 @@ define check_service_health
 	@service_name="$(1)"; \
 	color="$(2)"; \
 	port="$(3)"; \
-	if systemctl is-active --quiet $$service_name 2>/dev/null; then \
-		status="$(FONT_GREEN)RUNNING$(FONT_RESET)"; \
-		pid=$$(systemctl show $$service_name --property=MainPID --value 2>/dev/null); \
-		uptime=$$(systemctl show $$service_name --property=ActiveEnterTimestamp --value 2>/dev/null | awk '{print $$2 " " $$3}'); \
-	elif systemctl is-enabled --quiet $$service_name 2>/dev/null; then \
-		status="$(FONT_YELLOW)STOPPED$(FONT_RESET)"; \
-		pid="-"; \
-		uptime="-"; \
-	else \
-		status="$(FONT_RED)NOT INSTALLED$(FONT_RESET)"; \
-		pid="-"; \
-		uptime="-"; \
-	fi; \
-	printf "  %s%-20s%s %-15s %s%-8s%s %s%-10s%s %s%s%s\n" \
-		"$$color" "$$service_name" "$(FONT_RESET)" \
-		"$$status" \
-		"$(FONT_CYAN)" "$$port" "$(FONT_RESET)" \
-		"$(FONT_GRAY)" "$${pid:-N/A}" "$(FONT_RESET)" \
-		"$(FONT_GRAY)" "$${uptime:-N/A}" "$(FONT_RESET)"
-endef
-
-define check_pm2_service_health
-	@service_name="$(1)"; \
-	color="$(2)"; \
-	port="$(3)"; \
 	if pm2 list 2>/dev/null | grep -q "$$service_name.*online"; then \
 		status="$(FONT_GREEN)RUNNING$(FONT_RESET)"; \
-		pid=$$(pm2 list --no-color 2>/dev/null | awk '/$$service_name.*online/ {print $$10}'); \
+		pid=$$(pm2 list --no-color 2>/dev/null | awk "/$$service_name.*online/ {print \$$10}"); \
 		uptime=$$(pm2 show $$service_name 2>/dev/null | grep uptime | awk -F'│' '{print $$3}' | xargs); \
 	elif pm2 list 2>/dev/null | grep -q "$$service_name"; then \
 		status="$(FONT_YELLOW)STOPPED$(FONT_RESET)"; \
@@ -184,6 +163,7 @@ define check_pm2_service_health
 		"$(FONT_GRAY)" "$${pid:-N/A}" "$(FONT_RESET)" \
 		"$(FONT_GRAY)" "$${uptime:-N/A}" "$(FONT_RESET)"
 endef
+
 
 
 define print_infrastructure_status
@@ -263,6 +243,14 @@ help: ## 🚀 Show this help message
 	@echo -e "  $(FONT_GRAY)pull-[service]$(FONT_RESET)             Pull specific service repo"
 	@echo -e "  $(FONT_GRAY)logs-[service]$(FONT_RESET)             Follow specific service logs"
 	@echo ""
+	@echo -e "$(FONT_CYAN)🌟 Optional Services:$(FONT_RESET)"
+	@echo -e "  $(FONT_GRAY)start-langflow$(FONT_RESET)             Start LangFlow visual workflow builder"
+	@echo -e "  $(FONT_GRAY)stop-langflow$(FONT_RESET)              Stop LangFlow"
+	@echo -e "  $(FONT_GRAY)status-langflow$(FONT_RESET)            Check LangFlow status"
+	@echo -e "  $(FONT_GRAY)start-evolution$(FONT_RESET)            Start Evolution API (WhatsApp)"
+	@echo -e "  $(FONT_GRAY)stop-evolution$(FONT_RESET)             Stop Evolution API"
+	@echo -e "  $(FONT_GRAY)status-evolution$(FONT_RESET)           Check Evolution API status"
+	@echo ""
 	@echo -e "$(FONT_CYAN)🔧 Advanced Commands (for troubleshooting):$(FONT_RESET)"
 	@echo -e "  $(FONT_GRAY)install-all-services$(FONT_RESET)       Install services only"
 	@echo -e "  $(FONT_GRAY)uninstall-all-services$(FONT_RESET)     Uninstall services only"
@@ -275,7 +263,8 @@ help: ## 🚀 Show this help message
 	@echo -e "$(FONT_GRAY)Service Colors & Ports:$(FONT_RESET)"
 	@echo -e "  $(AGENTS_COLOR)AGENTS$(FONT_RESET) (🎨 Orange):  $(FONT_CYAN)8881$(FONT_RESET)  |  $(SPARK_COLOR)SPARK$(FONT_RESET) (🎨 Yellow):   $(FONT_CYAN)8883$(FONT_RESET)"
 	@echo -e "  $(TOOLS_COLOR)TOOLS$(FONT_RESET) (🎨 Blue):     $(FONT_CYAN)8884$(FONT_RESET)  |  $(OMNI_COLOR)OMNI$(FONT_RESET) (🎨 Purple):     $(FONT_CYAN)8882$(FONT_RESET)"
-	@echo -e "  $(UI_COLOR)UI$(FONT_RESET) (🎨 Green):        $(FONT_CYAN)8888$(FONT_RESET)  |  $(INFRA_COLOR)EVOLUTION$(FONT_RESET) (🎨 Red):    $(FONT_CYAN)9000$(FONT_RESET)"
+	@echo -e "  $(UI_COLOR)UI$(FONT_RESET) (🎨 Green):        $(FONT_CYAN)8888$(FONT_RESET)  |  Optional Services:"
+	@echo -e "  $(FONT_CYAN)LANGFLOW$(FONT_RESET):       $(FONT_CYAN)7860$(FONT_RESET)  |  $(FONT_CYAN)EVOLUTION$(FONT_RESET):       $(FONT_CYAN)9000$(FONT_RESET)"
 	@echo -e "  $(FONT_CYAN)📋 Use 'make logs' to see beautiful colorized output!$(FONT_RESET)"
 	@echo ""
 
@@ -291,29 +280,21 @@ start-infrastructure: ## 🚀 Start Docker infrastructure (idempotent)
 		$(call print_error,Infrastructure compose file not found: $(INFRASTRUCTURE_COMPOSE)); \
 		exit 1; \
 	fi
-	@# Check if infrastructure is already running and healthy
-	@running_containers=$$($(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) ps --services --filter "status=running" 2>/dev/null | wc -l); \
-	total_services=$$($(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) config --services | wc -l); \
-	if [ "$$running_containers" -eq "$$total_services" ]; then \
-		echo -e "$(FONT_GREEN)$(CHECKMARK) Infrastructure already running and healthy$(FONT_RESET)"; \
-		$(call print_infrastructure_status); \
-	else \
-		echo -e "$(FONT_CYAN)$(INFO) Starting infrastructure services ($$running_containers/$$total_services running)...$(FONT_RESET)"; \
-		$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) up -d; \
-		$(call print_status,Waiting for infrastructure to be ready...); \
-		sleep 10; \
-		$(call print_success,Docker infrastructure started successfully!); \
-		$(call print_infrastructure_status); \
-	fi
+	@echo -e "$(FONT_CYAN)$(INFO) Starting core infrastructure services...$(FONT_RESET)"
+	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik up -d
+	@$(call print_status,Waiting for infrastructure to be ready...)
+	@sleep 10
+	@$(call print_success,Docker infrastructure started successfully!)
+	@$(call print_infrastructure_status)
 
 stop-infrastructure: ## 🛑 Stop Docker infrastructure
 	$(call print_status,Stopping Docker infrastructure...)
-	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) down
+	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down
 	@$(call print_success,Docker infrastructure stopped!)
 
 uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove containers, images, volumes)
 	$(call print_status,Uninstalling Docker infrastructure...)
-	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) down -v --rmi all --remove-orphans 2>/dev/null || true
+	@$(DOCKER_COMPOSE) -f $(INFRASTRUCTURE_COMPOSE) -p automagik down -v --rmi all --remove-orphans 2>/dev/null || true
 	@docker system prune -f 2>/dev/null || true
 	@$(call print_success,Docker infrastructure uninstalled!)
 
@@ -327,30 +308,88 @@ status-infrastructure: ## 📊 Check infrastructure status
 	@$(call print_infrastructure_status)
 
 # ===========================================
+# 🌊 LangFlow Management (Optional Service)
+# ===========================================
+.PHONY: start-langflow stop-langflow restart-langflow status-langflow
+start-langflow: ## 🌊 Start LangFlow visual workflow builder
+	$(call print_status,Starting LangFlow...)
+	@if [ ! -f "$(LANGFLOW_COMPOSE)" ]; then \
+		$(call print_error,LangFlow compose file not found: $(LANGFLOW_COMPOSE)); \
+		exit 1; \
+	fi
+	@# Using host network mode - no network creation needed
+	@$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow up -d
+	@$(call print_status,Waiting for LangFlow to be ready...)
+	@sleep 15
+	@$(call print_success,LangFlow started successfully!)
+	@echo -e "$(FONT_CYAN)🌊 LangFlow UI: http://localhost:7860$(FONT_RESET)"
+	@echo -e "$(FONT_YELLOW)   Username: admin$(FONT_RESET)"
+	@echo -e "$(FONT_YELLOW)   Password: automagik123$(FONT_RESET)"
+
+stop-langflow: ## 🛑 Stop LangFlow
+	$(call print_status,Stopping LangFlow...)
+	@$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow down
+	@$(call print_success,LangFlow stopped!)
+
+restart-langflow: ## 🔄 Restart LangFlow
+	$(call print_status,Restarting LangFlow...)
+	@$(MAKE) stop-langflow
+	@sleep 2
+	@$(MAKE) start-langflow
+
+status-langflow: ## 📊 Check LangFlow status
+	@echo -e "$(FONT_CYAN)🌊 LangFlow Status:$(FONT_RESET)"
+	@$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow ps 2>/dev/null || echo "LangFlow not running"
+
+# ===========================================
+# 📱 Evolution API Management (Optional Service)
+# ===========================================
+.PHONY: start-evolution stop-evolution restart-evolution status-evolution
+start-evolution: ## 📱 Start Evolution API (WhatsApp integration)
+	$(call print_status,Starting Evolution API...)
+	@if [ ! -f "$(EVOLUTION_COMPOSE)" ]; then \
+		$(call print_error,Evolution compose file not found: $(EVOLUTION_COMPOSE)); \
+		exit 1; \
+	fi
+	@$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api up -d
+	@$(call print_status,Waiting for Evolution API to be ready...)
+	@sleep 20
+	@$(call print_success,Evolution API started successfully!)
+	@echo -e "$(FONT_CYAN)📱 Evolution API: http://localhost:9000$(FONT_RESET)"
+	@echo -e "$(FONT_YELLOW)   API Key: namastex888$(FONT_RESET)"
+
+stop-evolution: ## 🛑 Stop Evolution API
+	$(call print_status,Stopping Evolution API...)
+	@$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down
+	@$(call print_success,Evolution API stopped!)
+
+restart-evolution: ## 🔄 Restart Evolution API
+	$(call print_status,Restarting Evolution API...)
+	@$(MAKE) stop-evolution
+	@sleep 2
+	@$(MAKE) start-evolution
+
+status-evolution: ## 📊 Check Evolution API status
+	@echo -e "$(FONT_CYAN)📱 Evolution API Status:$(FONT_RESET)"
+	@$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api ps 2>/dev/null || echo "Evolution API not running"
+
+# ===========================================
 # 📝 Environment Setup
 # ===========================================
 .PHONY: setup-env-files
-setup-env-files: ## 📝 Setup and sync .env files from central configuration
-	$(call print_status,Setting up environment files...)
+setup-env-files: ## 📝 Setup main .env file from template
+	$(call print_status,Setting up environment file...)
 	@# Create main .env file if it doesn't exist
 	@if [ ! -f .env ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Creating main .env file from template...$(FONT_RESET)"; \
 		cp .env.example .env; \
 		echo -e "$(FONT_GREEN)$(CHECKMARK) Main .env file created$(FONT_RESET)"; \
+		echo -e "$(FONT_YELLOW)$(WARNING) Please update .env with your actual API keys and configuration$(FONT_RESET)"; \
 	else \
 		echo -e "$(FONT_GREEN)$(CHECKMARK) Main .env file already exists$(FONT_RESET)"; \
 	fi
-	@# Sync central .env to all repositories (always overwrite for consistency)
-	@echo -e "$(FONT_CYAN)$(INFO) Syncing central .env to all repositories...$(FONT_RESET)"
-	@for repo_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
-		repo_name=$$(basename $$repo_dir); \
-		if [ -d "$$repo_dir" ]; then \
-			echo -e "$(FONT_CYAN)$(INFO) Syncing .env to $$repo_name...$(FONT_RESET)"; \
-			cp .env "$$repo_dir/.env"; \
-			echo -e "$(FONT_GREEN)$(CHECKMARK) .env synced to $$repo_name$(FONT_RESET)"; \
-		fi; \
-	done
-	@$(call print_success,Environment files synced from central configuration!)
+	@# Note: PM2 ecosystem.config.js loads the main .env and passes it to all services
+	@$(call print_success,Environment file ready!)
 
 # ===========================================
 # 🏗️ Service Building (Optimized)
@@ -397,7 +436,7 @@ build-omni: ## Build automagik-omni service
 # ⚙️ Service Installation
 # ===========================================
 .PHONY: install-all-services uninstall-all-services install-agents install-spark install-tools install-omni install-ui install-dependencies-only
-install-all-services: ## ⚙️ Install all services as systemd services
+install-all-services: ## ⚙️ Install all services and setup PM2
 	$(call print_status,Installing all Automagik services...)
 	@# Install services in dependency order
 	@$(MAKE) install-agents
@@ -406,7 +445,23 @@ install-all-services: ## ⚙️ Install all services as systemd services
 	@$(MAKE) install-ui
 	@# Install tools library
 	@$(MAKE) install-tools
+	@# Setup PM2 ecosystem
+	@$(MAKE) setup-pm2
 	@$(call print_success_with_logo,All services installed successfully!)
+
+setup-pm2: ## 📦 Setup PM2 with ecosystem file
+	$(call print_status,Setting up PM2 ecosystem...)
+	@if ! command -v pm2 >/dev/null 2>&1; then \
+		echo -e "$(FONT_RED)Error: PM2 not found. Install with: npm install -g pm2$(FONT_RESET)"; \
+		exit 1; \
+	fi
+	@echo -e "$(FONT_CYAN)$(INFO) Installing PM2 log rotation...$(FONT_RESET)"
+	@pm2 install pm2-logrotate
+	@pm2 set pm2-logrotate:max_size 100M
+	@pm2 set pm2-logrotate:retain 7
+	@echo -e "$(FONT_CYAN)$(INFO) Setting up PM2 startup...$(FONT_RESET)"
+	@pm2 startup -s
+	@$(call print_success,PM2 ecosystem configured!)
 
 install-dependencies-only: ## 📦 Install only dependencies (no systemd services)
 	$(call print_status,Installing dependencies for all services...)
@@ -436,7 +491,6 @@ install-agents: ## Install am-agents-labs service
 		$(call ensure_repository,am-agents-labs,$(AM_AGENTS_LABS_DIR),$(AM_AGENTS_LABS_URL)); \
 	fi
 	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),install)
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),install-service)
 
 install-spark: ## Install automagik-spark service
 	$(call print_status,Installing $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
@@ -444,7 +498,6 @@ install-spark: ## Install automagik-spark service
 		$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL)); \
 	fi
 	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),install)
-	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),install-service)
 
 install-tools: ## Install automagik-tools service
 	$(call print_status,Installing $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
@@ -452,7 +505,6 @@ install-tools: ## Install automagik-tools service
 		$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL)); \
 	fi
 	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),install)
-	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),install-service)
 
 install-omni: ## Install automagik-omni service
 	$(call print_status,Installing $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
@@ -460,7 +512,6 @@ install-omni: ## Install automagik-omni service
 		$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL)); \
 	fi
 	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),install)
-	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),install-service)
 
 install-ui: ## Install automagik-ui service
 	$(call print_status,Installing $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
@@ -468,22 +519,14 @@ install-ui: ## Install automagik-ui service
 		$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL)); \
 	fi
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install)
-	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install-service)
 
-uninstall-all-services: ## 🗑️ Uninstall all services (remove systemd and PM2 services)
+uninstall-all-services: ## 🗑️ Uninstall all services (remove PM2 services)
 	$(call print_status,Uninstalling all Automagik services...)
 	@$(MAKE) stop-all-services
-	@# Remove systemd services
-	@for service in am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui; do \
-		echo -e "Removing $$service systemd service..."; \
-		sudo systemctl disable $$service 2>/dev/null || true; \
-		sudo rm -f /etc/systemd/system/$$service.service 2>/dev/null || true; \
-	done
-	@sudo systemctl daemon-reload
 	@# Remove PM2 services
 	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 services...$(FONT_RESET)"
-	@pm2 delete automagik-ui 2>/dev/null || true
-	@pm2 save 2>/dev/null || true
+	@pm2 delete ecosystem.config.js 2>/dev/null || true
+	@pm2 save --force 2>/dev/null || true
 	@$(call print_success,All services uninstalled!)
 
 uninstall: ## 🗑️ Complete uninstall (stop everything, remove services and infrastructure)
@@ -497,23 +540,9 @@ uninstall: ## 🗑️ Complete uninstall (stop everything, remove services and i
 # 🎛️ Service Management
 # ===========================================
 .PHONY: start-all-services stop-all-services restart-all-services status-all-services
-start-all-services: ## 🚀 Start all services
-	$(call print_status,Starting all Automagik services...)
-	@echo -e "$(AGENTS_COLOR)[1/5] Starting am-agents-labs (core orchestrator)...$(FONT_RESET)"
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),start-service)
-	@sleep 2
-	@echo -e "$(SPARK_COLOR)[2/5] Starting automagik-spark (workflow engine)...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),start-service)
-	@sleep 2
-	@echo -e "$(TOOLS_COLOR)[3/5] Starting automagik-tools (MCP hub)...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),start-service)
-	@sleep 2
-	@echo -e "$(OMNI_COLOR)[4/5] Starting automagik-omni (multi-tenant hub)...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),start-service)
-	@sleep 2
-	@echo -e "$(UI_COLOR)[5/5] Starting automagik-ui (frontend - PM2)...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),start-service)
-	@sleep 3
+start-all-services: ## 🚀 Start all services with PM2
+	$(call print_status,Starting all Automagik services with PM2...)
+	@pm2 start ecosystem.config.js
 	@$(call print_success,All services started!)
 
 start-all-dev: ## 🚀 Start all services in dev mode (no sudo required)
@@ -539,35 +568,25 @@ start-all-dev: ## 🚀 Start all services in dev mode (no sudo required)
 	@echo -e "$(FONT_YELLOW)$(INFO) Services running on 999x ports. Production services remain on 888x.$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)Access URLs: agents(9991), omni(9992), spark(9993), tools(9994), ui(9998)$(FONT_RESET)"
 
-stop-all-services: ## 🛑 Stop all services
+stop-all-services: ## 🛑 Stop all services with PM2
 	$(call print_status,Stopping all Automagik services...)
-	@echo -e "$(AGENTS_COLOR)Stopping am-agents-labs...$(FONT_RESET)"
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),stop-service)
-	@echo -e "$(SPARK_COLOR)Stopping automagik-spark...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),stop-service)
-	@echo -e "$(TOOLS_COLOR)Stopping automagik-tools...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),stop-service)
-	@echo -e "$(OMNI_COLOR)Stopping automagik-omni...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),stop-service)
-	@echo -e "$(UI_COLOR)Stopping automagik-ui...$(FONT_RESET)"
-	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),stop-service)
+	@pm2 stop ecosystem.config.js 2>/dev/null || true
 	@$(call print_success,All services stopped!)
 
-restart-all-services: ## 🔄 Restart all services
+restart-all-services: ## 🔄 Restart all services with PM2
 	$(call print_status,Restarting all Automagik services...)
-	@$(MAKE) stop-all-services
-	@sleep 2
-	@$(MAKE) start-all-services
+	@pm2 restart ecosystem.config.js 2>/dev/null || pm2 start ecosystem.config.js
+	@$(call print_success,All services restarted!)
 
 status-all-services: ## 📊 Check status of all services
 	@echo -e "$(FONT_PURPLE)$(CHART) Automagik Services Status:$(FONT_RESET)"
 	@echo -e "  $(FONT_BOLD)Service Name         Status          Port     PID        Uptime$(FONT_RESET)"
 	@echo -e "  $(FONT_GRAY)──────────────────────────────────────────────────────────────────────$(FONT_RESET)"
-	$(call check_service_health,automagik-agents,$(AGENTS_COLOR),8881)
+	$(call check_service_health,am-agents-labs,$(AGENTS_COLOR),8881)
 	$(call check_service_health,automagik-spark,$(SPARK_COLOR),8883)
 	$(call check_service_health,automagik-tools,$(TOOLS_COLOR),8884)
-	$(call check_service_health,omni-hub,$(OMNI_COLOR),8882)
-	$(call check_pm2_service_health,automagik-ui,$(UI_COLOR),8888)
+	$(call check_service_health,automagik-omni,$(OMNI_COLOR),8882)
+	$(call check_service_health,automagik-ui,$(UI_COLOR),8888)
 	@echo ""
 	@$(call print_infrastructure_status)
 
@@ -582,32 +601,24 @@ status-all-services: ## 📊 Check status of all services
 # Individual Start Commands
 start-agents: ## 🚀 Start am-agents-labs service only
 	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),start-service)
+	@pm2 start ecosystem.config.js --only am-agents-labs
 
 start-agents-dev: ## 🚀 Start am-agents-labs in dev mode (no sudo)
 	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) in dev mode on port 9991...)
 	@cd $(AM_AGENTS_LABS_DIR) && AM_PORT=9991 $(MAKE) dev
 
-start-agents-user: ## 🚀 Start am-agents-labs with user systemd (no sudo)
-	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) with user systemd...)
-	@cd $(AM_AGENTS_LABS_DIR) && systemctl --user start automagik-agents 2>/dev/null || echo "User service not installed. Use 'make install-user-services' first."
-
 start-spark: ## 🚀 Start automagik-spark service only
 	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),start-service)
+	@pm2 start ecosystem.config.js --only automagik-spark
 
 start-spark-dev: ## 🚀 Start automagik-spark in dev mode (no sudo)
 	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) in dev mode...)
 	@echo -e "$(FONT_YELLOW)Starting on port 9993 with auto-reload...$(FONT_RESET)"
 	@cd $(AUTOMAGIK_SPARK_DIR) && source .venv/bin/activate && uvicorn automagik.api.app:app --host 0.0.0.0 --port 9993 --reload 2>/dev/null || echo "Failed to start dev mode - check dependencies"
 
-start-spark-user: ## 🚀 Start automagik-spark with user systemd (no sudo)
-	$(call print_status,Starting $(SPARK_COLOR)automagik-spark$(FONT_RESET) with user systemd...)
-	@systemctl --user start automagik-spark 2>/dev/null || echo "User service not installed. Use 'make install-user-services' first."
-
 start-tools: ## 🚀 Start automagik-tools service only
 	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),start-service)
+	@pm2 start ecosystem.config.js --only automagik-tools
 
 start-tools-dev: ## 🚀 Start automagik-tools in dev mode (no sudo)
 	$(call print_status,Starting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) in dev mode on port 9994...)
@@ -615,19 +626,15 @@ start-tools-dev: ## 🚀 Start automagik-tools in dev mode (no sudo)
 
 start-omni: ## 🚀 Start automagik-omni service only
 	$(call print_status,Starting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),start-service)
+	@pm2 start ecosystem.config.js --only automagik-omni
 
 start-omni-dev: ## 🚀 Start automagik-omni in dev mode (no sudo)
 	$(call print_status,Starting $(OMNI_COLOR)automagik-omni$(FONT_RESET) in dev mode on port 9992...)
 	@cd $(AUTOMAGIK_OMNI_DIR) && API_PORT=9992 $(MAKE) dev
 
-start-omni-user: ## 🚀 Start automagik-omni with user systemd (no sudo)
-	$(call print_status,Starting $(OMNI_COLOR)automagik-omni$(FONT_RESET) with user systemd...)
-	@systemctl --user start omni-hub 2>/dev/null || echo "User service not installed. Use 'make install-user-services' first."
-
 start-ui: ## 🚀 Start automagik-ui service only (PM2)
 	$(call print_status,Starting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),start-service)
+	@pm2 start ecosystem.config.js --only automagik-ui
 
 start-ui-dev: ## 🚀 Start automagik-ui in dev mode (no sudo)
 	$(call print_status,Starting $(UI_COLOR)automagik-ui$(FONT_RESET) in dev mode on port 9998...)
@@ -636,93 +643,94 @@ start-ui-dev: ## 🚀 Start automagik-ui in dev mode (no sudo)
 # Individual Stop Commands
 stop-agents: ## 🛑 Stop am-agents-labs service only
 	$(call print_status,Stopping $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),stop-service)
+	@pm2 stop am-agents-labs 2>/dev/null || true
 
 stop-spark: ## 🛑 Stop automagik-spark service only
 	$(call print_status,Stopping $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),stop-service)
+	@pm2 stop automagik-spark 2>/dev/null || true
 
 stop-tools: ## 🛑 Stop automagik-tools service only
 	$(call print_status,Stopping $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),stop-service)
+	@pm2 stop automagik-tools 2>/dev/null || true
 
 stop-omni: ## 🛑 Stop automagik-omni service only
 	$(call print_status,Stopping $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),stop-service)
+	@pm2 stop automagik-omni 2>/dev/null || true
 
 stop-ui: ## 🛑 Stop automagik-ui service only (PM2)
 	$(call print_status,Stopping $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),stop-service)
+	@pm2 stop automagik-ui 2>/dev/null || true
 
 # Individual Restart Commands
 restart-agents: ## 🔄 Restart am-agents-labs service only
 	$(call print_status,Restarting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),restart-service)
+	@pm2 restart am-agents-labs 2>/dev/null || pm2 start ecosystem.config.js --only am-agents-labs
 
 restart-spark: ## 🔄 Restart automagik-spark service only
 	$(call print_status,Restarting $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),restart-service)
+	@pm2 restart automagik-spark 2>/dev/null || pm2 start ecosystem.config.js --only automagik-spark
 
 restart-tools: ## 🔄 Restart automagik-tools service only
 	$(call print_status,Restarting $(TOOLS_COLOR)automagik-tools$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),restart-service)
+	@pm2 restart automagik-tools 2>/dev/null || pm2 start ecosystem.config.js --only automagik-tools
 
 restart-omni: ## 🔄 Restart automagik-omni service only
 	$(call print_status,Restarting $(OMNI_COLOR)automagik-omni$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),restart-service)
+	@pm2 restart automagik-omni 2>/dev/null || pm2 start ecosystem.config.js --only automagik-omni
 
 restart-ui: ## 🔄 Restart automagik-ui service only (PM2)
 	$(call print_status,Restarting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
-	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),restart-service)
+	@pm2 restart automagik-ui 2>/dev/null || pm2 start ecosystem.config.js --only automagik-ui
 
 # Individual Status Commands
 status-agents: ## 📊 Check am-agents-labs status only
-	$(call show_service_status,$(AM_AGENTS_LABS_DIR),$(AGENTS_COLOR))
+	$(call print_status,Checking $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) status...)
+	@pm2 show am-agents-labs 2>/dev/null || echo "Service not found"
 
 status-spark: ## 📊 Check automagik-spark status only
-	$(call show_service_status,$(AUTOMAGIK_SPARK_DIR),$(SPARK_COLOR))
+	$(call print_status,Checking $(SPARK_COLOR)automagik-spark$(FONT_RESET) status...)
+	@pm2 show automagik-spark 2>/dev/null || echo "Service not found"
 
 status-tools: ## 📊 Check automagik-tools status only
-	$(call show_service_status,$(AUTOMAGIK_TOOLS_DIR),$(TOOLS_COLOR))
+	$(call print_status,Checking $(TOOLS_COLOR)automagik-tools$(FONT_RESET) status...)
+	@pm2 show automagik-tools 2>/dev/null || echo "Service not found"
 
 status-omni: ## 📊 Check automagik-omni status only
-	$(call show_service_status,$(AUTOMAGIK_OMNI_DIR),$(OMNI_COLOR))
+	$(call print_status,Checking $(OMNI_COLOR)automagik-omni$(FONT_RESET) status...)
+	@pm2 show automagik-omni 2>/dev/null || echo "Service not found"
 
-status-ui: ## 📊 Check automagik-ui status only (PM2)
-	$(call show_service_status,$(AUTOMAGIK_UI_DIR),$(UI_COLOR))
+status-ui: ## 📊 Check automagik-ui status only
+	$(call print_status,Checking $(UI_COLOR)automagik-ui$(FONT_RESET) status...)
+	@pm2 show automagik-ui 2>/dev/null || echo "Service not found"
 
 # ===========================================
 # 📋 Logging & Monitoring
 # ===========================================
 .PHONY: logs-all logs-agents logs-spark logs-tools logs-omni logs-ui logs-infrastructure
-logs-all: ## 📋 Follow logs from all services (colorized)
+logs-all: ## 📋 Follow logs from all services
 	$(call print_status,Following logs from all services...)
 	@echo -e "$(FONT_YELLOW)Press Ctrl+C to stop following logs$(FONT_RESET)"
-	@(journalctl -u automagik-agents -f --no-pager 2>/dev/null | sed "s/^/$(AGENTS_COLOR)[AGENTS]$(FONT_RESET) /" &); \
-	(journalctl -u automagik-spark -f --no-pager 2>/dev/null | sed "s/^/$(SPARK_COLOR)[SPARK]$(FONT_RESET)  /" &); \
-	(journalctl -u automagik-omni -f --no-pager 2>/dev/null | sed "s/^/$(OMNI_COLOR)[OMNI]$(FONT_RESET)   /" &); \
-	(pm2 logs automagik-ui --follow --lines 0 2>/dev/null | sed "s/^/$(UI_COLOR)[UI]$(FONT_RESET)     /" &); \
-	wait
+	@pm2 logs
 
 logs-agents: ## 📋 Follow am-agents-labs logs
 	$(call print_status,Following $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) logs...)
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),logs)
+	@pm2 logs am-agents-labs
 
 logs-spark: ## 📋 Follow automagik-spark logs
 	$(call print_status,Following $(SPARK_COLOR)automagik-spark$(FONT_RESET) logs...)
-	$(call delegate_to_service,$(AUTOMAGIK_SPARK_DIR),logs)
+	@pm2 logs automagik-spark
 
 logs-tools: ## 📋 Follow automagik-tools logs
 	$(call print_status,Following $(TOOLS_COLOR)automagik-tools$(FONT_RESET) logs...)
-	$(call delegate_to_service,$(AUTOMAGIK_TOOLS_DIR),logs FOLLOW=1)
+	@pm2 logs automagik-tools
 
 logs-omni: ## 📋 Follow automagik-omni logs
 	$(call print_status,Following $(OMNI_COLOR)automagik-omni$(FONT_RESET) logs...)
-	$(call delegate_to_service,$(AUTOMAGIK_OMNI_DIR),logs)
+	@pm2 logs automagik-omni
 
-logs-ui: ## 📋 Follow automagik-ui logs (PM2)
+logs-ui: ## 📋 Follow automagik-ui logs
 	$(call print_status,Following $(UI_COLOR)automagik-ui$(FONT_RESET) logs...)
-	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),logs)
+	@pm2 logs automagik-ui
 
 logs-infrastructure: ## 📋 Follow Docker infrastructure logs
 	$(call print_status,Following Docker infrastructure logs...)
@@ -861,6 +869,15 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
 	@$(MAKE) start-infrastructure
+	@# Install optional services if requested
+	@if [ "$$INSTALL_LANGFLOW" = "true" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Installing LangFlow...$(FONT_RESET)"; \
+		$(MAKE) start-langflow; \
+	fi
+	@if [ "$$INSTALL_EVOLUTION" = "true" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Installing Evolution API...$(FONT_RESET)"; \
+		$(MAKE) start-evolution; \
+	fi
 	@$(MAKE) build-essential-services
 	@$(MAKE) install-all-services
 	@$(call print_success_with_logo,Installation completed!)
@@ -870,6 +887,12 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@echo -e "$(FONT_CYAN)   - Omni: http://localhost:8882$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)   - Spark: http://localhost:8883$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)   - Tools: http://localhost:8884$(FONT_RESET)"
+	@if [ "$$INSTALL_EVOLUTION" = "true" ]; then \
+		echo -e "$(FONT_CYAN)   - Evolution: http://localhost:9000$(FONT_RESET)"; \
+	fi
+	@if [ "$$INSTALL_LANGFLOW" = "true" ]; then \
+		echo -e "$(FONT_CYAN)   - LangFlow: http://localhost:7860$(FONT_RESET)"; \
+	fi
 	@echo -e "$(FONT_YELLOW)💡 Start services with: make start$(FONT_RESET)"
 	@echo -e "$(FONT_YELLOW)💡 Check status with: make status$(FONT_RESET)"
 
@@ -891,14 +914,7 @@ install-full: ## 🚀 Complete installation (includes UI build - slower but full
 	@echo -e "$(FONT_CYAN)🌐 Frontend: http://localhost:8888$(FONT_RESET)"
 	@echo -e "$(FONT_CYAN)🔧 API: http://localhost:8881$(FONT_RESET)"
 
-start: ## 🚀 Start everything (infrastructure + all services)
-	$(call print_status,🚀 Starting complete Automagik stack...)
-	@$(MAKE) start-infrastructure
-	@sleep 5
-	@$(MAKE) start-all-services
-	@$(call print_success,Complete stack started!)
-	@echo ""
-	@$(MAKE) status
+start: start-all-services ## 🚀 Start everything (alias for start-all-services)
 
 start-nosudo: ## 🚀 Start everything without sudo (dev mode)
 	$(call print_status,🚀 Starting Automagik stack in dev mode (no sudo)...)
