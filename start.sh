@@ -41,3 +41,17 @@ chmod +x install.sh
 ./install.sh
 
 echo "✅ Automagik installation completed!"
+echo ""
+echo "📁 Installation directory: $(pwd)"
+echo "🚀 To start all services:"
+echo "   cd automagik && make start"
+echo "🛑 To stop all services:"
+echo "   cd automagik && make stop"
+echo "📊 To check service status:"
+echo "   cd automagik && make status"
+echo "💡 To see all available commands:"
+echo "   cd automagik && make help"
+echo ""
+echo "🎯 Quick start:"
+echo "   cd automagik"
+echo "   make start"
