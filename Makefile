@@ -1167,8 +1167,6 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
-	@# Sync port configuration from main .env to individual services
-	@$(MAKE) sync-service-env-ports
 	@# Start infrastructure automatically if not running
 	@echo -e "$(FONT_CYAN)🔄 Ensuring infrastructure is running...$(FONT_RESET)"
 	@if docker ps --filter "name=am-agents-labs-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "am-agents-labs-postgres" && \
@@ -1182,6 +1180,8 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@$(MAKE) build-essential-services
 	@echo ""
 	@$(MAKE) install-all-services
+	@# Sync port configuration from main .env to individual services AFTER installation
+	@$(MAKE) sync-service-env-ports
 	@$(call print_success_with_logo,Installation completed!)
 	@echo -e "$(FONT_CYAN)🎯 Next Steps:$(FONT_RESET)"
 	@echo -e "  $(FONT_BOLD)$(FONT_GREEN)make start$(FONT_RESET)    - Start all services"
