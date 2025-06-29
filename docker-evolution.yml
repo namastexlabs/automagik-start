@@ -73,8 +73,8 @@ services:
     container_name: automagik-evolution
     restart: unless-stopped
     environment:
-      - SERVER_PORT=8080
-      - SERVER_URL=http://localhost:8080
+      - SERVER_PORT=${EVOLUTION_API_PORT:-18080}
+      - SERVER_URL=http://localhost:${EVOLUTION_API_PORT:-18080}
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@localhost:5403/evolution_api
@@ -83,7 +83,7 @@ services:
       - RABBITMQ_ENABLED=true
       - RABBITMQ_URI=amqp://rabbitmq:rabbitmq@localhost:5431
       - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=namastex888
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-namastex888}
       - LOG_LEVEL=info
     volumes:
       - evolution_instances:/evolution/instances
@@ -96,7 +96,7 @@ services:
       evolution-rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${EVOLUTION_API_PORT:-18080}/"]
       interval: 30s
       timeout: 10s
       retries: 5
