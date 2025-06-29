@@ -478,6 +478,43 @@ setup-env-files: ## 📝 Setup main .env file from template
 	@# Note: PM2 ecosystem.config.js loads the main .env and passes it to all services
 	@$(call print_success,Environment file ready!)
 
+.PHONY: sync-service-env-ports
+sync-service-env-ports: ## 🔄 Sync port configuration from main .env to individual services
+	$(call print_status,Syncing port configuration to services...)
+	@# Extract port values from main .env file
+	@AGENTS_PORT=$$(grep "^AUTOMAGIK_AGENTS_API_PORT=" .env | head -1 | cut -d'=' -f2); \
+	OMNI_PORT=$$(grep "^AUTOMAGIK_OMNI_API_PORT=" .env | head -1 | cut -d'=' -f2); \
+	SPARK_PORT=$$(grep "^AUTOMAGIK_SPARK_API_PORT=" .env | head -1 | cut -d'=' -f2); \
+	TOOLS_PORT=$$(grep "^PORT=18885" .env | head -1 | cut -d'=' -f2); \
+	UI_PORT=$$(grep "^PORT=18888" .env | head -1 | cut -d'=' -f2); \
+	echo -e "$(FONT_CYAN)$(INFO) Detected ports: Agents=$$AGENTS_PORT, Omni=$$OMNI_PORT, Spark=$$SPARK_PORT, Tools=$$TOOLS_PORT, UI=$$UI_PORT$(FONT_RESET)"; \
+	if [ -n "$$AGENTS_PORT" ] && [ -f "$(AM_AGENTS_LABS_DIR)/.env" ]; then \
+		sed -i "s/AUTOMAGIK_AGENTS_API_PORT=.*/AUTOMAGIK_AGENTS_API_PORT=$$AGENTS_PORT/" "$(AM_AGENTS_LABS_DIR)/.env"; \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Updated agents port to $$AGENTS_PORT$(FONT_RESET)"; \
+	fi; \
+	if [ -n "$$OMNI_PORT" ] && [ -f "$(AUTOMAGIK_OMNI_DIR)/.env" ]; then \
+		sed -i "s/AUTOMAGIK_OMNI_API_PORT=.*/AUTOMAGIK_OMNI_API_PORT=$$OMNI_PORT/" "$(AUTOMAGIK_OMNI_DIR)/.env"; \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Updated omni port to $$OMNI_PORT$(FONT_RESET)"; \
+	fi; \
+	if [ -n "$$SPARK_PORT" ] && [ -f "$(AUTOMAGIK_SPARK_DIR)/.env" ]; then \
+		sed -i "s/AUTOMAGIK_SPARK_API_PORT=.*/AUTOMAGIK_SPARK_API_PORT=$$SPARK_PORT/" "$(AUTOMAGIK_SPARK_DIR)/.env"; \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Updated spark port to $$SPARK_PORT$(FONT_RESET)"; \
+	fi; \
+	if [ -n "$$TOOLS_PORT" ] && [ -f "$(AUTOMAGIK_TOOLS_DIR)/.env" ]; then \
+		sed -i "s/PORT=.*/PORT=$$TOOLS_PORT/" "$(AUTOMAGIK_TOOLS_DIR)/.env"; \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Updated tools port to $$TOOLS_PORT$(FONT_RESET)"; \
+	fi; \
+	if [ -n "$$UI_PORT" ] && [ -f "$(AUTOMAGIK_UI_DIR)/.env.local" ]; then \
+		if ! grep -q "^PORT=" "$(AUTOMAGIK_UI_DIR)/.env.local"; then \
+			echo "" >> "$(AUTOMAGIK_UI_DIR)/.env.local"; \
+			echo "PORT=$$UI_PORT" >> "$(AUTOMAGIK_UI_DIR)/.env.local"; \
+		else \
+			sed -i "s/^PORT=.*/PORT=$$UI_PORT/" "$(AUTOMAGIK_UI_DIR)/.env.local"; \
+		fi; \
+		echo -e "$(FONT_GREEN)$(CHECKMARK) Updated UI port to $$UI_PORT$(FONT_RESET)"; \
+	fi
+	@$(call print_success,Port synchronization completed!)
+
 # ===========================================
 # 🏗️ Service Building (Optimized)
 # ===========================================
@@ -1130,21 +1167,17 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@$(call ensure_repository,automagik-ui,$(AUTOMAGIK_UI_DIR),$(AUTOMAGIK_UI_URL))
 	@# Now setup environment files after all repos exist
 	@$(MAKE) setup-env-files
-	@# Verify infrastructure health before service installation
-	@echo -e "$(FONT_CYAN)🔄 Verifying infrastructure health before service installation...$(FONT_RESET)"
+	@# Sync port configuration from main .env to individual services
+	@$(MAKE) sync-service-env-ports
+	@# Start infrastructure automatically if not running
+	@echo -e "$(FONT_CYAN)🔄 Ensuring infrastructure is running...$(FONT_RESET)"
 	@if docker ps --filter "name=am-agents-labs-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "am-agents-labs-postgres" && \
 	   docker ps --filter "name=automagik-spark-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "automagik-spark-postgres" && \
 	   docker ps --filter "name=automagik-spark-redis" --filter "status=running" --format "{{.Names}}" | grep -q "automagik-spark-redis"; then \
-		echo -e "$(FONT_GREEN)✓ Infrastructure containers are running and ready$(FONT_RESET)"; \
+		echo -e "$(FONT_GREEN)✓ Infrastructure containers are already running and ready$(FONT_RESET)"; \
 	else \
-		echo -e "$(FONT_RED)❌ Infrastructure containers are not running!$(FONT_RESET)"; \
-		echo -e "$(FONT_RED)   Required: am-agents-labs-postgres, automagik-spark-postgres, automagik-spark-redis$(FONT_RESET)"; \
-		echo -e "$(FONT_YELLOW)💡 Please check Docker installation and container status:$(FONT_RESET)"; \
-		echo -e "$(FONT_CYAN)   docker ps$(FONT_RESET)"; \
-		echo -e "$(FONT_CYAN)   docker logs am-agents-labs-postgres$(FONT_RESET)"; \
-		echo -e "$(FONT_CYAN)   docker logs automagik-spark-postgres$(FONT_RESET)"; \
-		echo -e "$(FONT_CYAN)   docker logs automagik-spark-redis$(FONT_RESET)"; \
-		exit 1; \
+		echo -e "$(FONT_YELLOW)⚡ Infrastructure containers not running, starting them automatically...$(FONT_RESET)"; \
+		$(MAKE) start-infrastructure; \
 	fi
 	@$(MAKE) build-essential-services
 	@echo ""
