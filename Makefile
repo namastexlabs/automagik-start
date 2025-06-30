@@ -515,6 +515,17 @@ sync-service-env-ports: ## 🔄 Sync port configuration from main .env to indivi
 	fi
 	@$(call print_success,Port synchronization completed!)
 
+.PHONY: env
+env: ## 🔄 Sync main .env to all service .env files (master source of truth)
+	$(call print_status,Synchronizing environment variables to all services...)
+	@$(PROJECT_ROOT)/scripts/env-manager.sh sync
+	@$(call print_success,Environment synchronization completed!)
+
+.PHONY: env-status
+env-status: ## 📊 Show environment synchronization status across all services
+	$(call print_status,Checking environment status...)
+	@$(PROJECT_ROOT)/scripts/env-manager.sh status
+
 # ===========================================
 # 🏗️ Service Building (Optimized)
 # ===========================================
