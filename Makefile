@@ -1361,10 +1361,10 @@ pull-ui: ## 🔄 Pull automagik-ui repository only
 	@cd $(AUTOMAGIK_UI_DIR) && git pull
 	@$(call print_success,automagik-ui updated!)
 
-logs: ## 📋 Show logs from all services (N=lines FOLLOW=1 for follow mode)
+logs: ## 📋 Show logs from all services (N=lines F=1 for follow mode)
 	$(eval N := $(or $(N),30))
-	$(call print_status,📋 Showing last $(N) lines from all services...)
-	@if [ "$(FOLLOW)" = "1" ]; then \
+	@if [ "$(F)" = "1" ]; then \
+		echo -e "$(FONT_PURPLE)$(SUITE) 📋 Following logs from all services (Press Ctrl+C to stop)...$(FONT_RESET)"; \
 		echo -e "$(FONT_YELLOW)Press Ctrl+C to stop following logs$(FONT_RESET)"; \
 		pm2 logs | sed -E \
 			-e 's/(am-agents-labs)/$(AGENTS_COLOR)\1$(FONT_RESET)/g' \
@@ -1373,6 +1373,7 @@ logs: ## 📋 Show logs from all services (N=lines FOLLOW=1 for follow mode)
 			-e 's/(automagik-omni)/$(OMNI_COLOR)\1$(FONT_RESET)/g' \
 			-e 's/(automagik-ui)/$(UI_COLOR)\1$(FONT_RESET)/g'; \
 	else \
+		echo -e "$(FONT_PURPLE)$(SUITE) 📋 Showing last $(N) lines from all services...$(FONT_RESET)"; \
 		echo -e "$(AGENTS_COLOR)[AGENTS] Last $(N) lines:$(FONT_RESET)"; \
 		pm2 logs am-agents-labs --lines $(N) --no-stream 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(SPARK_COLOR)[SPARK-API] Last $(N) lines:$(FONT_RESET)"; \
