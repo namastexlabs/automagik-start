@@ -464,8 +464,8 @@ status-evolution: ## 📊 Check Evolution API status
 # 📝 Environment Setup
 # ===========================================
 .PHONY: setup-env-files
-setup-env-files: ## 📝 Setup main .env file from template
-	$(call print_status,Setting up environment file...)
+setup-env-files: ## 📝 Setup .env files from templates for main and all services
+	$(call print_status,Setting up environment files...)
 	@# Create main .env file if it doesn't exist
 	@if [ ! -f .env ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Creating main .env file from template...$(FONT_RESET)"; \
@@ -475,8 +475,23 @@ setup-env-files: ## 📝 Setup main .env file from template
 	else \
 		echo -e "$(FONT_GREEN)$(CHECKMARK) Main .env file already exists$(FONT_RESET)"; \
 	fi
+	@# Create service .env files from their templates
+	@for service in "am-agents-labs" "automagik-spark" "automagik-tools" "automagik-omni" "automagik-ui"; do \
+		service_dir="$(SERVICES_DIR)/$$service"; \
+		if [ -d "$$service_dir" ]; then \
+			if [ -f "$$service_dir/.env.example" ] && [ ! -f "$$service_dir/.env" ]; then \
+				echo -e "$(FONT_CYAN)$(INFO) Creating $$service/.env from template...$(FONT_RESET)"; \
+				cp "$$service_dir/.env.example" "$$service_dir/.env"; \
+				echo -e "$(FONT_GREEN)$(CHECKMARK) $$service/.env created$(FONT_RESET)"; \
+			elif [ -f "$$service_dir/.env" ]; then \
+				echo -e "$(FONT_GREEN)$(CHECKMARK) $$service/.env already exists$(FONT_RESET)"; \
+			elif [ ! -f "$$service_dir/.env.example" ]; then \
+				echo -e "$(FONT_YELLOW)$(WARNING) $$service/.env.example not found, skipping$(FONT_RESET)"; \
+			fi; \
+		fi; \
+	done
 	@# Note: PM2 ecosystem.config.js loads the main .env and passes it to all services
-	@$(call print_success,Environment file ready!)
+	@$(call print_success,Environment files ready!)
 
 .PHONY: sync-service-env-ports
 sync-service-env-ports: ## 🔄 Sync port configuration from main .env to individual services
@@ -1193,6 +1208,8 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@$(MAKE) install-all-services
 	@# Sync port configuration from main .env to individual services AFTER installation
 	@$(MAKE) sync-service-env-ports
+	@# Sync all environment variables from master .env to all services (single source of truth)
+	@$(MAKE) env
 	@$(call print_success_with_logo,Installation completed!)
 	@echo -e "$(FONT_CYAN)🎯 Next Steps:$(FONT_RESET)"
 	@echo -e "  $(FONT_BOLD)$(FONT_GREEN)make start$(FONT_RESET)    - Start all services"
