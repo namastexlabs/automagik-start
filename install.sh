@@ -100,7 +100,36 @@ fi
 if ! command -v uv &> /dev/null; then
     echo -e "${CYAN}Installing UV package manager...${NC}"
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    
+    # Add UV to PATH for current session and verify it works
     export PATH="$HOME/.local/bin:$PATH"
+    
+    # Source the UV env file if it exists
+    if [ -f "$HOME/.local/bin/env" ]; then
+        source "$HOME/.local/bin/env"
+    fi
+    
+    # Verify UV is now available
+    if ! command -v uv &> /dev/null; then
+        echo -e "${YELLOW}UV installed but not immediately available in PATH.${NC}"
+        echo -e "${YELLOW}Trying direct path...${NC}"
+        # Create an alias for this session
+        alias uv="$HOME/.local/bin/uv"
+        # Also update PATH more explicitly
+        if [ -d "$HOME/.cargo/bin" ]; then
+            export PATH="$HOME/.cargo/bin:$PATH"
+        fi
+    fi
+    
+    # Final check with full path
+    if [ -x "$HOME/.local/bin/uv" ] || [ -x "$HOME/.cargo/bin/uv" ]; then
+        echo -e "${GREEN}✓ UV installed successfully${NC}"
+        UV_BIN=$(which uv 2>/dev/null || echo "$HOME/.local/bin/uv")
+        echo -e "${CYAN}UV location: $UV_BIN${NC}"
+    else
+        echo -e "${RED}UV installation failed. Please run: source ~/.bashrc and re-run this script${NC}"
+        exit 1
+    fi
 else
     echo -e "${GREEN}✓ UV already installed${NC}"
 fi
@@ -364,8 +393,31 @@ fi
 
 echo ""
 echo -e "${GREEN}✅ Pre-dependencies installed successfully!${NC}"
+
+# Final verification of UV before proceeding
+echo -e "${CYAN}Verifying UV is available...${NC}"
+if command -v uv &> /dev/null; then
+    echo -e "${GREEN}✓ UV is available at: $(which uv)${NC}"
+elif [ -x "$HOME/.local/bin/uv" ]; then
+    echo -e "${GREEN}✓ UV found at: $HOME/.local/bin/uv${NC}"
+    export PATH="$HOME/.local/bin:$PATH"
+else
+    echo -e "${RED}⚠️  UV not found in PATH. Adding to PATH and updating shell config...${NC}"
+    export PATH="$HOME/.local/bin:$PATH"
+    
+    # Add to bashrc if not already there
+    if ! grep -q "/.local/bin" "$HOME/.bashrc" 2>/dev/null; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        echo -e "${YELLOW}Added UV to ~/.bashrc. You may need to run: source ~/.bashrc${NC}"
+    fi
+fi
+
+echo ""
 echo -e "${PURPLE}Running main installation...${NC}"
 echo ""
+
+# Export UV path for make install to use
+export UV_BIN="${UV_BIN:-$(which uv 2>/dev/null || echo $HOME/.local/bin/uv)}"
 
 # Call the main Makefile for core services installation
 make install
