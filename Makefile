@@ -48,7 +48,18 @@ INFRA_COLOR := $(FONT_RED)           # infrastructure: Red
 # 📁 Paths & Configuration
 # ===========================================
 PROJECT_ROOT := $(shell pwd)
-DOCKER_COMPOSE := $(shell if command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
+DOCKER_COMPOSE := $(shell \
+	if command -v docker >/dev/null 2>&1; then \
+		if docker compose version >/dev/null 2>&1; then \
+			echo "docker compose"; \
+		elif command -v docker-compose >/dev/null 2>&1; then \
+			echo "docker-compose"; \
+		else \
+			echo "echo 'ERROR: Neither docker compose nor docker-compose is available' >&2; exit 1"; \
+		fi; \
+	else \
+		echo "echo 'ERROR: Docker is not installed' >&2; exit 1"; \
+	fi)
 INFRASTRUCTURE_COMPOSE := docker-infrastructure.yml
 
 # Service directories
@@ -368,14 +379,20 @@ uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove con
 	@if [ -f "$(EVOLUTION_COMPOSE)" ]; then \
 		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans >/dev/null 2>&1 || true; \
 	fi
+	@# Remove am-agents-labs docker project
+	@if [ -f "am-agents-labs/docker/docker-compose.yml" ]; then \
+		$(DOCKER_COMPOSE) -f am-agents-labs/docker/docker-compose.yml -p docker down -v --rmi all --remove-orphans >/dev/null 2>&1 || true; \
+	fi
 	@# Clean up any remaining resources
 	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
 		docker ps -aq --filter "label=com.docker.compose.project=automagik" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true; \
 		docker ps -aq --filter "label=com.docker.compose.project=langflow" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true; \
 		docker ps -aq --filter "label=com.docker.compose.project=evolution_api" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true; \
+		docker ps -aq --filter "label=com.docker.compose.project=docker" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true; \
 		docker volume ls -q --filter "label=com.docker.compose.project=automagik" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true; \
 		docker volume ls -q --filter "label=com.docker.compose.project=langflow" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true; \
 		docker volume ls -q --filter "label=com.docker.compose.project=evolution_api" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true; \
+		docker volume ls -q --filter "label=com.docker.compose.project=docker" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true; \
 		docker images --filter "reference=*langflow*" --filter "reference=*evolution*" --filter "reference=*postgres*" --filter "reference=*redis*" -q 2>/dev/null | xargs -r docker rmi -f >/dev/null 2>&1 || true; \
 		docker system prune -f --volumes >/dev/null 2>&1 || true; \
 		after_size=$$(docker system df --format "table {{.Size}}" | tail -n +2 | head -n 1 | sed 's/[^0-9.]//g' || echo "0"); \

@@ -15,6 +15,33 @@ BASE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DOCKER_COMPOSE_FILE="$BASE_DIR/docker-compose.yml"
 REFRESH_INTERVAL=5
 
+# Docker Compose Detection Function
+detect_docker_compose() {
+    if command -v docker >/dev/null 2>&1; then
+        # Test docker compose (modern plugin)
+        if docker compose version >/dev/null 2>&1; then
+            echo "docker compose"
+            return 0
+        # Test docker-compose (legacy standalone)
+        elif command -v docker-compose >/dev/null 2>&1; then
+            echo "docker-compose"
+            return 0
+        else
+            echo "echo 'ERROR: Neither docker compose nor docker-compose is available' >&2; exit 1"
+            return 1
+        fi
+    else
+        echo "echo 'ERROR: Docker is not installed' >&2; exit 1"
+        return 1
+    fi
+}
+
+# Set Docker Compose command
+DOCKER_COMPOSE_CMD=$(detect_docker_compose)
+if [ $? -ne 0 ]; then
+    eval "$DOCKER_COMPOSE_CMD"
+fi
+
 # Service definitions
 declare -A SERVICE_INFO=(
     ["am-agents-labs"]="Main Orchestrator|http://localhost:8881|8881"
@@ -43,7 +70,7 @@ get_service_status() {
     local service="$1"
     
     if command -v docker >/dev/null 2>&1; then
-        local container_id=$(docker-compose -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
+        local container_id=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
         
         if [ -n "$container_id" ]; then
             local status=$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null)
@@ -87,7 +114,7 @@ get_service_uptime() {
     local service="$1"
     
     if command -v docker >/dev/null 2>&1; then
-        local container_id=$(docker-compose -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
+        local container_id=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
         
         if [ -n "$container_id" ]; then
             local started=$(docker inspect --format '{{.State.StartedAt}}' "$container_id" 2>/dev/null)
@@ -125,7 +152,7 @@ get_service_resources() {
     local service="$1"
     
     if command -v docker >/dev/null 2>&1; then
-        local container_id=$(docker-compose -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
+        local container_id=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
         
         if [ -n "$container_id" ]; then
             local stats=$(docker stats --no-stream --format "{{.CPUPerc}}|{{.MemUsage}}" "$container_id" 2>/dev/null)
@@ -298,7 +325,7 @@ display_logs_summary() {
         # Get recent error logs from all services
         local error_count=0
         for service in "${!SERVICE_INFO[@]}" "${!INFRASTRUCTURE_INFO[@]}"; do
-            local container_id=$(docker-compose -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
+            local container_id=$($DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" ps -q "$service" 2>/dev/null)
             if [ -n "$container_id" ]; then
                 local errors=$(docker logs --since="5m" "$container_id" 2>&1 | grep -i "error\|warning\|exception" | wc -l)
                 if [ "$errors" -gt 0 ]; then
@@ -430,7 +457,7 @@ show_logs_menu() {
         echo ""
         
         if command -v docker >/dev/null 2>&1; then
-            docker-compose -f "$DOCKER_COMPOSE_FILE" logs --tail=50 "$selected_service" 2>/dev/null || {
+            $DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" logs --tail=50 "$selected_service" 2>/dev/null || {
                 echo "No logs available for $selected_service"
             }
         else

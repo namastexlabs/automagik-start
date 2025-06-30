@@ -18,6 +18,37 @@ CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# Docker Compose Detection Function
+detect_docker_compose() {
+    if command -v docker >/dev/null 2>&1; then
+        # Test docker compose (modern plugin)
+        if docker compose version >/dev/null 2>&1; then
+            echo "docker compose"
+            return 0
+        # Test docker-compose (legacy standalone)
+        elif command -v docker-compose >/dev/null 2>&1; then
+            echo "docker-compose"
+            return 0
+        else
+            echo -e "${RED}❌ Neither 'docker compose' nor 'docker-compose' is available${NC}" >&2
+            echo -e "${YELLOW}Please install Docker Compose: https://docs.docker.com/compose/install/${NC}" >&2
+            return 1
+        fi
+    else
+        echo -e "${RED}❌ Docker is not installed${NC}" >&2
+        return 1
+    fi
+}
+
+# Set Docker Compose command
+DOCKER_COMPOSE_CMD=$(detect_docker_compose)
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Cannot proceed without Docker Compose${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Using Docker Compose command: ${DOCKER_COMPOSE_CMD}${NC}"
+
 echo -e "${PURPLE}🚀 Automagik Suite - Pre-dependency Installer${NC}"
 echo -e "${CYAN}Installing minimal dependencies before main installation...${NC}"
 echo ""
@@ -258,7 +289,7 @@ check_infrastructure_health() {
 # Start infrastructure containers
 if [ -f "$SCRIPT_DIR/docker-infrastructure.yml" ]; then
     echo -e "${CYAN}Starting core infrastructure...${NC}"
-    docker compose -f "$SCRIPT_DIR/docker-infrastructure.yml" -p automagik up -d
+    $DOCKER_COMPOSE_CMD -f "$SCRIPT_DIR/docker-infrastructure.yml" -p automagik up -d
     
     # Wait for infrastructure health
     if check_infrastructure_health; then
@@ -284,7 +315,7 @@ declare -a PARALLEL_MESSAGES=()
 install_langflow() {
     {
         if [ -f "$SCRIPT_DIR/docker-langflow.yml" ]; then
-            docker compose -f "$SCRIPT_DIR/docker-langflow.yml" -p langflow up -d >/dev/null 2>&1
+            $DOCKER_COMPOSE_CMD -f "$SCRIPT_DIR/docker-langflow.yml" -p langflow up -d >/dev/null 2>&1
         else
             exit 1
         fi
@@ -299,7 +330,7 @@ install_langflow() {
 install_evolution() {
     {
         if [ -f "$SCRIPT_DIR/docker-evolution.yml" ]; then
-            docker compose -f "$SCRIPT_DIR/docker-evolution.yml" -p evolution_api up -d >/dev/null 2>&1
+            $DOCKER_COMPOSE_CMD -f "$SCRIPT_DIR/docker-evolution.yml" -p evolution_api up -d >/dev/null 2>&1
         else
             exit 1
         fi
