@@ -137,7 +137,7 @@ update_service_env() {
                 local new_value="${master_env[$var_name]}"
                 if [[ "$current_value" != "$new_value" ]]; then
                     echo "$var_name=$new_value" >> "$temp_file"
-                    ((updates_made++))
+                    updates_made=$((updates_made + 1))
                 else
                     echo "$line" >> "$temp_file"
                 fi
@@ -172,7 +172,9 @@ sync_all_services() {
     
     for service in "${SERVICES[@]}"; do
         if update_service_env "$service"; then
-            ((success_count++))
+            success_count=$((success_count + 1))
+        else
+            print_error "Failed to update $service"
         fi
     done
     
@@ -208,7 +210,12 @@ check_env_status() {
     echo ""
     for service in "${SERVICES[@]}"; do
         local service_dir="$PROJECT_ROOT/$service"
-        local service_env_file="$service_dir/.env"
+        # Use .env.local for automagik-ui, .env for others
+        if [[ "$service" == "automagik-ui" ]]; then
+            local service_env_file="$service_dir/.env.local"
+        else
+            local service_env_file="$service_dir/.env"
+        fi
         
         if [[ ! -f "$service_env_file" ]]; then
             print_warning "$service: .env file missing"
@@ -235,7 +242,7 @@ check_env_status() {
                             differences_found=true
                         fi
                         echo "  - $var_name"
-                        ((diff_count++))
+                        diff_count=$((diff_count + 1))
                     fi
                 fi
             fi
