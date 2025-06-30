@@ -95,7 +95,12 @@ load_env_to_map() {
 update_service_env() {
     local service="$1"
     local service_dir="$PROJECT_ROOT/$service"
-    local service_env_file="$service_dir/.env"
+    # Use .env.local for automagik-ui, .env for others
+    if [[ "$service" == "automagik-ui" ]]; then
+        local service_env_file="$service_dir/.env.local"
+    else
+        local service_env_file="$service_dir/.env"
+    fi
     
     if [[ ! -d "$service_dir" ]]; then
         print_warning "Service directory not found: $service_dir"
@@ -271,7 +276,12 @@ show_env_status() {
     
     for service in "${SERVICES[@]}"; do
         local service_dir="$PROJECT_ROOT/$service"
-        local service_env_file="$service_dir/.env"
+        # Use .env.local for automagik-ui, .env for others
+        if [[ "$service" == "automagik-ui" ]]; then
+            local service_env_file="$service_dir/.env.local"
+        else
+            local service_env_file="$service_dir/.env"
+        fi
         
         if [[ -f "$service_env_file" ]]; then
             local vars_count=$(grep -c "^[A-Za-z_][A-Za-z0-9_]*=" "$service_env_file" 2>/dev/null || echo "0")

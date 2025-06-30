@@ -476,7 +476,7 @@ setup-env-files: ## 📝 Setup .env files from templates for main and all servic
 		echo -e "$(FONT_GREEN)$(CHECKMARK) Main .env file already exists$(FONT_RESET)"; \
 	fi
 	@# Create service .env files from their templates
-	@for service in "am-agents-labs" "automagik-spark" "automagik-tools" "automagik-omni" "automagik-ui"; do \
+	@for service in "am-agents-labs" "automagik-spark" "automagik-tools" "automagik-omni"; do \
 		service_dir="$(SERVICES_DIR)/$$service"; \
 		if [ -d "$$service_dir" ]; then \
 			if [ -f "$$service_dir/.env.example" ] && [ ! -f "$$service_dir/.env" ]; then \
@@ -490,6 +490,19 @@ setup-env-files: ## 📝 Setup .env files from templates for main and all servic
 			fi; \
 		fi; \
 	done
+	@# Handle automagik-ui with special .env.local pattern
+	@service_dir="$(AUTOMAGIK_UI_DIR)"; \
+	if [ -d "$$service_dir" ]; then \
+		if [ -f "$$service_dir/.env.local.example" ] && [ ! -f "$$service_dir/.env.local" ]; then \
+			echo -e "$(FONT_CYAN)$(INFO) Creating automagik-ui/.env.local from template...$(FONT_RESET)"; \
+			cp "$$service_dir/.env.local.example" "$$service_dir/.env.local"; \
+			echo -e "$(FONT_GREEN)$(CHECKMARK) automagik-ui/.env.local created$(FONT_RESET)"; \
+		elif [ -f "$$service_dir/.env.local" ]; then \
+			echo -e "$(FONT_GREEN)$(CHECKMARK) automagik-ui/.env.local already exists$(FONT_RESET)"; \
+		elif [ ! -f "$$service_dir/.env.local.example" ]; then \
+			echo -e "$(FONT_YELLOW)$(WARNING) automagik-ui/.env.local.example not found, skipping$(FONT_RESET)"; \
+		fi; \
+	fi
 	@# Note: PM2 ecosystem.config.js loads the main .env and passes it to all services
 	@$(call print_success,Environment files ready!)
 
