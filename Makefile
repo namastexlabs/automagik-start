@@ -676,9 +676,18 @@ uninstall-all-services: ## 🗑️ Uninstall all services (remove PM2 services)
 	$(call print_status,Uninstalling all Automagik services...)
 	@# Remove PM2 services
 	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 services...$(FONT_RESET)"
-	@pm2 delete am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui 2>/dev/null || true
+	@# Stop and delete all PM2 processes
+	@if pm2 list 2>/dev/null | grep -q "online\|stopped\|errored"; then \
+		echo -e "$(FONT_CYAN)$(INFO) Stopping all PM2 processes...$(FONT_RESET)"; \
+		pm2 stop all 2>/dev/null || true; \
+		echo -e "$(FONT_CYAN)$(INFO) Deleting all PM2 processes...$(FONT_RESET)"; \
+		pm2 delete all 2>/dev/null || true; \
+	else \
+		echo -e "$(FONT_GRAY)$(INFO) No PM2 processes found to remove$(FONT_RESET)"; \
+	fi
 	@echo -e "$(FONT_CYAN)$(INFO) Removing PM2 logrotate module...$(FONT_RESET)"
 	@pm2 uninstall pm2-logrotate 2>/dev/null || true
+	@echo -e "$(FONT_CYAN)$(INFO) Saving PM2 configuration...$(FONT_RESET)"
 	@pm2 save --force 2>/dev/null || true
 	@$(call print_success,All services uninstalled!)
 
@@ -727,12 +736,25 @@ start-all-dev: ## 🚀 Start all services in dev mode (no sudo required)
 
 stop-all-services: ## 🛑 Stop all services with PM2
 	$(call print_status,Stopping all Automagik services...)
-	@pm2 stop am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui 2>/dev/null || true
+	@# Stop all PM2 processes (more robust than hardcoded names)
+	@if pm2 list 2>/dev/null | grep -q "online\|stopped\|errored"; then \
+		echo -e "$(FONT_CYAN)$(INFO) Stopping all PM2 processes...$(FONT_RESET)"; \
+		pm2 stop all 2>/dev/null || true; \
+	else \
+		echo -e "$(FONT_GRAY)$(INFO) No PM2 processes found to stop$(FONT_RESET)"; \
+	fi
 	@$(call print_success,All services stopped!)
 
 restart-all-services: ## 🔄 Restart all services with PM2
 	$(call print_status,Restarting all Automagik services...)
-	@pm2 restart am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui 2>/dev/null || $(MAKE) start-all-services
+	@# Restart all PM2 processes (more robust than hardcoded names)
+	@if pm2 list 2>/dev/null | grep -q "online\|stopped\|errored"; then \
+		echo -e "$(FONT_CYAN)$(INFO) Restarting all PM2 processes...$(FONT_RESET)"; \
+		pm2 restart all 2>/dev/null || $(MAKE) start-all-services; \
+	else \
+		echo -e "$(FONT_GRAY)$(INFO) No PM2 processes found, starting services...$(FONT_RESET)"; \
+		$(MAKE) start-all-services; \
+	fi
 	@$(call print_success,All services restarted!)
 
 status-all-services: ## 📊 Check status of all services
