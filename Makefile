@@ -1392,11 +1392,53 @@ restart-nosudo: ## 🔄 Restart everything without sudo
 	@$(MAKE) start-nosudo
 	@$(call print_success,Dev stack restarted!)
 
-update: ## 🔄 Git pull and restart all services
-	$(call print_status,🔄 Updating Automagik suite...)
-	@$(MAKE) pull
-	@$(MAKE) restart
-	@$(call print_success,Update complete!)
+update: ## 🔄 Git pull and restart only updated services
+	$(call print_status,🔄 Checking for updates...)
+	@updated_repos=""; \
+	echo -e "$(FONT_CYAN)📌 Checking main repository...$(FONT_RESET)"; \
+	git_output=$$(git pull 2>&1); \
+	if echo "$$git_output" | grep -q "Already up to date"; then \
+		echo "  $(FONT_GREEN)✓ Main repository already up to date$(FONT_RESET)"; \
+	else \
+		echo "  $(FONT_YELLOW)🔄 Main repository updated$(FONT_RESET)"; \
+		updated_repos="$$updated_repos main"; \
+	fi; \
+	for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+		if [ -d "$$service_dir" ]; then \
+			echo -e "$(FONT_CYAN)📌 Checking $$(basename $$service_dir)...$(FONT_RESET)"; \
+			cd $$service_dir; \
+			if git rev-parse --git-dir > /dev/null 2>&1; then \
+				git_output=$$(git pull 2>&1); \
+				if echo "$$git_output" | grep -q "Already up to date"; then \
+					echo "  $(FONT_GREEN)✓ $$(basename $$service_dir) already up to date$(FONT_RESET)"; \
+				else \
+					echo "  $(FONT_YELLOW)🔄 $$(basename $$service_dir) updated$(FONT_RESET)"; \
+					updated_repos="$$updated_repos $$(basename $$service_dir)"; \
+				fi; \
+			else \
+				echo "  $(FONT_YELLOW)⚠️ Not a git repository$(FONT_RESET)"; \
+			fi; \
+			cd - >/dev/null; \
+		fi; \
+	done; \
+	if [ -z "$$updated_repos" ]; then \
+		echo -e "$(FONT_GREEN)✅ No updates needed - all repositories are up to date!$(FONT_RESET)"; \
+	else \
+		echo -e "$(FONT_YELLOW)🔄 Restarting services for updated repositories:$$updated_repos$(FONT_RESET)"; \
+		for repo in $$updated_repos; do \
+			case $$repo in \
+				"main") \
+					echo -e "$(FONT_CYAN)🔄 Main repository updated - restarting PM2 services...$(FONT_RESET)"; \
+					$(MAKE) restart-all-services ;; \
+				"am-agents-labs") $(MAKE) restart-agents ;; \
+				"automagik-spark") $(MAKE) restart-spark ;; \
+				"automagik-tools") $(MAKE) restart-tools ;; \
+				"automagik-omni") $(MAKE) restart-omni ;; \
+				"automagik-ui") $(MAKE) restart-ui ;; \
+			esac; \
+		done; \
+		$(call print_success,Update complete - restarted updated services!); \
+	fi
 
 pull: ## 🔄 Pull from all GitHub repos (main + all services)
 	$(call print_status,🔄 Pulling from all GitHub repositories...)
