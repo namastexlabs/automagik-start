@@ -1,0 +1,299 @@
+{
+  "timestamp": "2025-06-30T00:58:43.115Z",
+  "version": "1.0",
+  "entries": [
+    {
+      "id": "entry_mcie0aje_xihgowwv2",
+      "key": "swarm-auto-centralized-1751244835634/coordinator/env-analysis",
+      "value": "{\"step\":\"env-analysis\",\"findings\":{\"total_variables\":90,\"sections\":[\"AI Services\",\"Database Config\",\"Redis Config\",\"Service URLs\",\"Application Settings\",\"External Integrations\",\"Logging/Monitoring\",\"Claude Code Config\",\"Celery Config\"],\"naming_patterns\":{\"automagik_prefix\":\"AUTOMAGIK_\",\"evolution_prefix\":\"EVOLUTION_\",\"service_ports\":{\"automagik\":8881,\"automagik_spark\":8883,\"automagik_omni\":8882,\"automagik_ui\":8888,\"automagik_tools\":8885,\"evolution_api\":8080},\"database_ports\":{\"automagik\":5401,\"automagik_spark\":5402,\"evolution_api\":5403},\"redis_ports\":{\"automagik_spark\":5412,\"evolution_api\":5413}},\"standardization_opportunities\":[\"Port allocation strategy\",\"Naming convention consistency\",\"Database configuration templates\",\"Redis configuration templates\",\"API key management patterns\",\"Logging configuration standardization\"]},\"decisions\":[\"Establish port allocation ranges for new services\",\"Standardize environment variable naming conventions\",\"Create configuration templates for common patterns\",\"Implement validation for required vs optional variables\"],\"nextSteps\":[\"Analyze am-agents-labs project structure\",\"Map current variables to project requirements\",\"Create standardization strategy\",\"Coordinate with specialized agents\"],\"coordination\":{\"lead_coordinator\":\"active\",\"memory_key\":\"swarm-auto-centralized-1751244835634/coordinator/env-analysis\",\"status\":\"analysis_complete\"}}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:55:17.594Z",
+      "updatedAt": "2025-06-30T00:55:17.594Z",
+      "lastAccessedAt": "2025-06-30T00:55:17.594Z",
+      "version": 1,
+      "size": 1537,
+      "compressed": true,
+      "checksum": "fc42f8e07736e03b74702e0a6245c9f8ef195395ae2684e5e2b7deada0674369",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie0s9r_hs2qymid1",
+      "key": "swarm-auto-centralized-1751244835634/coordinator/decisions",
+      "value": "{\"step\":\"master-coordination-plan\",\"master_strategy\":{\"phase1\":{\"name\":\"Analysis & Mapping\",\"agents\":[\"requirements-gatherer\",\"structure-analyzer\",\"dependency-mapper\"],\"tasks\":[\"Map am-agents-labs to current variables\",\"Identify missing configurations\",\"Document variable dependencies\"],\"timeline\":\"immediate\"},\"phase2\":{\"name\":\"Standardization Design\",\"agents\":[\"template-designer\",\"validation-specialist\",\"naming-coordinator\"],\"tasks\":[\"Create environment templates\",\"Design validation schemas\",\"Establish naming conventions\"],\"timeline\":\"post-analysis\"},\"phase3\":{\"name\":\"Implementation & Testing\",\"agents\":[\"implementation-coordinator\",\"testing-specialist\",\"integration-validator\"],\"tasks\":[\"Update .env.example\",\"Create validation tools\",\"Test across all projects\"],\"timeline\":\"post-design\"}},\"coordination_decisions\":{\"port_allocation\":{\"ranges\":{\"automagik_services\":\"8881-8889\",\"database_services\":\"5401-5409\",\"redis_services\":\"5411-5419\",\"external_apis\":\"8080-8099\"},\"strategy\":\"incremental_allocation\"},\"naming_conventions\":{\"service_prefixes\":[\"AUTOMAGIK_\",\"EVOLUTION_\",\"LANGFLOW_\"],\"config_patterns\":[\"_API_KEY\",\"_API_URL\",\"_DATABASE_URL\",\"_REDIS_URL\"],\"environment_suffixes\":[\"_ENV\",\"_MODE\",\"_DEBUG\"]},\"validation_requirements\":{\"required_for_basic\":[\"OPENAI_API_KEY or ANTHROPIC_API_KEY\"],\"required_for_whatsapp\":[\"EVOLUTION_API_KEY\",\"EVOLUTION_API_URL\"],\"optional_integrations\":[\"NOTION_TOKEN\",\"DISCORD_BOT_TOKEN\",\"AIRTABLE_TOKEN\"]},\"template_strategy\":{\"database_template\":\"postgresql://{user}:{password}@{host}:{port}/{database}\",\"redis_template\":\"redis://{host}:{port}\",\"api_template\":\"http://{host}:{port}\"}},\"parallelization_strategy\":{\"concurrent_analysis\":[\"requirements_gathering\",\"structure_analysis\",\"dependency_mapping\"],\"sequential_design\":[\"template_creation\",\"validation_design\",\"naming_standardization\"],\"parallel_implementation\":[\"env_file_updates\",\"validation_tool_creation\",\"integration_testing\"]},\"communication_protocol\":{\"status_updates\":\"memory_store_after_each_step\",\"conflict_resolution\":\"coordinator_arbitration\",\"progress_tracking\":\"centralized_todo_management\"},\"success_criteria\":[\"Complete am-agents-labs mapping\",\"Standardized .env.example\",\"Validation tools created\",\"Cross-project compatibility confirmed\"]}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:55:40.575Z",
+      "updatedAt": "2025-06-30T00:55:40.575Z",
+      "lastAccessedAt": "2025-06-30T00:55:40.575Z",
+      "version": 1,
+      "size": 2506,
+      "compressed": true,
+      "checksum": "4091d5fdcb0cb9f25a290d7c46c7130515d6ea6991ad8ee6fed8bb0f39e1c948",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie0zaj_xkya0ggab",
+      "key": "swarm-auto-centralized-1751244835634/validator/environment-analysis",
+      "value": "{\"projectStructure\":{\"services\":[\"automagik-agents-labs\",\"automagik-spark\",\"automagik-omni\",\"automagik-ui\",\"automagik-tools\"],\"mainEnvironmentFiles\":[\"/home/namastex/prod/automagik-start/am-agents-labs/.env\",\"/home/namastex/prod/automagik-start/automagik-spark/.env\",\"/home/namastex/prod/automagik-start/automagik-spark/.env.example\"]},\"environmentCategories\":{\"core\":[\"AUTOMAGIK_API_KEY\",\"AUTOMAGIK_API_HOST\",\"AUTOMAGIK_API_PORT\",\"AUTOMAGIK_ENV\"],\"database\":[\"DATABASE_URL\",\"POSTGRES_HOST\",\"POSTGRES_PORT\",\"POSTGRES_USER\",\"POSTGRES_PASSWORD\"],\"ai_providers\":[\"OPENAI_API_KEY\",\"ANTHROPIC_API_KEY\",\"GEMINI_API_KEY\"],\"external_apis\":[\"LANGFLOW_API_URL\",\"EVOLUTION_API_KEY\",\"NOTION_TOKEN\",\"DISCORD_BOT_TOKEN\"],\"infrastructure\":[\"CELERY_BROKER_URL\",\"CELERY_RESULT_BACKEND\",\"REDIS_URL\"],\"security\":[\"ENCRYPTION_KEY\",\"API_KEY\",\"JWT_SECRET\"],\"networking\":[\"HOST\",\"PORT\",\"CORS_ORIGINS\",\"REMOTE_URL\"]},\"validationPriorities\":{\"critical\":[\"API_KEY\",\"DATABASE_URL\",\"OPENAI_API_KEY\"],\"important\":[\"HOST\",\"PORT\",\"ENCRYPTION_KEY\"],\"optional\":[\"NOTION_TOKEN\",\"DISCORD_BOT_TOKEN\",\"AIRTABLE_TOKEN\"]}}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:55:49.675Z",
+      "updatedAt": "2025-06-30T00:55:49.675Z",
+      "lastAccessedAt": "2025-06-30T00:55:49.675Z",
+      "version": 1,
+      "size": 1229,
+      "compressed": true,
+      "checksum": "0c6c89149f6fbd4934c2d6af34f0836b393300bf7b0127afdda11f1bbd02de47",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie1fho_qv8vhohql",
+      "key": "swarm-auto-centralized-1751244835634/coordinator/initial-step",
+      "value": {
+        "step": "initial-coordination-complete",
+        "findings": {
+          "env_file_analyzed": true,
+          "total_variables": 90,
+          "major_sections": 9,
+          "standardization_opportunities_identified": 6
+        },
+        "coordination_established": {
+          "master_plan_created": true,
+          "todo_structure_established": true,
+          "memory_keys_active": [
+            "swarm-auto-centralized-1751244835634/coordinator/env-analysis",
+            "swarm-auto-centralized-1751244835634/coordinator/decisions"
+          ],
+          "phases_defined": 3,
+          "agents_coordination_ready": true
+        },
+        "next_coordination_actions": [
+          "Phase 1 agents can begin parallel analysis",
+          "Requirements gathering can start immediately",
+          "Structure analysis can proceed concurrently",
+          "Dependency mapping ready for execution"
+        ],
+        "coordination_status": "READY_FOR_SWARM_EXECUTION"
+      },
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:56:10.668Z",
+      "updatedAt": "2025-06-30T00:56:10.668Z",
+      "lastAccessedAt": "2025-06-30T00:56:10.668Z",
+      "version": 1,
+      "size": 741,
+      "compressed": false,
+      "checksum": "c43610601bef3f3ff0bd58d28ee9ee16d449e60fc571c4f73b7d21f98f3bad01",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie1mfx_tf9n5t9w2",
+      "key": "swarm-auto-centralized-1751244835634/validator/validation-rules",
+      "value": "{\"coreValidationRules\":{\"required_presence\":{\"description\":\"Variables that must be present in all environments\",\"rules\":[{\"name\":\"AUTOMAGIK_API_KEY\",\"pattern\":\"^[a-zA-Z0-9_-]+$\",\"min_length\":8,\"critical\":true},{\"name\":\"AUTOMAGIK_API_HOST\",\"pattern\":\"^(0\\\\.0\\\\.0\\\\.0 < /dev/null | localhost|[a-zA-Z0-9.-]+)$\",\"critical\":true},{\"name\":\"AUTOMAGIK_API_PORT\",\"pattern\":\"^[0-9]+$\",\"range\":[1000,65535],\"critical\":true},{\"name\":\"AUTOMAGIK_ENV\",\"pattern\":\"^(development|production|staging|test)$\",\"critical\":true}]},\"ai_provider_validation\":{\"description\":\"AI API key validation with specific patterns\",\"rules\":[{\"name\":\"OPENAI_API_KEY\",\"pattern\":\"^sk-[a-zA-Z0-9_-]+$\",\"min_length\":40,\"critical\":true},{\"name\":\"ANTHROPIC_API_KEY\",\"pattern\":\"^sk-ant-[a-zA-Z0-9_-]+$\",\"min_length\":40,\"critical\":false},{\"name\":\"GEMINI_API_KEY\",\"pattern\":\"^[a-zA-Z0-9_-]+$\",\"min_length\":30,\"critical\":false}]},\"database_validation\":{\"description\":\"Database connection string validation\",\"rules\":[{\"name\":\"DATABASE_URL\",\"pattern\":\"^(postgresql|sqlite)://.*\",\"critical\":true},{\"name\":\"POSTGRES_HOST\",\"pattern\":\"^[a-zA-Z0-9.-]+$\",\"critical\":false},{\"name\":\"POSTGRES_PORT\",\"pattern\":\"^[0-9]+$\",\"range\":[1,65535],\"critical\":false},{\"name\":\"POSTGRES_USER\",\"pattern\":\"^[a-zA-Z0-9_]+$\",\"critical\":false},{\"name\":\"POSTGRES_PASSWORD\",\"min_length\":8,\"critical\":false}]},\"url_validation\":{\"description\":\"URL format validation for external services\",\"rules\":[{\"name\":\"LANGFLOW_API_URL\",\"pattern\":\"^https?://[a-zA-Z0-9.-]+:[0-9]+/?$\",\"critical\":false},{\"name\":\"EVOLUTION_API_URL\",\"pattern\":\"^https?://[a-zA-Z0-9.-]+/?$\",\"critical\":false},{\"name\":\"BLACKPEARL_API_URL\",\"pattern\":\"^https?://[a-zA-Z0-9.-]+/?$\",\"critical\":false}]},\"security_validation\":{\"description\":\"Security-related environment variables\",\"rules\":[{\"name\":\"ENCRYPTION_KEY\",\"pattern\":\"^[a-zA-Z0-9+/=]+$\",\"min_length\":32,\"critical\":true},{\"name\":\"JWT_SECRET\",\"min_length\":32,\"critical\":true},{\"name\":\"API_KEY\",\"pattern\":\"^[a-zA-Z0-9_-]+$\",\"min_length\":16,\"critical\":true}]},\"networking_validation\":{\"description\":\"Network configuration validation\",\"rules\":[{\"name\":\"HOST\",\"pattern\":\"^(0\\\\.0\\\\.0\\\\.0|localhost|[a-zA-Z0-9.-]+)$\",\"critical\":true},{\"name\":\"PORT\",\"pattern\":\"^[0-9]+$\",\"range\":[1000,65535],\"critical\":true},{\"name\":\"CORS_ORIGINS\",\"pattern\":\"^(https?://[a-zA-Z0-9.-]+:[0-9]+,?)+$\",\"critical\":false}]}},\"cross_service_validation\":{\"description\":\"Validation rules that check compatibility between services\",\"rules\":[{\"name\":\"port_conflicts\",\"description\":\"Ensure no port conflicts between services\",\"check\":\"unique_ports\",\"variables\":[\"AUTOMAGIK_API_PORT\",\"AUTOMAGIK_SPARK_API_PORT\",\"POSTGRES_PORT\",\"REDIS_PORT\"]},{\"name\":\"service_connectivity\",\"description\":\"Ensure service URLs are reachable\",\"check\":\"connectivity_test\",\"variables\":[\"LANGFLOW_API_URL\",\"EVOLUTION_API_URL\",\"DATABASE_URL\"]},{\"name\":\"environment_consistency\",\"description\":\"Ensure environment settings are consistent across services\",\"check\":\"env_consistency\",\"variables\":[\"AUTOMAGIK_ENV\",\"AUTOMAGIK_SPARK_ENV\"]}]},\"conditional_validation\":{\"description\":\"Validation rules that depend on other variables\",\"rules\":[{\"condition\":\"AUTOMAGIK_ENV == production\",\"required\":[\"ENCRYPTION_KEY\",\"JWT_SECRET\",\"DATABASE_URL\"],\"forbidden\":[\"DEBUG=true\",\"AUTOMAGIK_LOG_LEVEL=DEBUG\"]},{\"condition\":\"DATABASE_URL starts with postgresql\",\"required\":[\"POSTGRES_HOST\",\"POSTGRES_PORT\",\"POSTGRES_USER\",\"POSTGRES_PASSWORD\"]},{\"condition\":\"EVOLUTION_API_KEY is set\",\"required\":[\"EVOLUTION_API_URL\",\"EVOLUTION_INSTANCE\"]}]}}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:56:19.677Z",
+      "updatedAt": "2025-06-30T00:56:19.677Z",
+      "lastAccessedAt": "2025-06-30T00:56:19.677Z",
+      "version": 1,
+      "size": 3932,
+      "compressed": true,
+      "checksum": "53dc70885ee2539a5c0fec11956481ddc2a49953ecbd554789e191153f878903",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie1yxv_mi0zq5rzh",
+      "key": "swarm-auto-centralized-1751244835634/strategist/master-strategy",
+      "value": "{\"approach\":\"parallelized standardization\",\"timestamp\":\"2025-06-29T21:56:35-03:00\",\"categories\":{\"ai_provider_keys\":{\"pattern\":\"direct_copy\",\"variables\":[\"OPENAI_API_KEY\",\"ANTHROPIC_API_KEY\",\"GEMINI_API_KEY\"],\"distribution\":\"all_ai_services\",\"services\":[\"am-agents-labs\",\"automagik-spark\",\"automagik-tools\",\"automagik-omni\"]},\"service_specific_config\":{\"pattern\":\"prefixed_variables\",\"variables\":[\"AUTOMAGIK_AGENTS_*\",\"AUTOMAGIK_SPARK_*\",\"AUTOMAGIK_OMNI_*\",\"AUTOMAGIK_TOOLS_*\",\"AUTOMAGIK_UI_*\"],\"distribution\":\"matching_service_only\",\"transform_rules\":{\"AUTOMAGIK_AGENTS_*\":\"am-agents-labs\",\"AUTOMAGIK_SPARK_*\":\"automagik-spark\",\"AUTOMAGIK_OMNI_*\":\"automagik-omni\",\"AUTOMAGIK_TOOLS_*\":\"automagik-tools\",\"AUTOMAGIK_UI_*\":\"automagik-ui\"}},\"infrastructure_urls\":{\"pattern\":\"transformed_distribution\",\"variables\":[\"AUTOMAGIK_DATABASE_URL\",\"AUTOMAGIK_SPARK_DATABASE_URL\",\"EVOLUTION_DATABASE_URL\",\"AUTOMAGIK_SPARK_REDIS_URL\",\"EVOLUTION_REDIS_URL\"],\"distribution\":\"service_specific_transforms\",\"transforms\":{\"AUTOMAGIK_DATABASE_URL\":{\"am-agents-labs\":\"DATABASE_URL\"},\"AUTOMAGIK_SPARK_DATABASE_URL\":{\"automagik-spark\":\"DATABASE_URL\"},\"EVOLUTION_DATABASE_URL\":{\"am-agents-labs\":\"EVOLUTION_DATABASE_URL\"}}},\"shared_secrets\":{\"pattern\":\"selective_copy\",\"variables\":[\"AUTOMAGIK_API_KEY\",\"AUTOMAGIK_SPARK_API_KEY\",\"AUTOMAGIK_OMNI_API_KEY\",\"EVOLUTION_API_KEY\"],\"distribution\":\"auth_required_services\",\"rules\":{\"AUTOMAGIK_API_KEY\":[\"am-agents-labs\",\"automagik-ui\",\"automagik-omni\"],\"AUTOMAGIK_SPARK_API_KEY\":[\"automagik-spark\",\"automagik-ui\",\"automagik-omni\"],\"AUTOMAGIK_OMNI_API_KEY\":[\"automagik-omni\",\"automagik-ui\"],\"EVOLUTION_API_KEY\":[\"am-agents-labs\"]}},\"integration_keys\":{\"pattern\":\"service_specific_integration\",\"variables\":[\"NOTION_TOKEN\",\"DISCORD_BOT_TOKEN\",\"AIRTABLE_TOKEN\",\"BLACKPEARL_TOKEN\",\"OMIE_APP_KEY\",\"FLASHED_API_KEY\",\"LANGFLOW_API_KEY\"],\"distribution\":\"integration_using_services\",\"mapping\":{\"am-agents-labs\":[\"NOTION_TOKEN\",\"DISCORD_BOT_TOKEN\",\"AIRTABLE_TOKEN\",\"BLACKPEARL_TOKEN\",\"OMIE_APP_KEY\",\"FLASHED_API_KEY\"],\"automagik-spark\":[\"LANGFLOW_API_KEY\"],\"automagik-tools\":[\"LANGFLOW_API_KEY\"]}}},\"distributionRules\":{\"parallel_execution\":true,\"batch_processing\":true,\"validation_required\":true,\"backup_before_sync\":true,\"change_detection\":true,\"dry_run_support\":true},\"transformations\":{\"port_standardization\":{\"AUTOMAGIK_API_PORT\":\"AUTOMAGIK_AGENTS_API_PORT\",\"PORT\":\"service_specific_port\"},\"url_standardization\":{\"database_urls\":\"transform_to_service_specific\",\"api_urls\":\"maintain_cross_references\"}},\"validationRules\":[\"required_ai_provider_key_present\",\"valid_api_key_format\",\"valid_url_format\",\"port_availability_check\",\"cross_service_consistency\"],\"implementationPlan\":[\"1. Create env-mappings.yaml with service-specific rules\",\"2. Build env-manager.sh for parallel processing\",\"3. Implement validation layer\",\"4. Add backup/restore functionality\",\"5. Integrate with Makefile env target\",\"6. Test with am-agents-labs first\",\"7. Roll out to all services\"]}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:56:35.875Z",
+      "updatedAt": "2025-06-30T00:56:35.875Z",
+      "lastAccessedAt": "2025-06-30T00:56:35.875Z",
+      "version": 1,
+      "size": 3284,
+      "compressed": true,
+      "checksum": "da3d39c0ad1013a9c6be3396254293c842b58a732632fa6aa59af426ccd99de8",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie2kah_kip8mh5h4",
+      "key": "swarm-auto-centralized-1751244835634/updater/env-example-update",
+      "value": "{\"timestamp\":\"2025-06-30T00:55:06Z\",\"currentFile\":\"/home/namastex/prod/automagik-start/.env.example\",\"newVariables\":[\"AUTOMAGIK_DATABASE_TYPE\",\"AUTOMAGIK_SQLITE_DATABASE_PATH\",\"AUTOMAGIK_POSTGRES_POOL_MIN\",\"AUTOMAGIK_POSTGRES_POOL_MAX\",\"AUTOMAGIK_LOG_DIRECTORY\",\"SQLITE_DB_PATH\",\"AGENT_API_URL\",\"AGENT_API_KEY\",\"DEFAULT_AGENT_NAME\",\"AGENT_API_TIMEOUT\",\"ENABLE_TRACING\",\"TRACE_RETENTION_DAYS\",\"TRACE_MAX_PAYLOAD_SIZE\",\"TRACE_INCLUDE_SENSITIVE\",\"SERPER_API_KEY\",\"TAVILY_API_KEY\"],\"categories\":{\"database\":\"Enhanced database configuration with both SQLite and PostgreSQL support\",\"logging\":\"Added log directory configuration\",\"omni\":\"Added comprehensive Omni-Hub configuration including tracing and agent API integration\",\"search\":\"Added web search API keys for enhanced agent capabilities\"},\"documentation\":{\"database\":\"Added clear distinction between SQLite (default) and PostgreSQL configurations with connection pool settings\",\"omni\":\"Added detailed Omni-Hub configuration including database path, agent API integration, and tracing settings\",\"search\":\"Added optional web search API keys for enhanced research capabilities\"},\"changes\":[\"Enhanced AM Agents Labs database configuration with type selection and connection pool settings\",\"Added log directory configuration for centralized logging\",\"Expanded Automagik Omni configuration with database, agent API, and tracing settings\",\"Added web search API keys for enhanced agent research capabilities\",\"Improved categorization and documentation throughout\"],\"status\":\"completed\",\"validation\":\"All major environment variables from am-agents-labs, automagik-spark, and automagik-omni configurations are now covered\"}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:57:03.545Z",
+      "updatedAt": "2025-06-30T00:57:03.545Z",
+      "lastAccessedAt": "2025-06-30T00:57:03.545Z",
+      "version": 1,
+      "size": 1787,
+      "compressed": true,
+      "checksum": "b8fd923f2965acd87ad23ad28f684a37989f1d4014d1bb77f2e3bc095a19c70f",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie2udz_ol0r8snqy",
+      "key": "swarm-auto-centralized-1751244835634/strategist/env-mappings-structure",
+      "value": "{\"env_mappings_yaml_structure\":{\"version\":\"1.0\",\"description\":\"Environment variable mapping configuration for Automagik Suite\",\"services\":{\"am-agents-labs\":{\"directory\":\"am-agents-labs\",\"env_file\":\".env\",\"required_variables\":[\"OPENAI_API_KEY\",\"AUTOMAGIK_AGENTS_API_PORT\",\"AUTOMAGIK_AGENTS_API_HOST\",\"AUTOMAGIK_AGENTS_API_KEY\",\"DATABASE_URL\"],\"variable_mappings\":{\"direct_copy\":[\"OPENAI_API_KEY\",\"ANTHROPIC_API_KEY\",\"GEMINI_API_KEY\",\"NOTION_TOKEN\",\"DISCORD_BOT_TOKEN\",\"AIRTABLE_TOKEN\",\"BLACKPEARL_TOKEN\",\"OMIE_APP_KEY\",\"FLASHED_API_KEY\",\"EVOLUTION_API_KEY\",\"DEFAULT_EVOLUTION_INSTANCE\",\"DEFAULT_WHATSAPP_NUMBER\"],\"prefix_match\":{\"AUTOMAGIK_AGENTS_\":\"strip_prefix_copy\"},\"transforms\":{\"AUTOMAGIK_DATABASE_URL\":\"DATABASE_URL\",\"EVOLUTION_DATABASE_URL\":\"EVOLUTION_DATABASE_URL\",\"AUTOMAGIK_API_PORT\":\"AUTOMAGIK_AGENTS_API_PORT\",\"AUTOMAGIK_API_HOST\":\"AUTOMAGIK_AGENTS_API_HOST\",\"AUTOMAGIK_API_KEY\":\"AUTOMAGIK_AGENTS_API_KEY\"}}},\"automagik-spark\":{\"directory\":\"automagik-spark\",\"env_file\":\".env\",\"required_variables\":[\"OPENAI_API_KEY\",\"AUTOMAGIK_SPARK_API_PORT\",\"DATABASE_URL\",\"REDIS_URL\"],\"variable_mappings\":{\"direct_copy\":[\"OPENAI_API_KEY\",\"ANTHROPIC_API_KEY\",\"GEMINI_API_KEY\",\"LANGFLOW_API_KEY\",\"LANGFLOW_API_URL\"],\"prefix_match\":{\"AUTOMAGIK_SPARK_\":\"strip_prefix_copy\"},\"transforms\":{\"AUTOMAGIK_SPARK_DATABASE_URL\":\"DATABASE_URL\",\"AUTOMAGIK_SPARK_REDIS_URL\":\"REDIS_URL\",\"AUTOMAGIK_SPARK_CELERY_BROKER_URL\":\"CELERY_BROKER_URL\",\"AUTOMAGIK_SPARK_CELERY_RESULT_BACKEND\":\"CELERY_RESULT_BACKEND\"}}},\"automagik-omni\":{\"directory\":\"automagik-omni\",\"env_file\":\".env\",\"required_variables\":[\"AUTOMAGIK_OMNI_API_PORT\",\"AUTOMAGIK_OMNI_API_HOST\",\"AUTOMAGIK_OMNI_API_KEY\"],\"variable_mappings\":{\"direct_copy\":[\"OPENAI_API_KEY\",\"ANTHROPIC_API_KEY\"],\"prefix_match\":{\"AUTOMAGIK_OMNI_\":\"strip_prefix_copy\"},\"transforms\":{\"AUTOMAGIK_AGENTS_API_PORT\":\"AUTOMAGIK_AGENTS_API_PORT\",\"AUTOMAGIK_SPARK_API_PORT\":\"AUTOMAGIK_SPARK_API_PORT\",\"AUTOMAGIK_API_KEY\":\"AUTOMAGIK_AGENTS_API_KEY\"}}},\"automagik-tools\":{\"directory\":\"automagik-tools\",\"env_file\":\".env\",\"required_variables\":[\"PORT\"],\"variable_mappings\":{\"direct_copy\":[\"OPENAI_API_KEY\",\"ANTHROPIC_API_KEY\",\"LANGFLOW_API_KEY\"],\"transforms\":{\"AUTOMAGIK_TOOLS_PORT\":\"PORT\"}}},\"automagik-ui\":{\"directory\":\"automagik-ui\",\"env_file\":\".env.local\",\"required_variables\":[\"PORT\"],\"variable_mappings\":{\"transforms\":{\"AUTOMAGIK_UI_PORT\":\"PORT\",\"AUTOMAGIK_AGENTS_API_PORT\":\"NEXT_PUBLIC_AGENTS_API_PORT\",\"AUTOMAGIK_SPARK_API_PORT\":\"NEXT_PUBLIC_SPARK_API_PORT\",\"AUTOMAGIK_OMNI_API_PORT\":\"NEXT_PUBLIC_OMNI_API_PORT\",\"AUTOMAGIK_API_KEY\":\"NEXT_PUBLIC_API_KEY\"}}}},\"global_rules\":{\"validation\":{\"api_key_format\":{\"OPENAI_API_KEY\":\"^sk-[a-zA-Z0-9]{48}$\",\"ANTHROPIC_API_KEY\":\"^sk-ant-api03-[a-zA-Z0-9_-]+$\"},\"port_range\":{\"min\":3000,\"max\":9999},\"url_format\":\"^https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?$\"},\"backup\":{\"enabled\":true,\"directory\":\"env-backups\",\"timestamp_format\":\"%Y%m%d_%H%M%S\"},\"change_detection\":{\"enabled\":true,\"hash_algorithm\":\"sha256\"}}}}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:57:16.631Z",
+      "updatedAt": "2025-06-30T00:57:16.631Z",
+      "lastAccessedAt": "2025-06-30T00:57:16.631Z",
+      "version": 1,
+      "size": 3291,
+      "compressed": true,
+      "checksum": "85d960ae107064a817573653ef3d3c3357a3dadace8764340b4c32320897b8a8",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie3rlv_06guxgq23",
+      "key": "swarm-auto-centralized-1751244835634/strategist/parallelized-distribution-strategy",
+      "value": "{\"parallelized_distribution_strategy\":{\"overview\":\"Multi-stage parallel environment variable distribution system\",\"architecture\":{\"orchestration_layer\":{\"component\":\"env-manager.sh\",\"responsibilities\":[\"Parse main .env file\",\"Load env-mappings.yaml configuration\",\"Coordinate parallel service processing\",\"Aggregate results and report status\",\"Handle error recovery and rollback\"]},\"parallel_processing\":{\"strategy\":\"service_based_parallelization\",\"max_concurrent_services\":5,\"execution_model\":\"fork_and_wait\",\"communication\":\"shared_status_files\"},\"validation_layer\":{\"pre_sync_validation\":true,\"per_service_validation\":true,\"post_sync_validation\":true,\"cross_service_consistency_check\":true}},\"execution_phases\":{\"phase_1_preparation\":{\"description\":\"Pre-sync validation and backup\",\"parallel\":false,\"steps\":[\"Load and validate main .env file\",\"Parse env-mappings.yaml configuration\",\"Validate required directories exist\",\"Create timestamped backup of all current env files\",\"Check for running services (optional warning)\"]},\"phase_2_parallel_processing\":{\"description\":\"Parallel service-specific environment generation\",\"parallel\":true,\"max_concurrency\":5,\"steps\":[{\"service\":\"am-agents-labs\",\"process_function\":\"generate_service_env\",\"dependencies\":[],\"priority\":\"high\"},{\"service\":\"automagik-spark\",\"process_function\":\"generate_service_env\",\"dependencies\":[],\"priority\":\"high\"},{\"service\":\"automagik-omni\",\"process_function\":\"generate_service_env\",\"dependencies\":[\"am-agents-labs\",\"automagik-spark\"],\"priority\":\"medium\"},{\"service\":\"automagik-tools\",\"process_function\":\"generate_service_env\",\"dependencies\":[],\"priority\":\"medium\"},{\"service\":\"automagik-ui\",\"process_function\":\"generate_service_env\",\"dependencies\":[\"am-agents-labs\",\"automagik-spark\",\"automagik-omni\"],\"priority\":\"low\"}]},\"phase_3_validation\":{\"description\":\"Post-sync validation and consistency checks\",\"parallel\":true,\"steps\":[\"Validate each service env file against schema\",\"Check cross-service variable consistency\",\"Verify required variables are present\",\"Test API key formats\",\"Validate port assignments for conflicts\"]},\"phase_4_application\":{\"description\":\"Apply changes with rollback capability\",\"parallel\":false,\"steps\":[\"Move generated files to target locations\",\"Update file permissions\",\"Generate change summary report\",\"Clean up temporary files\"]}},\"implementation_details\":{\"file_structure\":{\"temp_directory\":\"/tmp/env-sync-{timestamp}\",\"backup_directory\":\"env-backups/{timestamp}\",\"status_files\":\"/tmp/env-sync-{timestamp}/status/\"},\"error_handling\":{\"rollback_on_failure\":true,\"partial_success_handling\":\"report_and_continue\",\"validation_failure_action\":\"abort_before_apply\"},\"logging\":{\"log_level\":\"INFO\",\"log_file\":\"logs/env-sync.log\",\"per_service_logs\":true,\"structured_output\":true}},\"makefile_integration\":{\"new_targets\":{\"env\":{\"description\":\"Complete environment synchronization\",\"dependencies\":[\"env-check\",\"env-sync\"],\"parallel\":false},\"env-check\":{\"description\":\"Check environment status and validate main .env\",\"parallel\":false,\"fast_execution\":true},\"env-sync\":{\"description\":\"Synchronize environment variables to all services\",\"parallel\":true,\"dependencies\":[\"env-check\"]},\"env-validate\":{\"description\":\"Validate all environment configurations\",\"parallel\":true,\"post_sync_only\":false},\"env-status\":{\"description\":\"Show comprehensive environment status\",\"parallel\":true,\"read_only\":true},\"env-diff\":{\"description\":\"Show differences between main .env and service env files\",\"parallel\":true,\"read_only\":true},\"env-backup\":{\"description\":\"Create backup of all environment files\",\"parallel\":false},\"env-restore\":{\"description\":\"Restore environment files from backup\",\"parallel\":false,\"requires_backup_timestamp\":true}}},\"performance_optimizations\":{\"caching\":{\"env_file_hashing\":\"detect_changes_before_processing\",\"mapping_config_cache\":\"reload_only_if_changed\"},\"parallel_execution\":{\"dependency_aware_scheduling\":true,\"resource_pooling\":true,\"early_termination_on_error\":true},\"io_optimization\":{\"batch_file_operations\":true,\"atomic_file_writes\":true,\"minimize_disk_io\":true}}}}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:57:59.683Z",
+      "updatedAt": "2025-06-30T00:57:59.683Z",
+      "lastAccessedAt": "2025-06-30T00:57:59.683Z",
+      "version": 1,
+      "size": 4468,
+      "compressed": true,
+      "checksum": "d189454560b6df129d993671a1597025f8212bc87ef93ecebaa71725ee6e611e",
+      "references": [],
+      "dependencies": []
+    },
+    {
+      "id": "entry_mcie4p47_ekoit86dz",
+      "key": "swarm-auto-centralized-1751244835634/strategist/strategy",
+      "value": "{\"approach\":\"parallelized standardization\",\"timestamp\":\"2025-06-29T21:58:43-03:00\",\"categories\":{\"ai_provider_keys\":{\"strategy\":\"direct_copy\",\"variables\":[\"OPENAI_API_KEY\",\"ANTHROPIC_API_KEY\",\"GEMINI_API_KEY\"],\"distribution\":\"all_ai_services\",\"rationale\":\"AI keys needed across all services for model access\"},\"service_specific_config\":{\"strategy\":\"prefixed_transformation\",\"pattern\":\"AUTOMAGIK_{SERVICE}_*\",\"distribution\":\"matching_service_only\",\"rationale\":\"Avoid variable collision, maintain service isolation\"},\"infrastructure_urls\":{\"strategy\":\"transformed_distribution\",\"key_transforms\":{\"AUTOMAGIK_DATABASE_URL\":\"DATABASE_URL\",\"AUTOMAGIK_SPARK_DATABASE_URL\":\"DATABASE_URL\",\"AUTOMAGIK_SPARK_REDIS_URL\":\"REDIS_URL\"},\"rationale\":\"Services expect standard variable names, not prefixed ones\"},\"shared_secrets\":{\"strategy\":\"selective_copy\",\"distribution_matrix\":{\"AUTOMAGIK_API_KEY\":[\"am-agents-labs\",\"automagik-ui\",\"automagik-omni\"],\"AUTOMAGIK_SPARK_API_KEY\":[\"automagik-spark\",\"automagik-ui\"],\"EVOLUTION_API_KEY\":[\"am-agents-labs\"]},\"rationale\":\"Security - only distribute secrets to services that need them\"},\"integration_keys\":{\"strategy\":\"service_specific\",\"mapping\":{\"am-agents-labs\":[\"NOTION_TOKEN\",\"DISCORD_BOT_TOKEN\",\"AIRTABLE_TOKEN\"],\"automagik-spark\":[\"LANGFLOW_API_KEY\"],\"automagik-tools\":[\"LANGFLOW_API_KEY\"]},\"rationale\":\"Integration keys only needed by services that use them\"}},\"distributionRules\":{\"execution_model\":\"parallel_with_dependencies\",\"max_concurrency\":5,\"validation_gates\":[\"pre_sync\",\"per_service\",\"post_sync\"],\"rollback_strategy\":\"atomic_with_backup\",\"change_detection\":\"hash_based\"},\"transformations\":{\"prefix_stripping\":{\"AUTOMAGIK_AGENTS_*\":\"strip_to_base_name\",\"AUTOMAGIK_SPARK_*\":\"strip_to_base_name\",\"AUTOMAGIK_OMNI_*\":\"strip_to_base_name\"},\"variable_renaming\":{\"AUTOMAGIK_DATABASE_URL\":\"DATABASE_URL\",\"AUTOMAGIK_API_PORT\":\"AUTOMAGIK_AGENTS_API_PORT\",\"AUTOMAGIK_TOOLS_PORT\":\"PORT\"},\"ui_specific_transforms\":{\"AUTOMAGIK_AGENTS_API_PORT\":\"NEXT_PUBLIC_AGENTS_API_PORT\",\"AUTOMAGIK_SPARK_API_PORT\":\"NEXT_PUBLIC_SPARK_API_PORT\"}},\"validationRules\":[{\"rule\":\"required_ai_provider_key_present\",\"check\":\"at_least_one_of_openai_anthropic_gemini\"},{\"rule\":\"valid_api_key_format\",\"patterns\":{\"OPENAI_API_KEY\":\"^sk-[a-zA-Z0-9]{48}$\",\"ANTHROPIC_API_KEY\":\"^sk-ant-api03-[a-zA-Z0-9_-]+$\"}},{\"rule\":\"port_availability\",\"range\":[3000,9999],\"check_conflicts\":true},{\"rule\":\"cross_service_consistency\",\"check\":\"api_keys_match_between_services\"}],\"implementationPlan\":[{\"step\":1,\"task\":\"Create env-mappings.yaml configuration file\",\"deliverable\":\"service_mapping_configuration\",\"priority\":\"critical\"},{\"step\":2,\"task\":\"Build env-manager.sh orchestration script\",\"deliverable\":\"parallel_processing_engine\",\"priority\":\"critical\"},{\"step\":3,\"task\":\"Implement validation layer with env-validator.py\",\"deliverable\":\"validation_and_safety_checks\",\"priority\":\"high\"},{\"step\":4,\"task\":\"Add backup/restore functionality\",\"deliverable\":\"data_safety_mechanisms\",\"priority\":\"high\"},{\"step\":5,\"task\":\"Integrate with Makefile env targets\",\"deliverable\":\"seamless_user_interface\",\"priority\":\"medium\"},{\"step\":6,\"task\":\"Test with am-agents-labs (milestone 1)\",\"deliverable\":\"validated_implementation\",\"priority\":\"critical\"},{\"step\":7,\"task\":\"Roll out to all services progressively\",\"deliverable\":\"complete_suite_integration\",\"priority\":\"medium\"}],\"coordination_notes\":{\"swarm_integration\":\"Strategy designed for swarm-based implementation with parallel agent coordination\",\"memory_coordination\":\"All implementation details stored in Memory for cross-agent access\",\"batch_processing\":\"Optimized for batch file operations and parallel execution\",\"error_recovery\":\"Comprehensive rollback and recovery mechanisms built in\"}}",
+      "type": "object",
+      "namespace": "default",
+      "tags": [],
+      "metadata": {},
+      "owner": "system",
+      "accessLevel": "shared",
+      "createdAt": "2025-06-30T00:58:43.111Z",
+      "updatedAt": "2025-06-30T00:58:43.111Z",
+      "lastAccessedAt": "2025-06-30T00:58:43.111Z",
+      "version": 1,
+      "size": 4104,
+      "compressed": true,
+      "checksum": "a82fc48bea9ac190875779feb146b56ee29ce395aebdca0f26285626fa30a2b5",
+      "references": [],
+      "dependencies": []
+    }
+  ],
+  "statistics": {
+    "overview": {
+      "totalEntries": 10,
+      "totalSize": 26879,
+      "compressedEntries": 9,
+      "compressionRatio": -34.27395411605938,
+      "indexSize": 500,
+      "memoryUsage": 9619048,
+      "diskUsage": 0
+    },
+    "distribution": {
+      "byNamespace": {
+        "default": {
+          "count": 10,
+          "size": 26879
+        }
+      },
+      "byType": {
+        "object": {
+          "count": 10,
+          "size": 26879
+        }
+      },
+      "byOwner": {
+        "system": {
+          "count": 10,
+          "size": 26879
+        }
+      },
+      "byAccessLevel": {
+        "shared": {
+          "count": 10,
+          "size": 26879
+        }
+      }
+    },
+    "temporal": {
+      "entriesCreatedLast24h": 10,
+      "entriesUpdatedLast24h": 10,
+      "entriesAccessedLast24h": 10,
+      "oldestEntry": "2025-06-30T00:55:17.594Z",
+      "newestEntry": "2025-06-30T00:58:43.111Z"
+    },
+    "performance": {
+      "averageQueryTime": 0,
+      "averageWriteTime": 2,
+      "cacheHitRatio": 0,
+      "indexEfficiency": 0.95
+    },
+    "health": {
+      "expiredEntries": 0,
+      "orphanedReferences": 0,
+      "duplicateKeys": 0,
+      "corruptedEntries": 0,
+      "recommendedCleanup": false
+    },
+    "optimization": {
+      "suggestions": [],
+      "potentialSavings": {
+        "compression": 0,
+        "cleanup": 0,
+        "deduplication": 0
+      },
+      "indexOptimization": [
+        "Consider periodic index rebuilding for optimal performance"
+      ]
+    }
+  }
+}
