@@ -914,6 +914,22 @@ restart-ui: ## 🔄 Restart automagik-ui service only (PM2)
 	$(call print_status,Restarting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
 	@pm2 restart automagik-ui 2>/dev/null || (cd $(AUTOMAGIK_UI_DIR) && pm2 start ecosystem.prod.config.js)
 
+restart-ui-with-build: ## 🔄 Rebuild and restart automagik-ui service (PM2)
+	$(call print_status,Rebuilding and restarting $(UI_COLOR)automagik-ui$(FONT_RESET) service...)
+	@if [ -d "$(AUTOMAGIK_UI_DIR)" ]; then \
+		cd $(AUTOMAGIK_UI_DIR) && \
+		echo -e "$(FONT_CYAN)📦 Installing dependencies...$(FONT_RESET)" && \
+		pnpm install && \
+		echo -e "$(FONT_CYAN)🔨 Building UI...$(FONT_RESET)" && \
+		pnpm build && \
+		echo -e "$(FONT_CYAN)🔄 Restarting UI service...$(FONT_RESET)" && \
+		pm2 restart automagik-ui 2>/dev/null || pm2 start ecosystem.prod.config.js; \
+		echo -e "$(FONT_GREEN)✅ UI rebuilt and restarted successfully!$(FONT_RESET)"; \
+	else \
+		echo -e "$(FONT_RED)❌ automagik-ui directory not found at $(AUTOMAGIK_UI_DIR)$(FONT_RESET)"; \
+		exit 1; \
+	fi
+
 # Individual Status Commands
 status-agents: ## 📊 Check am-agents-labs status only
 	$(call print_status,Checking $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) status...)
@@ -1419,6 +1435,8 @@ update: ## 🔄 Git pull and restart only updated services
 				echo "  $(FONT_YELLOW)⚠️ Not a git repository$(FONT_RESET)"; \
 			fi; \
 			cd - >/dev/null; \
+		else \
+			echo -e "$(FONT_RED)❌ $$(basename $$service_dir) directory not found - skipping$(FONT_RESET)"; \
 		fi; \
 	done; \
 	if [ -z "$$updated_repos" ]; then \
@@ -1434,10 +1452,19 @@ update: ## 🔄 Git pull and restart only updated services
 				"automagik-spark") $(MAKE) restart-spark ;; \
 				"automagik-tools") $(MAKE) restart-tools ;; \
 				"automagik-omni") $(MAKE) restart-omni ;; \
-				"automagik-ui") $(MAKE) restart-ui ;; \
+				"automagik-ui") $(MAKE) restart-ui-with-build ;; \
 			esac; \
 		done; \
-		$(call print_success,Update complete - restarted updated services!); \
+		echo -e "$(FONT_GREEN)✅ Update complete - restarted updated services!$(FONT_RESET)"; \
+	fi
+
+clone-ui: ## 📥 Clone automagik-ui repository if missing
+	@if [ ! -d "$(AUTOMAGIK_UI_DIR)" ]; then \
+		echo -e "$(FONT_CYAN)📥 Cloning automagik-ui repository...$(FONT_RESET)"; \
+		git clone $(AUTOMAGIK_UI_URL) $(AUTOMAGIK_UI_DIR); \
+		echo -e "$(FONT_GREEN)✅ automagik-ui repository cloned successfully!$(FONT_RESET)"; \
+	else \
+		echo -e "$(FONT_YELLOW)⚠️ automagik-ui directory already exists$(FONT_RESET)"; \
 	fi
 
 pull: ## 🔄 Pull from all GitHub repos (main + all services)
