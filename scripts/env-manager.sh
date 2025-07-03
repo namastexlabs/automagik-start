@@ -1,10 +1,16 @@
 #!/bin/bash
 # ===================================================================
-# 🔄 Automagik Suite - Simple Environment Value Sync
+# 🔄 Automagik Suite - Environment Value Sync with Variable Mapping
 # ===================================================================
 # Updates values in service .env files from master .env
 # Only updates existing variables, doesn't add new ones
-# No backups, no complex mappings, just value updates
+# Supports variable name mapping based on ENV_VARIABLE_MAPPING.md
+# 
+# Key Mappings:
+# - AUTOMAGIK_AGENTS_* → AUTOMAGIK_*
+# - AGENT_API_* → AUTOMAGIK_API_*
+# - DATABASE_PATH → AUTOMAGIK_UI_DATABASE_PATH
+# - PORT/HOST → AUTOMAGIK_TOOLS_SSE_PORT/AUTOMAGIK_TOOLS_HOST
 
 set -e
 
@@ -91,6 +97,58 @@ load_env_to_map() {
     done < "$env_file"
 }
 
+# Define variable mappings for services
+declare -gA VARIABLE_MAPPINGS
+
+# Initialize variable mappings based on ENV_VARIABLE_MAPPING.md
+init_variable_mappings() {
+    # Core Automagik Service mappings (am-agents-labs)
+    VARIABLE_MAPPINGS["am-agents-labs:AUTOMAGIK_AGENTS_API_PORT"]="AUTOMAGIK_API_PORT"
+    VARIABLE_MAPPINGS["am-agents-labs:AUTOMAGIK_AGENTS_API_HOST"]="AUTOMAGIK_API_HOST"
+    VARIABLE_MAPPINGS["am-agents-labs:AUTOMAGIK_AGENTS_URL"]="AUTOMAGIK_API_URL"
+    
+    # Automagik Spark Service mappings
+    # Note: Spark uses AUTOMAGIK_SPARK_* variables directly - no mappings needed for most variables
+    # Only map integration variables that reference external services
+    
+    # Automagik Omni Service mappings
+    # Note: Omni now uses generic variable names directly (DATABASE_URL, SQLITE_DB_PATH, LOG_*)
+    # No mappings needed - variables match between main .env and service .env
+    
+    # Automagik Tools Service mappings
+    VARIABLE_MAPPINGS["automagik-tools:PORT"]="AUTOMAGIK_TOOLS_SSE_PORT"
+    VARIABLE_MAPPINGS["automagik-tools:HOST"]="AUTOMAGIK_TOOLS_HOST"
+    VARIABLE_MAPPINGS["automagik-tools:AUTOMAGIK_TOOLS_PORT"]="AUTOMAGIK_TOOLS_HTTP_PORT"
+    
+    # Automagik UI Service mappings
+    VARIABLE_MAPPINGS["automagik-ui:AUTOMAGIK_DEV_PORT"]="AUTOMAGIK_UI_DEV_PORT"
+    VARIABLE_MAPPINGS["automagik-ui:AUTOMAGIK_PROD_PORT"]="AUTOMAGIK_UI_PROD_PORT"
+    VARIABLE_MAPPINGS["automagik-ui:DATABASE_PATH"]="AUTOMAGIK_UI_DATABASE_PATH"
+    VARIABLE_MAPPINGS["automagik-ui:DB_PATH"]="AUTOMAGIK_UI_DATABASE_PATH"
+    
+    # Global mappings for all services
+    # These apply to all services unless overridden by service-specific mapping
+    VARIABLE_MAPPINGS["*:AGENT_API_URL"]="AUTOMAGIK_API_URL"
+    VARIABLE_MAPPINGS["*:AGENT_API_KEY"]="AUTOMAGIK_API_KEY"
+}
+
+# Get mapped variable name for a service
+get_mapped_var() {
+    local service="$1"
+    local service_var="$2"
+    
+    # Check service-specific mapping first
+    if [[ -n "${VARIABLE_MAPPINGS[$service:$service_var]+exists}" ]]; then
+        echo "${VARIABLE_MAPPINGS[$service:$service_var]}"
+    # Check global mapping
+    elif [[ -n "${VARIABLE_MAPPINGS[*:$service_var]+exists}" ]]; then
+        echo "${VARIABLE_MAPPINGS[*:$service_var]}"
+    # Return original if no mapping
+    else
+        echo "$service_var"
+    fi
+}
+
 # Update values in service .env file
 update_service_env() {
     local service="$1"
@@ -132,8 +190,20 @@ update_service_env() {
             local var_name="${BASH_REMATCH[1]}"
             local current_value="${BASH_REMATCH[2]}"
             
-            # If variable exists in master, use master's value
-            if [[ -n "${master_env[$var_name]+exists}" ]]; then
+            # Get mapped variable name from master env
+            local master_var_name=$(get_mapped_var "$service" "$var_name")
+            
+            # If mapped variable exists in master, use master's value
+            if [[ -n "${master_env[$master_var_name]+exists}" ]]; then
+                local new_value="${master_env[$master_var_name]}"
+                if [[ "$current_value" != "$new_value" ]]; then
+                    echo "$var_name=$new_value" >> "$temp_file"
+                    updates_made=$((updates_made + 1))
+                else
+                    echo "$line" >> "$temp_file"
+                fi
+            # If variable exists in master with same name, use it
+            elif [[ -n "${master_env[$var_name]+exists}" ]]; then
                 local new_value="${master_env[$var_name]}"
                 if [[ "$current_value" != "$new_value" ]]; then
                     echo "$var_name=$new_value" >> "$temp_file"
@@ -232,8 +302,23 @@ check_env_status() {
                 local var_name="${BASH_REMATCH[1]}"
                 local service_value="${BASH_REMATCH[2]}"
                 
-                # If variable exists in master and values differ
-                if [[ -n "${master_env[$var_name]+exists}" ]]; then
+                # Get mapped variable name from master env
+                local master_var_name=$(get_mapped_var "$service" "$var_name")
+                
+                # Check if mapped variable exists in master and values differ
+                if [[ -n "${master_env[$master_var_name]+exists}" ]]; then
+                    local master_value="${master_env[$master_var_name]}"
+                    if [[ "$service_value" != "$master_value" ]]; then
+                        if [[ "$service_has_diff" == "false" ]]; then
+                            print_warning "$service: Different values from master:"
+                            service_has_diff=true
+                            differences_found=true
+                        fi
+                        echo "  - $var_name (mapped from $master_var_name)"
+                        diff_count=$((diff_count + 1))
+                    fi
+                # Also check if variable exists in master with same name
+                elif [[ -n "${master_env[$var_name]+exists}" ]]; then
                     local master_value="${master_env[$var_name]}"
                     if [[ "$service_value" != "$master_value" ]]; then
                         if [[ "$service_has_diff" == "false" ]]; then
@@ -304,6 +389,9 @@ show_env_status() {
 main() {
     local command="${1:-help}"
     
+    # Initialize variable mappings
+    init_variable_mappings
+    
     case "$command" in
         "sync")
             if check_main_env; then
@@ -331,6 +419,11 @@ main() {
             echo "  $0 sync      # Update values in service .env files"
             echo "  $0 check     # Check for differences"
             echo "  $0 status    # Show file statistics"
+            echo ""
+            echo "Notes:"
+            echo "  - Variable mappings are applied automatically"
+            echo "  - Old variable names are mapped to new standardized names"
+            echo "  - See ENV_VARIABLE_MAPPING.md for mapping details"
             echo ""
             ;;
         *)

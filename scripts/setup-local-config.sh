@@ -66,10 +66,10 @@ DATABASE_TYPE=postgresql
 DATABASE_URL=postgresql://postgres:postgres@localhost:5401/am_agents_labs
 
 # Service Configuration
-AM_PORT=8881
+AUTOMAGIK_API_PORT=8881
 HOST=127.0.0.1
-AM_LOG_LEVEL=INFO
-AM_LOG_SQL=false
+AUTOMAGIK_LOG_LEVEL=INFO
+AUTOMAGIK_LOG_SQL=false
 
 # API Keys (UPDATE WITH YOUR KEYS)
 OPENAI_API_KEY=sk-your-openai-api-key-here

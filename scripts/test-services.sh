@@ -20,7 +20,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVICES_DIR="$PROJECT_ROOT"
 
 # Service directories
-AM_AGENTS_DIR="$SERVICES_DIR/am-agents-labs"
+AUTOMAGIK_AGENTS_DIR="$SERVICES_DIR/am-agents-labs"
 SPARK_DIR="$SERVICES_DIR/automagik-spark"
 TOOLS_DIR="$SERVICES_DIR/automagik-tools"
 OMNI_DIR="$SERVICES_DIR/automagik-omni"
@@ -155,7 +155,7 @@ echo "=================================="
 echo ""
 
 # Test each service
-test_python_service "am-agents-labs" "$AM_AGENTS_DIR" "src"
+test_python_service "am-agents-labs" "$AUTOMAGIK_AGENTS_DIR" "src"
 echo ""
 
 test_python_service "automagik-spark" "$SPARK_DIR" "src"
