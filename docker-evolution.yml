@@ -22,12 +22,12 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
-      PGPORT: 5403
+      PGPORT: ${EVOLUTION_POSTGRES_PORT:-5403}
     volumes:
       - evolution-postgres-data:/var/lib/postgresql/data
     network_mode: host
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d evolution_api -p 5403"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d evolution_api -p ${EVOLUTION_POSTGRES_PORT:-5403}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,12 +38,12 @@ services:
     image: redis:7-alpine
     container_name: evolution-redis
     restart: unless-stopped
-    command: redis-server --port 5413 --appendonly yes --requirepass ""
+    command: redis-server --port ${EVOLUTION_REDIS_PORT:-5413} --appendonly yes --requirepass ""
     volumes:
       - evolution-redis-data:/data
     network_mode: host
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "5413", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${EVOLUTION_REDIS_PORT:-5413}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -57,7 +57,7 @@ services:
       RABBITMQ_DEFAULT_USER: rabbitmq
       RABBITMQ_DEFAULT_PASS: rabbitmq
       RABBITMQ_DEFAULT_VHOST: /
-      RABBITMQ_NODE_PORT: 5431
+      RABBITMQ_NODE_PORT: ${EVOLUTION_RABBITMQ_PORT:-5431}
     volumes:
       - evolution-rabbitmq-data:/var/lib/rabbitmq
     network_mode: host
@@ -73,15 +73,15 @@ services:
     container_name: automagik-evolution
     restart: unless-stopped
     environment:
-      - SERVER_PORT=${EVOLUTION_API_PORT:-18080}
-      - SERVER_URL=http://localhost:${EVOLUTION_API_PORT:-18080}
+      - SERVER_PORT=${EVOLUTION_API_PORT:-8080}
+      - SERVER_URL=http://localhost:${EVOLUTION_API_PORT:-8080}
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@localhost:5403/evolution_api
+      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@localhost:${EVOLUTION_POSTGRES_PORT:-5403}/evolution_api
       - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://localhost:5413
+      - CACHE_REDIS_URI=redis://localhost:${EVOLUTION_REDIS_PORT:-5413}
       - RABBITMQ_ENABLED=true
-      - RABBITMQ_URI=amqp://rabbitmq:rabbitmq@localhost:5431
+      - RABBITMQ_URI=amqp://rabbitmq:rabbitmq@localhost:${EVOLUTION_RABBITMQ_PORT:-5431}
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-namastex888}
       - LOG_LEVEL=info
@@ -96,7 +96,7 @@ services:
       evolution-rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${EVOLUTION_API_PORT:-18080}/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${EVOLUTION_API_PORT:-8080}/"]
       interval: 30s
       timeout: 10s
       retries: 5

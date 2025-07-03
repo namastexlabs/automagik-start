@@ -34,11 +34,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
-      PGPORT: 5401
+      PGPORT: ${AUTOMAGIK_POSTGRES_PORT:-5401}
     volumes:
       - am-agents-labs-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_agents -p 5401"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_agents -p ${AUTOMAGIK_POSTGRES_PORT:-5401}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -55,11 +55,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
-      PGPORT: 5402
+      PGPORT: ${AUTOMAGIK_SPARK_POSTGRES_PORT:-5402}
     volumes:
       - automagik-spark-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_spark -p 5402"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_spark -p ${AUTOMAGIK_SPARK_POSTGRES_PORT:-5402}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,11 +71,11 @@ services:
     container_name: automagik-spark-redis
     restart: unless-stopped
     network_mode: host
-    command: redis-server --port 5412 --appendonly yes --requirepass ""
+    command: redis-server --port ${AUTOMAGIK_SPARK_REDIS_PORT:-5412} --appendonly yes --requirepass ""
     volumes:
       - automagik-spark-redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "5412", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${AUTOMAGIK_SPARK_REDIS_PORT:-5412}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3

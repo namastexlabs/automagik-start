@@ -259,16 +259,16 @@ check_infrastructure_health() {
         local all_healthy=true
         
         # Check PostgreSQL containers
-        if ! docker exec am-agents-labs-postgres pg_isready -U postgres -d automagik_agents -p 5401 >/dev/null 2>&1; then
+        if ! docker exec am-agents-labs-postgres pg_isready -U postgres -d automagik_agents -p ${AUTOMAGIK_POSTGRES_PORT:-5401} >/dev/null 2>&1; then
             all_healthy=false
         fi
         
-        if ! docker exec automagik-spark-postgres pg_isready -U postgres -d automagik_spark -p 5402 >/dev/null 2>&1; then
+        if ! docker exec automagik-spark-postgres pg_isready -U postgres -d automagik_spark -p ${AUTOMAGIK_SPARK_POSTGRES_PORT:-5402} >/dev/null 2>&1; then
             all_healthy=false
         fi
         
         # Check Redis container
-        if ! docker exec automagik-spark-redis redis-cli -p 5412 ping >/dev/null 2>&1; then
+        if ! docker exec automagik-spark-redis redis-cli -p ${AUTOMAGIK_SPARK_REDIS_PORT:-5412} ping >/dev/null 2>&1; then
             all_healthy=false
         fi
         
