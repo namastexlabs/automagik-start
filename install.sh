@@ -291,6 +291,14 @@ if [ -f "$SCRIPT_DIR/docker-infrastructure.yml" ]; then
     echo -e "${CYAN}Starting core infrastructure...${NC}"
     $DOCKER_COMPOSE_CMD -f "$SCRIPT_DIR/docker-infrastructure.yml" -p automagik up -d
     
+    # Load .env file for health check port configuration
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        echo -e "${CYAN}Loading port configuration from .env...${NC}"
+        set -a  # automatically export all variables
+        source "$SCRIPT_DIR/.env"
+        set +a  # stop automatically exporting
+    fi
+    
     # Wait for infrastructure health
     if check_infrastructure_health; then
         echo -e "${GREEN}✓ Core infrastructure ready${NC}"
