@@ -164,8 +164,8 @@ DATABASE_URL=sqlite:///./data/omnihub.db
 SQLITE_DB_PATH=./data/omnihub.db
 
 # Agent API Configuration (am-agents-labs)
-AGENT_API_URL=http://127.0.0.1:8881
-AGENT_API_KEY=namastex888
+AUTOMAGIK_API_URL=http://127.0.0.1:8881
+AUTOMAGIK_API_KEY=namastex888
 DEFAULT_AGENT_NAME=simple_agent
 
 # Evolution API Configuration (WhatsApp)

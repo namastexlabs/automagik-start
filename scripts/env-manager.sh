@@ -112,8 +112,7 @@ init_variable_mappings() {
     # Only map integration variables that reference external services
     
     # Automagik Omni Service mappings
-    # Note: Omni now uses generic variable names directly (DATABASE_URL, SQLITE_DB_PATH, LOG_*)
-    # No mappings needed - variables match between main .env and service .env
+    # Note: Omni uses AUTOMAGIK_OMNI_* prefixed variables directly - no mappings needed
     
     # Automagik Tools Service mappings
     VARIABLE_MAPPINGS["automagik-tools:PORT"]="AUTOMAGIK_TOOLS_SSE_PORT"
