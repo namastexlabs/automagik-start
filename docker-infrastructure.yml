@@ -31,14 +31,14 @@ services:
     network_mode: host
     environment:
       POSTGRES_DB: automagik_agents
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-automagik_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-automagik_pass}
       PGDATA: /var/lib/postgresql/data/pgdata
       PGPORT: ${AUTOMAGIK_POSTGRES_PORT:-5401}
     volumes:
       - am-agents-labs-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_agents -p ${AUTOMAGIK_POSTGRES_PORT:-5401}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-automagik_user} -d automagik_agents -p ${AUTOMAGIK_POSTGRES_PORT:-5401}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,14 +52,14 @@ services:
     network_mode: host
     environment:
       POSTGRES_DB: automagik_spark
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${AUTOMAGIK_SPARK_POSTGRES_USER:-spark_user}
+      POSTGRES_PASSWORD: ${AUTOMAGIK_SPARK_POSTGRES_PASSWORD:-spark_pass}
       PGDATA: /var/lib/postgresql/data/pgdata
       PGPORT: ${AUTOMAGIK_SPARK_POSTGRES_PORT:-5402}
     volumes:
       - automagik-spark-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d automagik_spark -p ${AUTOMAGIK_SPARK_POSTGRES_PORT:-5402}"]
+      test: ["CMD-SHELL", "pg_isready -U ${AUTOMAGIK_SPARK_POSTGRES_USER:-spark_user} -d automagik_spark -p ${AUTOMAGIK_SPARK_POSTGRES_PORT:-5402}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,11 +71,11 @@ services:
     container_name: automagik-spark-redis
     restart: unless-stopped
     network_mode: host
-    command: redis-server --port ${AUTOMAGIK_SPARK_REDIS_PORT:-5412} --appendonly yes --requirepass ""
+    command: redis-server --port ${AUTOMAGIK_SPARK_REDIS_PORT:-5412} --appendonly yes --requirepass "${AUTOMAGIK_SPARK_REDIS_PASSWORD:-spark_redis_pass}"
     volumes:
       - automagik-spark-redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "${AUTOMAGIK_SPARK_REDIS_PORT:-5412}", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${AUTOMAGIK_SPARK_REDIS_PORT:-5412}", "-a", "${AUTOMAGIK_SPARK_REDIS_PASSWORD:-spark_redis_pass}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3

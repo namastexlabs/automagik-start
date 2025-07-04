@@ -19,15 +19,15 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: evolution_api
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${EVOLUTION_POSTGRES_USER:-evolution_user}
+      POSTGRES_PASSWORD: ${EVOLUTION_POSTGRES_PASSWORD:-evolution_pass}
       PGDATA: /var/lib/postgresql/data/pgdata
       PGPORT: ${EVOLUTION_POSTGRES_PORT:-5403}
     volumes:
       - evolution-postgres-data:/var/lib/postgresql/data
     network_mode: host
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d evolution_api -p ${EVOLUTION_POSTGRES_PORT:-5403}"]
+      test: ["CMD-SHELL", "pg_isready -U ${EVOLUTION_POSTGRES_USER:-evolution_user} -d evolution_api -p ${EVOLUTION_POSTGRES_PORT:-5403}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,12 +38,12 @@ services:
     image: redis:7-alpine
     container_name: evolution-redis
     restart: unless-stopped
-    command: redis-server --port ${EVOLUTION_REDIS_PORT:-5413} --appendonly yes --requirepass ""
+    command: redis-server --port ${EVOLUTION_REDIS_PORT:-5413} --appendonly yes --requirepass "${EVOLUTION_REDIS_PASSWORD:-evolution_redis_pass}"
     volumes:
       - evolution-redis-data:/data
     network_mode: host
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "${EVOLUTION_REDIS_PORT:-5413}", "ping"]
+      test: ["CMD", "redis-cli", "-p", "${EVOLUTION_REDIS_PORT:-5413}", "-a", "${EVOLUTION_REDIS_PASSWORD:-evolution_redis_pass}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -54,8 +54,8 @@ services:
     container_name: evolution-rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: rabbitmq
-      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_USER: ${EVOLUTION_RABBITMQ_USER:-rabbitmq}
+      RABBITMQ_DEFAULT_PASS: ${EVOLUTION_RABBITMQ_PASSWORD:-rabbitmq_pass}
       RABBITMQ_DEFAULT_VHOST: /
       RABBITMQ_NODE_PORT: ${EVOLUTION_RABBITMQ_PORT:-5431}
     volumes:
@@ -77,11 +77,11 @@ services:
       - SERVER_URL=http://localhost:${EVOLUTION_API_PORT:-8080}
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@localhost:${EVOLUTION_POSTGRES_PORT:-5403}/evolution_api
+      - DATABASE_CONNECTION_URI=postgresql://${EVOLUTION_POSTGRES_USER:-evolution_user}:${EVOLUTION_POSTGRES_PASSWORD:-evolution_pass}@localhost:${EVOLUTION_POSTGRES_PORT:-5403}/evolution_api
       - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://localhost:${EVOLUTION_REDIS_PORT:-5413}
+      - CACHE_REDIS_URI=redis://:${EVOLUTION_REDIS_PASSWORD:-evolution_redis_pass}@localhost:${EVOLUTION_REDIS_PORT:-5413}
       - RABBITMQ_ENABLED=true
-      - RABBITMQ_URI=amqp://rabbitmq:rabbitmq@localhost:${EVOLUTION_RABBITMQ_PORT:-5431}
+      - RABBITMQ_URI=amqp://${EVOLUTION_RABBITMQ_USER:-rabbitmq}:${EVOLUTION_RABBITMQ_PASSWORD:-rabbitmq_pass}@localhost:${EVOLUTION_RABBITMQ_PORT:-5431}
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-namastex888}
       - LOG_LEVEL=info

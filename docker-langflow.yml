@@ -12,19 +12,19 @@ services:
     container_name: automagik-langflow
     restart: unless-stopped
     environment:
-      - LANGFLOW_PORT=7860
+      - LANGFLOW_PORT=${LANGFLOW_PORT:-7860}
       - LANGFLOW_HOST=0.0.0.0
       - LANGFLOW_AUTO_LOGIN=false
-      - LANGFLOW_SUPERUSER=automagik
-      - LANGFLOW_SUPERUSER_PASSWORD=automagik
-      - LANGFLOW_SECRET_KEY=automagik-langflow-secret-key
+      - LANGFLOW_SUPERUSER=${LANGFLOW_SUPERUSER:-automagik}
+      - LANGFLOW_SUPERUSER_PASSWORD=${LANGFLOW_SUPERUSER_PASSWORD:-automagik_pass}
+      - LANGFLOW_SECRET_KEY=${LANGFLOW_SECRET_KEY:-your-langflow-secret-key-2024}
       - LANGFLOW_LOG_LEVEL=info
     volumes:
       - langflow-data:/app/langflow
     network_mode: host
     # Note: Dependencies are managed externally since we're using host network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7860/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${LANGFLOW_PORT:-7860}/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 5
