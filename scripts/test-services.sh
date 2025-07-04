@@ -155,13 +155,13 @@ echo "=================================="
 echo ""
 
 # Test each service
-test_python_service "am-agents-labs" "$AUTOMAGIK_AGENTS_DIR" "src"
+test_python_service "am-agents-labs" "$AUTOMAGIK_AGENTS_DIR" "automagik"
 echo ""
 
-test_python_service "automagik-spark" "$SPARK_DIR" "src"
+test_python_service "automagik-spark" "$SPARK_DIR" "automagik"
 echo ""
 
-test_python_service "automagik-omni" "$OMNI_DIR" "src.api.app"
+test_python_service "automagik-omni" "$OMNI_DIR" "automagik.api.app"
 echo ""
 
 test_tools_service

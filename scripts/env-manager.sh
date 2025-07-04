@@ -184,8 +184,32 @@ update_service_env() {
     
     # Process service env file line by line
     while IFS= read -r line || [[ -n "$line" ]]; do
-        # Check if line is a variable
-        if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+        # Check if line is a commented variable
+        if [[ "$line" =~ ^[[:space:]]*#[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+            local var_name="${BASH_REMATCH[1]}"
+            local commented_value="${BASH_REMATCH[2]}"
+            
+            # Get mapped variable name from master env
+            local master_var_name=$(get_mapped_var "$service" "$var_name")
+            
+            # If mapped variable exists in master, uncomment and use master's value
+            if [[ -n "${master_env[$master_var_name]+exists}" ]]; then
+                local new_value="${master_env[$master_var_name]}"
+                echo "$var_name=$new_value" >> "$temp_file"
+                updates_made=$((updates_made + 1))
+                print_info "  Uncommented and updated: $var_name"
+            # If variable exists in master with same name, uncomment and use it
+            elif [[ -n "${master_env[$var_name]+exists}" ]]; then
+                local new_value="${master_env[$var_name]}"
+                echo "$var_name=$new_value" >> "$temp_file"
+                updates_made=$((updates_made + 1))
+                print_info "  Uncommented and updated: $var_name"
+            else
+                # Keep original commented line if not in master
+                echo "$line" >> "$temp_file"
+            fi
+        # Check if line is an uncommented variable
+        elif [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
             local var_name="${BASH_REMATCH[1]}"
             local current_value="${BASH_REMATCH[2]}"
             
@@ -211,8 +235,15 @@ update_service_env() {
                     echo "$line" >> "$temp_file"
                 fi
             else
-                # Keep original line if not in master
-                echo "$line" >> "$temp_file"
+                # If strict mode and variable not in master, comment it out
+                if [[ "${STRICT_SYNC:-false}" == "true" ]]; then
+                    echo "# $line" >> "$temp_file"
+                    updates_made=$((updates_made + 1))
+                    print_info "  Commented out: $var_name (not in master)"
+                else
+                    # Keep original line if not in master
+                    echo "$line" >> "$temp_file"
+                fi
             fi
         else
             # Keep non-variable lines as-is (comments, blank lines)
@@ -297,7 +328,26 @@ check_env_status() {
         
         # Check each variable in service env
         while IFS= read -r line || [[ -n "$line" ]]; do
-            if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+            # Check for commented variables that exist in master
+            if [[ "$line" =~ ^[[:space:]]*#[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+                local var_name="${BASH_REMATCH[1]}"
+                local commented_value="${BASH_REMATCH[2]}"
+                
+                # Get mapped variable name from master env
+                local master_var_name=$(get_mapped_var "$service" "$var_name")
+                
+                # Check if this commented variable exists in master
+                if [[ -n "${master_env[$master_var_name]+exists}" ]] || [[ -n "${master_env[$var_name]+exists}" ]]; then
+                    if [[ "$service_has_diff" == "false" ]]; then
+                        print_warning "$service: Variables to uncomment from master:"
+                        service_has_diff=true
+                        differences_found=true
+                    fi
+                    echo "  - $var_name (currently commented out)"
+                    diff_count=$((diff_count + 1))
+                fi
+            # Check for uncommented variables
+            elif [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
                 local var_name="${BASH_REMATCH[1]}"
                 local service_value="${BASH_REMATCH[2]}"
                 
@@ -397,6 +447,13 @@ main() {
                 sync_all_services
             fi
             ;;
+        "sync-strict")
+            if check_main_env; then
+                export STRICT_SYNC=true
+                print_warning "Running in STRICT mode - will comment out variables not in master"
+                sync_all_services
+            fi
+            ;;
         "check")
             check_env_status
             ;;
@@ -409,15 +466,17 @@ main() {
             echo "Usage: $0 COMMAND"
             echo ""
             echo "Commands:"
-            echo "  sync      Update values in service .env files from master"
-            echo "  check     Check for value differences between master and services"
-            echo "  status    Show environment file statistics"
-            echo "  help      Show this help"
+            echo "  sync         Update values in service .env files from master"
+            echo "  sync-strict  Strict sync - also comments out vars not in master"
+            echo "  check        Check for value differences between master and services"
+            echo "  status       Show environment file statistics"
+            echo "  help         Show this help"
             echo ""
             echo "Examples:"
-            echo "  $0 sync      # Update values in service .env files"
-            echo "  $0 check     # Check for differences"
-            echo "  $0 status    # Show file statistics"
+            echo "  $0 sync         # Update values (keeps extra vars)"
+            echo "  $0 sync-strict  # Strict sync (comments out extra vars)"
+            echo "  $0 check        # Check for differences"
+            echo "  $0 status       # Show file statistics"
             echo ""
             echo "Notes:"
             echo "  - Variable mappings are applied automatically"
@@ -427,7 +486,7 @@ main() {
             ;;
         *)
             print_error "Unknown command: $command"
-            echo "Usage: $0 {sync|check|status|help}"
+            echo "Usage: $0 {sync|sync-strict|check|status|help}"
             exit 1
             ;;
     esac
