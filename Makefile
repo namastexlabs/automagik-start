@@ -382,8 +382,9 @@ start-langflow: ## 🌊 Start LangFlow visual workflow builder
 		$(call print_error,LangFlow compose file not found: $(LANGFLOW_COMPOSE)); \
 		exit 1; \
 	fi
-	@# Ensure LangFlow data directory exists
+	@# Ensure LangFlow data directory exists with correct permissions
 	@mkdir -p /root/data/langflow
+	@chown -R 1000:1000 /root/data/langflow
 	@# Using host network mode - no network creation needed
 	@$(DOCKER_COMPOSE) -f $(LANGFLOW_COMPOSE) -p langflow up -d
 	@$(call print_status,Waiting for LangFlow to be ready...)
