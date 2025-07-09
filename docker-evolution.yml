@@ -84,6 +84,8 @@ services:
       - RABBITMQ_URI=amqp://${EVOLUTION_RABBITMQ_USER:-rabbitmq}:${EVOLUTION_RABBITMQ_PASSWORD:-rabbitmq_pass}@localhost:${EVOLUTION_RABBITMQ_PORT:-5431}
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-namastex888}
+      - CONFIG_SESSION_PHONE_CLIENT=${EVOLUTION_PHONE_CLIENT:-Automagik Omni}
+      - QRCODE_COLOR=${EVOLUTION_QRCODE_COLOR:-#8B5CF6}
       - LOG_LEVEL=info
     volumes:
       - evolution_instances:/evolution/instances
