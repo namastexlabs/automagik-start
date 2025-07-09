@@ -30,6 +30,7 @@ env/
 
 # Repository directories (will be cloned)
 am-agents-labs/
+automagik_flashed/
 automagik-ui/
 automagik-omni/
 automagik-spark/
