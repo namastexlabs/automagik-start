@@ -40,7 +40,30 @@ detect_docker_compose() {
     fi
 }
 
-# Set Docker Compose command
+echo -e "${PURPLE}🚀 Automagik Suite - Pre-dependency Installer${NC}"
+echo -e "${CYAN}Installing minimal dependencies before main installation...${NC}"
+echo ""
+
+# Install Docker first (before checking for docker-compose)
+if ! command -v docker &> /dev/null; then
+    echo -e "${CYAN}Installing Docker...${NC}"
+    curl -fsSL https://get.docker.com | sh
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    sudo usermod -aG docker $USER
+    echo -e "${YELLOW}⚠️  You'll need to log out and back in for Docker permissions${NC}"
+    echo -e "${GREEN}✓ Docker installed successfully${NC}"
+else
+    echo -e "${GREEN}✓ Docker already installed${NC}"
+    # Ensure Docker service is running
+    if ! sudo systemctl is-active --quiet docker; then
+        echo -e "${CYAN}Starting Docker service...${NC}"
+        sudo systemctl start docker
+        sudo systemctl enable docker
+    fi
+fi
+
+# Now check for Docker Compose
 DOCKER_COMPOSE_CMD=$(detect_docker_compose)
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Cannot proceed without Docker Compose${NC}"
@@ -48,10 +71,6 @@ if [ $? -ne 0 ]; then
 fi
 
 echo -e "${GREEN}✓ Using Docker Compose command: ${DOCKER_COMPOSE_CMD}${NC}"
-
-echo -e "${PURPLE}🚀 Automagik Suite - Pre-dependency Installer${NC}"
-echo -e "${CYAN}Installing minimal dependencies before main installation...${NC}"
-echo ""
 
 # Detect OS
 OS_TYPE=""
@@ -234,15 +253,7 @@ else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
 fi
 
-# Install Docker
-if ! command -v docker &> /dev/null; then
-    echo -e "${CYAN}Installing Docker...${NC}"
-    curl -fsSL https://get.docker.com | sh
-    sudo usermod -aG docker $USER
-    echo -e "${YELLOW}⚠️  You'll need to log out and back in for Docker permissions${NC}"
-else
-    echo -e "${GREEN}✓ Docker already installed${NC}"
-fi
+# Docker already installed at the beginning of script
 
 echo ""
 echo -e "${CYAN}=== Core Infrastructure Setup ===${NC}"
