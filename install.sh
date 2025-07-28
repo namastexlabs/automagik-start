@@ -299,6 +299,14 @@ fi
 if ! command -v pnpm &> /dev/null; then
     echo -e "${CYAN}Installing pnpm...${NC}"
     npm install -g pnpm
+    # Ensure pnpm is immediately available in PATH
+    export PATH="$NPM_GLOBAL_BIN:$PATH"
+    # Verify pnpm is now accessible
+    if command -v pnpm &> /dev/null; then
+        echo -e "${GREEN}✓ pnpm installed successfully${NC}"
+    else
+        echo -e "${YELLOW}⚠️  pnpm installed but not immediately available. You may need to restart your terminal.${NC}"
+    fi
 else
     echo -e "${GREEN}✓ pnpm already installed${NC}"
 fi
@@ -542,6 +550,35 @@ echo ""
 
 # Export UV path for make install to use
 export UV_BIN="${UV_BIN:-$(which uv 2>/dev/null || echo $HOME/.local/bin/uv)}"
+
+# Final verification that all tools are available
+echo -e "${CYAN}Verifying installed tools are available...${NC}"
+MISSING_TOOLS=()
+
+# Check essential tools
+for tool in node npm pnpm; do
+    if ! command -v "$tool" &> /dev/null; then
+        MISSING_TOOLS+=("$tool")
+    fi
+done
+
+if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
+    echo -e "${YELLOW}⚠️  Some tools are not immediately available in PATH: ${MISSING_TOOLS[*]}${NC}"
+    echo -e "${CYAN}Updating PATH for current session...${NC}"
+    # Ensure all paths are exported for the make install command
+    export PATH="/opt/homebrew/opt/node@22/bin:$NPM_GLOBAL_BIN:$HOME/.local/bin:$PATH"
+    
+    # Final check
+    for tool in "${MISSING_TOOLS[@]}"; do
+        if command -v "$tool" &> /dev/null; then
+            echo -e "${GREEN}✓ $tool now available${NC}"
+        else
+            echo -e "${RED}❌ $tool still not available. Installation may fail.${NC}"
+        fi
+    done
+else
+    echo -e "${GREEN}✓ All essential tools verified and available${NC}"
+fi
 
 # Call the main Makefile for core services installation
 make install
