@@ -1,4 +1,8 @@
 #!/bin/bash
+# Auto-detect and use modern bash if available (needed for associative arrays on macOS)
+if [ "${BASH_VERSION%%.*}" -lt 4 ] && [ -x "/opt/homebrew/bin/bash" ]; then
+    exec /opt/homebrew/bin/bash "$0" "$@"
+fi
 # ===================================================================
 # 🔄 Automagik Suite - Environment Value Sync with Variable Mapping
 # ===================================================================
