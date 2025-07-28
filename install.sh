@@ -40,39 +40,7 @@ detect_docker_compose() {
     fi
 }
 
-echo -e "${PURPLE}🚀 Automagik Suite - Pre-dependency Installer${NC}"
-echo -e "${CYAN}Installing minimal dependencies before main installation...${NC}"
-echo ""
-
-# Install Docker first (before checking for docker-compose)
-if ! command -v docker &> /dev/null; then
-    echo -e "${CYAN}Installing Docker...${NC}"
-    curl -fsSL https://get.docker.com | sh
-    sudo systemctl start docker
-    sudo systemctl enable docker
-    sudo usermod -aG docker $USER
-    echo -e "${YELLOW}⚠️  You'll need to log out and back in for Docker permissions${NC}"
-    echo -e "${GREEN}✓ Docker installed successfully${NC}"
-else
-    echo -e "${GREEN}✓ Docker already installed${NC}"
-    # Ensure Docker service is running
-    if ! sudo systemctl is-active --quiet docker; then
-        echo -e "${CYAN}Starting Docker service...${NC}"
-        sudo systemctl start docker
-        sudo systemctl enable docker
-    fi
-fi
-
-# Now check for Docker Compose
-DOCKER_COMPOSE_CMD=$(detect_docker_compose)
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Cannot proceed without Docker Compose${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ Using Docker Compose command: ${DOCKER_COMPOSE_CMD}${NC}"
-
-# Detect OS
+# Detect OS first
 OS_TYPE=""
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if [ -f /etc/debian_version ]; then
@@ -90,9 +58,53 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
     IS_WSL=true
 fi
 
+echo -e "${PURPLE}🚀 Automagik Suite - Pre-dependency Installer${NC}"
+echo -e "${CYAN}Installing minimal dependencies before main installation...${NC}"
 echo -e "${CYAN}Detected OS: $OS_TYPE${NC}"
 [ "$IS_WSL" = true ] && echo -e "${CYAN}Running in WSL${NC}"
 echo ""
+
+# Install Docker first (before checking for docker-compose)
+if ! command -v docker &> /dev/null; then
+    echo -e "${CYAN}Installing Docker...${NC}"
+    if [ "$OS_TYPE" = "macos" ]; then
+        echo -e "${YELLOW}Please install Docker Desktop manually from: https://docs.docker.com/desktop/mac/${NC}"
+        echo -e "${YELLOW}Or install via Homebrew: brew install --cask docker${NC}"
+        exit 1
+    else
+        curl -fsSL https://get.docker.com | sh
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        sudo usermod -aG docker $USER
+        echo -e "${YELLOW}⚠️  You'll need to log out and back in for Docker permissions${NC}"
+    fi
+    echo -e "${GREEN}✓ Docker installed successfully${NC}"
+else
+    echo -e "${GREEN}✓ Docker already installed${NC}"
+    # Ensure Docker service is running (Linux only)
+    if [ "$OS_TYPE" != "macos" ]; then
+        if ! sudo systemctl is-active --quiet docker; then
+            echo -e "${CYAN}Starting Docker service...${NC}"
+            sudo systemctl start docker
+            sudo systemctl enable docker
+        fi
+    else
+        # For macOS, check if Docker is running
+        if ! docker info >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️  Docker is installed but not running. Please start Docker Desktop${NC}"
+            echo -e "${CYAN}You can start it from Applications or run: open -a Docker${NC}"
+        fi
+    fi
+fi
+
+# Now check for Docker Compose
+DOCKER_COMPOSE_CMD=$(detect_docker_compose)
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Cannot proceed without Docker Compose${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Using Docker Compose command: ${DOCKER_COMPOSE_CMD}${NC}"
 
 # Install essential packages
 echo -e "${CYAN}Installing essential packages...${NC}"
@@ -184,18 +196,66 @@ else
     echo -e "${GREEN}✓ UV already installed${NC}"
 fi
 
-# Install Node.js 22 LTS if not present
-if ! command -v node &> /dev/null; then
+# Install Node.js 22 LTS if not present or version is too old
+NODE_VERSION=""
+if command -v node &> /dev/null; then
+    NODE_VERSION=$(node --version | sed 's/v//')
+    MAJOR_VERSION=$(echo $NODE_VERSION | cut -d. -f1)
+fi
+
+if ! command -v node &> /dev/null || [ "$MAJOR_VERSION" -lt 20 ]; then
     echo -e "${CYAN}Installing Node.js 22 LTS...${NC}"
     if [ "$OS_TYPE" = "debian" ]; then
         curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
         sudo apt-get install -y nodejs
     elif [ "$OS_TYPE" = "macos" ]; then
         brew install node@22
+        # For macOS, node@22 is keg-only, so we need to add it to PATH
+        echo -e "${YELLOW}Adding Node.js 22 to PATH...${NC}"
+        if ! grep -q "/opt/homebrew/opt/node@22/bin" "$HOME/.zshrc" 2>/dev/null; then
+            echo 'export PATH="/opt/homebrew/opt/node@22/bin:$PATH"' >> "$HOME/.zshrc"
+        fi
+        if ! grep -q "/opt/homebrew/opt/node@22/bin" "$HOME/.bashrc" 2>/dev/null; then
+            echo 'export PATH="/opt/homebrew/opt/node@22/bin:$PATH"' >> "$HOME/.bashrc"
+        fi
+        export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+    fi
+    echo -e "${GREEN}✓ Node.js 22 installed successfully${NC}"
+elif [ "$MAJOR_VERSION" -lt 22 ]; then
+    echo -e "${YELLOW}⚠️  Node.js $NODE_VERSION detected. Some packages require Node.js 22+${NC}"
+    echo -e "${YELLOW}Consider upgrading for full compatibility${NC}"
+    if [ "$OS_TYPE" = "macos" ]; then
+        echo -e "${CYAN}To upgrade: brew install node@22${NC}"
+    elif [ "$OS_TYPE" = "debian" ]; then
+        echo -e "${CYAN}To upgrade: curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs${NC}"
     fi
 else
-    echo -e "${GREEN}✓ Node.js already installed: $(node --version)${NC}"
+    echo -e "${GREEN}✓ Node.js already installed: v$(node --version)${NC}"
 fi
+
+# Configure npm to avoid permission issues
+echo -e "${CYAN}Configuring npm for global installations...${NC}"
+if [ ! -d "$HOME/.npm-global" ]; then
+    mkdir -p "$HOME/.npm-global"
+fi
+
+# Set npm prefix to user directory
+npm config set prefix "$HOME/.npm-global"
+
+# Add npm global bin to PATH if not already there
+NPM_GLOBAL_BIN="$HOME/.npm-global/bin"
+if [[ ":$PATH:" != *":$NPM_GLOBAL_BIN:"* ]]; then
+    export PATH="$NPM_GLOBAL_BIN:$PATH"
+    
+    # Add to shell configs
+    for config_file in "$HOME/.bashrc" "$HOME/.zshrc"; do
+        if [ -f "$config_file" ] && ! grep -q ".npm-global/bin" "$config_file" 2>/dev/null; then
+            echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$config_file"
+        fi
+    done
+fi
+
+echo -e "${GREEN}✓ npm configured for safe global installations${NC}"
 
 # Install Claude Code
 if ! command -v claude &> /dev/null; then
@@ -205,18 +265,32 @@ else
     echo -e "${GREEN}✓ Claude Code already installed${NC}"
 fi
 
-# Install OpenAI Codex
+# Install OpenAI Codex (requires Node.js 22+)
 if ! command -v codex &> /dev/null; then
     echo -e "${CYAN}Installing OpenAI Codex...${NC}"
-    npm install -g @openai/codex
+    if npm install -g @openai/codex 2>/dev/null; then
+        echo -e "${GREEN}✓ OpenAI Codex installed successfully${NC}"
+    else
+        echo -e "${YELLOW}⚠️  OpenAI Codex installation failed (likely Node.js version incompatibility)${NC}"
+        if [ "$MAJOR_VERSION" -lt 22 ]; then
+            echo -e "${YELLOW}   OpenAI Codex requires Node.js 22+, current version: $NODE_VERSION${NC}"
+        fi
+    fi
 else
     echo -e "${GREEN}✓ OpenAI Codex already installed${NC}"
 fi
 
-# Install Google Gemini CLI
+# Install Google Gemini CLI (requires Node.js 20.18.1+)
 if ! command -v gemini &> /dev/null; then
     echo -e "${CYAN}Installing Google Gemini CLI...${NC}"
-    npm install -g @google/gemini-cli
+    if npm install -g @google/gemini-cli 2>/dev/null; then
+        echo -e "${GREEN}✓ Google Gemini CLI installed successfully${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Google Gemini CLI installation failed (likely Node.js version incompatibility)${NC}"
+        if [ "$MAJOR_VERSION" -lt 20 ] || ([ "$MAJOR_VERSION" -eq 20 ] && [ "$(echo $NODE_VERSION | cut -d. -f2)" -lt 18 ]); then
+            echo -e "${YELLOW}   Google Gemini CLI requires Node.js 20.18.1+, current version: $NODE_VERSION${NC}"
+        fi
+    fi
 else
     echo -e "${GREEN}✓ Google Gemini CLI already installed${NC}"
 fi
