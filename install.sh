@@ -596,4 +596,11 @@ else
 fi
 
 # Call the main Makefile for core services installation
-make install
+# Use modern bash if available (needed for env-manager.sh on macOS)
+if [ "$OS_TYPE" = "macos" ] && [ -x "/opt/homebrew/bin/bash" ]; then
+    echo -e "${CYAN}Using modern bash for remaining installation steps...${NC}"
+    export SHELL="/opt/homebrew/bin/bash"
+    /opt/homebrew/bin/bash -c "make install"
+else
+    make install
+fi
