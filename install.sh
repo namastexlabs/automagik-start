@@ -62,6 +62,21 @@ echo -e "${PURPLE}🚀 Automagik Suite - Pre-dependency Installer${NC}"
 echo -e "${CYAN}Installing minimal dependencies before main installation...${NC}"
 echo -e "${CYAN}Detected OS: $OS_TYPE${NC}"
 [ "$IS_WSL" = true ] && echo -e "${CYAN}Running in WSL${NC}"
+
+# Check bash version and install newer version if needed (macOS)
+BASH_VERSION=$(bash --version | head -n1 | grep -o '[0-9]\+\.[0-9]\+' | head -n1)
+BASH_MAJOR=$(echo $BASH_VERSION | cut -d. -f1)
+if [ "$BASH_MAJOR" -lt 4 ] && [ "$OS_TYPE" = "macos" ]; then
+    echo -e "${YELLOW}⚠️  Detected bash $BASH_VERSION. Automagik requires bash 4.0+ for full functionality${NC}"
+    echo -e "${CYAN}Installing newer bash via Homebrew...${NC}"
+    if ! brew list bash &> /dev/null; then
+        brew install bash
+        echo -e "${GREEN}✓ Modern bash installed${NC}"
+        echo -e "${YELLOW}Note: You may want to change your default shell: chsh -s /opt/homebrew/bin/bash${NC}"
+    else
+        echo -e "${GREEN}✓ Modern bash already installed${NC}"
+    fi
+fi
 echo ""
 
 # Install Docker first (before checking for docker-compose)

@@ -82,7 +82,17 @@ check_main_env() {
 # Load environment variables into an associative array
 load_env_to_map() {
     local env_file="$1"
-    declare -gA env_map
+    # Use unset and declare separately for bash 3.2 compatibility
+    unset env_map
+    if declare -A env_map 2>/dev/null; then
+        # Modern bash supports -A flag
+        :
+    else
+        # Fallback for older bash - use regular array with string keys
+        print_error "This script requires bash 4.0+ for associative arrays"
+        print_info "On macOS, install newer bash: brew install bash"
+        return 1
+    fi
     
     while IFS= read -r line || [[ -n "$line" ]]; do
         # Skip empty lines and comments
@@ -98,7 +108,17 @@ load_env_to_map() {
 }
 
 # Define variable mappings for services
-declare -gA VARIABLE_MAPPINGS
+# Use unset and declare separately for bash 3.2 compatibility
+unset VARIABLE_MAPPINGS
+if declare -A VARIABLE_MAPPINGS 2>/dev/null; then
+    # Modern bash supports -A flag
+    :
+else
+    # Fallback for older bash
+    print_error "This script requires bash 4.0+ for associative arrays"
+    print_info "On macOS, install newer bash: brew install bash"
+    exit 1
+fi
 
 # Initialize variable mappings based on ENV_VARIABLE_MAPPING.md
 init_variable_mappings() {
