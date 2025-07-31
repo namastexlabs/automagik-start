@@ -12,7 +12,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/logging.sh"
 declare -A REQUIRED_PORTS=(
     # Core Automagik Services
     ["8888"]="automagik-ui (Main Interface)"
-    ["8881"]="am-agents-labs (Main Orchestrator)"
+    ["8881"]="automagik (Main Orchestrator)"
     ["8882"]="automagik-omni (Multi-tenant Hub)"
     ["8883"]="automagik-spark (Workflow Engine)"
     ["8884"]="automagik-tools-sse (MCP Tools SSE)"
@@ -20,7 +20,7 @@ declare -A REQUIRED_PORTS=(
     ["8080"]="evolution-api (WhatsApp API)"
     
     # Infrastructure Services  
-    ["5401"]="am-agents-labs-postgres"
+    ["5401"]="automagik-postgres"
     ["5402"]="automagik-spark-postgres"
     ["5403"]="evolution-postgres"
     ["5412"]="automagik-spark-redis"

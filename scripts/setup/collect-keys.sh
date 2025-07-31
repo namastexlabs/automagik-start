@@ -234,7 +234,7 @@ load_existing_keys() {
     log_section "Loading Existing Configuration"
     
     local env_files=(
-        "$SCRIPT_DIR/../../am-agents-labs/.env"
+        "$SCRIPT_DIR/../../automagik/.env"
         "$SCRIPT_DIR/../../automagik-spark/.env"
         "$SCRIPT_DIR/../../automagik-tools/.env"
         "$SCRIPT_DIR/../../automagik-evolution/.env"

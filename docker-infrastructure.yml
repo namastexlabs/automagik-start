@@ -2,8 +2,8 @@
 # 🐳 Automagik Suite - Core Infrastructure Only (Docker Compose)
 # ===================================================================
 # This file contains only the core Automagik infrastructure dependencies
-# - PostgreSQL databases for am-agents-labs and automagik-spark
-# - Redis instances for am-agents-labs and automagik-spark
+# - PostgreSQL databases for automagik and automagik-spark
+# - Redis instances for automagik and automagik-spark
 # Application services run via PM2
 # Optional services (Evolution, LangFlow) have separate docker compose files
 
@@ -12,7 +12,7 @@
 
 volumes:
   # PostgreSQL Data
-  am-agents-labs-postgres-data:
+  automagik-postgres-data:
   automagik-spark-postgres-data: 
   
   # Redis Data
@@ -23,10 +23,10 @@ services:
   # Infrastructure Services
   # ================================
   
-  # PostgreSQL for am-agents-labs (Main Orchestrator)
-  am-agents-labs-postgres:
+  # PostgreSQL for automagik (Main Orchestrator)
+  automagik-postgres:
     image: postgres:15-alpine
-    container_name: am-agents-labs-postgres
+    container_name: automagik-postgres
     restart: unless-stopped
     network_mode: host
     environment:
@@ -36,7 +36,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
       PGPORT: ${AUTOMAGIK_POSTGRES_PORT:-5401}
     volumes:
-      - am-agents-labs-postgres-data:/var/lib/postgresql/data
+      - automagik-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-automagik_user} -d automagik_agents -p ${AUTOMAGIK_POSTGRES_PORT:-5401}"]
       interval: 10s

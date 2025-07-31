@@ -17,7 +17,7 @@ LANGFLOW_COMPOSE_FILE="$BASE_DIR/docker-langflow.yml"
 
 # Service startup order (infrastructure only - applications use PM2)
 INFRASTRUCTURE_SERVICES=(
-    "am-agents-labs-postgres"
+    "automagik-postgres"
     "automagik-spark-postgres"
     "automagik-spark-redis"
 )
@@ -32,7 +32,7 @@ OPTIONAL_INFRASTRUCTURE=(
 
 # PM2 managed services (not Docker)
 PM2_SERVICES=(
-    "am-agents-labs"
+    "automagik"
     "automagik-spark"
     "automagik-tools"
     "automagik-omni"
@@ -295,7 +295,7 @@ check_service_readiness() {
             local db_user=$(echo "$service" | grep -o "evolution\|spark\|agents" | head -1)
             local port
             case "$service" in
-                "am-agents-labs-postgres") port="5401"; db_user="postgres" ;;
+                "automagik-postgres") port="5401"; db_user="postgres" ;;
                 "automagik-spark-postgres") port="5402"; db_user="automagik" ;;
                 "evolution-postgres") port="5403"; db_user="postgres" ;;
             esac
@@ -313,11 +313,11 @@ check_service_readiness() {
             # For Evolution API, check if API endpoint is responding
             timeout 10 curl -s -f "http://localhost:8080/" >/dev/null 2>&1
             ;;
-        "am-agents-labs"|"automagik-spark-api"|"automagik-omni")
+        "automagik"|"automagik-spark-api"|"automagik-omni")
             # For application services, check health endpoints
             local port
             case "$service" in
-                "am-agents-labs") port="8881" ;;
+                "automagik") port="8881" ;;
                 "automagik-spark-api") port="8883" ;;
                 "automagik-omni") port="8882" ;;
             esac
@@ -464,7 +464,7 @@ check_service_connectivity() {
     
     # Define service endpoints for health checks
     declare -A SERVICE_ENDPOINTS=(
-        ["am-agents-labs"]="http://localhost:8881/health"
+        ["automagik"]="http://localhost:8881/health"
         ["automagik-spark-api"]="http://localhost:8883/health"
         ["automagik-tools"]="http://localhost:8885/health"
         # Note: Worker service doesn't have HTTP endpoint for health checks

@@ -14,7 +14,7 @@ The Automagik Suite uses a hybrid architecture:
 ## 📦 Components
 
 ### Core Services
-- **am-agents-labs** - Main AI orchestrator and agent management (Port: 8881)
+- **automagik** - Main AI orchestrator and agent management (Port: 8881)
 - **automagik-spark** - Workflow engine with Celery workers (Port: 8883)
 - **automagik-tools** - MCP tools hub with SSE/HTTP endpoints (Ports: 8884/8885)
 - **automagik-omni** - Multi-tenant hub for instance management (Port: 8882)
@@ -164,7 +164,7 @@ automagik-suite/
 │   ├── utils/                # Shared utilities
 │   ├── system/              # OS-specific installers
 │   └── deploy/              # Deployment scripts
-├── am-agents-labs/           # Main orchestrator
+├── automagik/           # Main orchestrator
 ├── automagik-spark/         # Workflow engine
 ├── automagik-tools/         # MCP tools
 ├── automagik-omni/          # Multi-tenant hub
@@ -173,7 +173,7 @@ automagik-suite/
 
 ## 🔍 Service Details
 
-### am-agents-labs (Port 8881)
+### automagik (Port 8881)
 - Main AI orchestration service
 - Agent management and routing
 - PostgreSQL database on port 5401

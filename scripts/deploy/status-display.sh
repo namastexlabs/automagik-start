@@ -44,7 +44,7 @@ fi
 
 # Service definitions
 declare -A SERVICE_INFO=(
-    ["am-agents-labs"]="Main Orchestrator|http://localhost:8881|8881"
+    ["automagik"]="Main Orchestrator|http://localhost:8881|8881"
     ["automagik-spark"]="Workflow Engine|http://localhost:8883|8883"
     ["automagik-tools"]="MCP Tools|http://localhost:8885|8885"
     ["automagik-evolution"]="WhatsApp API|http://localhost:8080|8080"
@@ -57,7 +57,7 @@ declare -A OPTIONAL_SERVICE_INFO=(
 )
 
 declare -A INFRASTRUCTURE_INFO=(
-    ["am-agents-labs-postgres"]="PostgreSQL|5401"
+    ["automagik-postgres"]="PostgreSQL|5401"
     ["automagik-spark-postgres"]="PostgreSQL|5402"
     ["evolution-postgres"]="PostgreSQL|5403"
     ["automagik-spark-redis"]="Redis|5412"

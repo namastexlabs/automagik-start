@@ -54,11 +54,11 @@ echo ""
 # Create service-specific .env files
 # ===========================================
 
-# am-agents-labs
-print_info "Configuring am-agents-labs..."
-cat > "${SERVICES_DIR}/am-agents-labs/.env" << 'EOF'
+# automagik
+print_info "Configuring automagik..."
+cat > "${SERVICES_DIR}/automagik/.env" << 'EOF'
 # ===================================================================
-# 🤖 am-agents-labs - Local Service Configuration
+# 🤖 automagik - Local Service Configuration
 # ===================================================================
 
 # Database Configuration (PostgreSQL in Docker)
@@ -163,7 +163,7 @@ API_PORT=8882
 DATABASE_URL=sqlite:///./data/omnihub.db
 SQLITE_DB_PATH=./data/omnihub.db
 
-# Agent API Configuration (am-agents-labs)
+# Agent API Configuration (automagik)
 AUTOMAGIK_API_URL=http://127.0.0.1:8881
 AUTOMAGIK_API_KEY=namastex888
 DEFAULT_AGENT_NAME=simple_agent
@@ -217,7 +217,7 @@ echo ""
 # ===========================================
 print_status "Creating data directories..."
 
-for service in am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui; do
+for service in automagik automagik-spark automagik-tools automagik-omni automagik-ui; do
     data_dir="${SERVICES_DIR}/${service}/data"
     if [ ! -d "$data_dir" ]; then
         mkdir -p "$data_dir"
@@ -241,7 +241,7 @@ echo -e "  ${CYAN}Gemini API Key:${RESET}     GEMINI_API_KEY=your-gemini-api-key
 echo -e "  ${CYAN}Groq API Key:${RESET}       GROQ_API_KEY=gsk_your-groq-api-key-here"
 echo ""
 echo -e "${CYAN}Files to update:${RESET}"
-for service in am-agents-labs automagik-spark automagik-tools; do
+for service in automagik automagik-spark automagik-tools; do
     echo -e "  - ${SERVICES_DIR}/${service}/.env"
 done
 echo ""
@@ -252,7 +252,7 @@ echo ""
 print_info "Network Configuration Summary"
 echo ""
 echo -e "${CYAN}Docker Infrastructure (accessible via localhost):${RESET}"
-echo -e "  PostgreSQL (am-agents-labs):  ${GREEN}localhost:5401${RESET}"
+echo -e "  PostgreSQL (automagik):  ${GREEN}localhost:5401${RESET}"
 echo -e "  PostgreSQL (automagik-spark): ${GREEN}localhost:5402${RESET}"
 echo -e "  PostgreSQL (evolution):       ${GREEN}localhost:5403${RESET}"
 echo -e "  Redis (automagik-spark):      ${GREEN}localhost:5412${RESET}"
@@ -261,7 +261,7 @@ echo -e "  RabbitMQ:                     ${GREEN}localhost:5431${RESET}"
 echo -e "  Evolution API:                ${GREEN}localhost:8080${RESET}"
 echo ""
 echo -e "${CYAN}Local Services:${RESET}"
-echo -e "  am-agents-labs:               ${GREEN}localhost:8881${RESET}"
+echo -e "  automagik:               ${GREEN}localhost:8881${RESET}"
 echo -e "  automagik-spark:              ${GREEN}localhost:8883${RESET}"
 echo -e "  automagik-tools:              ${GREEN}localhost:8884${RESET}"
 echo -e "  automagik-omni:               ${GREEN}localhost:8882${RESET}"

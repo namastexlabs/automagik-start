@@ -20,7 +20,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVICES_DIR="$PROJECT_ROOT"
 
 # Service directories
-AUTOMAGIK_AGENTS_DIR="$SERVICES_DIR/am-agents-labs"
+AUTOMAGIK_AGENTS_DIR="$SERVICES_DIR/automagik"
 SPARK_DIR="$SERVICES_DIR/automagik-spark"
 TOOLS_DIR="$SERVICES_DIR/automagik-tools"
 OMNI_DIR="$SERVICES_DIR/automagik-omni"
@@ -155,7 +155,7 @@ echo "=================================="
 echo ""
 
 # Test each service
-test_python_service "am-agents-labs" "$AUTOMAGIK_AGENTS_DIR" "automagik"
+test_python_service "automagik" "$AUTOMAGIK_AGENTS_DIR" "automagik"
 echo ""
 
 test_python_service "automagik-spark" "$SPARK_DIR" "automagik"
@@ -174,7 +174,7 @@ echo "=================================="
 print_success "Service testing complete!"
 echo ""
 echo "Port assignments:"
-echo "  - am-agents-labs: 8881"
+echo "  - automagik: 8881"
 echo "  - automagik-omni: 8882"
 echo "  - automagik-spark: 8883"
 echo "  - automagik-tools: 8884"

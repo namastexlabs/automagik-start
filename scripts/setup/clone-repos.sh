@@ -11,7 +11,7 @@ source "$SCRIPT_DIR/../utils/logging.sh"
 
 # Repository definitions
 declare -A REPOSITORIES=(
-    ["am-agents-labs"]="https://github.com/namastexlabs/am-agents-labs.git"
+    ["automagik"]="https://github.com/namastexlabs/automagik.git"
     ["automagik-ui"]="https://github.com/namastexlabs/automagik-ui.git"
     ["automagik-omni"]="https://github.com/namastexlabs/automagik-omni.git"
     ["automagik-spark"]="https://github.com/namastexlabs/automagik-spark.git"
@@ -21,7 +21,7 @@ declare -A REPOSITORIES=(
 
 # Branch settings (empty means default branch)
 declare -A REPOSITORY_BRANCHES=(
-    ["am-agents-labs"]=""  # Will be set by user selection
+    ["automagik"]=""  # Will be set by user selection
     ["automagik-ui"]=""
     ["automagik-omni"]=""
     ["automagik-spark"]=""
@@ -31,7 +31,7 @@ declare -A REPOSITORY_BRANCHES=(
 
 # Repository order for cloning (dependency-based)
 CLONE_ORDER=(
-    "am-agents-labs"
+    "automagik"
     "automagik-spark"
     "automagik-tools"
     "automagik-evolution"
@@ -85,24 +85,24 @@ get_repo_branches() {
         sort
 }
 
-# Select branch for am-agents-labs
+# Select branch for automagik
 select_agents_branch() {
     # In automated mode, always use default branch
     if [ "$INSTALL_MODE" = "automated" ]; then
-        log_info "Automated mode: using default branch (main) for am-agents-labs"
-        REPOSITORY_BRANCHES["am-agents-labs"]=""
+        log_info "Automated mode: using default branch (main) for automagik"
+        REPOSITORY_BRANCHES["automagik"]=""
         return 0
     fi
     
-    local repo_url="${REPOSITORIES[am-agents-labs]}"
+    local repo_url="${REPOSITORIES[automagik]}"
     
-    log_section "Branch Selection for am-agents-labs"
+    log_section "Branch Selection for automagik"
     log_info "This allows deploying specific agent configurations"
     
     # Check if GitHub CLI is available for better branch fetching
     if ! command -v gh >/dev/null 2>&1; then
         log_warning "GitHub CLI not available - using default branch (main)"
-        REPOSITORY_BRANCHES["am-agents-labs"]=""
+        REPOSITORY_BRANCHES["automagik"]=""
         return 0
     fi
     
@@ -114,8 +114,8 @@ select_agents_branch() {
     if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
         log_info "Using GitHub CLI to fetch branches..."
         # Try to get branches via GitHub API
-        if gh repo view namastexlabs/am-agents-labs >/dev/null 2>&1; then
-            branches=($(gh api repos/namastexlabs/am-agents-labs/branches --jq '.[].name' 2>/dev/null | sort))
+        if gh repo view namastexlabs/automagik >/dev/null 2>&1; then
+            branches=($(gh api repos/namastexlabs/automagik/branches --jq '.[].name' 2>/dev/null | sort))
             if [ ${#branches[@]} -gt 0 ]; then
                 log_success "Fetched ${#branches[@]} branches via GitHub CLI"
             fi
@@ -137,14 +137,14 @@ select_agents_branch() {
     fi
     
     if [ ${#branches[@]} -eq 0 ]; then
-        log_warning "Could not fetch branches for am-agents-labs"
+        log_warning "Could not fetch branches for automagik"
         log_info "Using default branch (main)"
-        REPOSITORY_BRANCHES["am-agents-labs"]=""
+        REPOSITORY_BRANCHES["automagik"]=""
         return 0
     fi
     
     # Show available branches
-    echo -e "${CYAN}Available branches for am-agents-labs:${NC}"
+    echo -e "${CYAN}Available branches for automagik:${NC}"
     echo "0) main (default)"
     
     local i=1
@@ -161,7 +161,7 @@ select_agents_branch() {
     if [ "$INSTALL_MODE" = "automated" ]; then
         # In automated mode, always use default branch (main)
         log_info "Automated mode: using default branch (main)"
-        REPOSITORY_BRANCHES["am-agents-labs"]=""
+        REPOSITORY_BRANCHES["automagik"]=""
         return 0
     fi
     
@@ -170,7 +170,7 @@ select_agents_branch() {
         
         if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 0 ] && [ "$choice" -lt "$i" ]; then
             if [ "$choice" -eq 0 ]; then
-                REPOSITORY_BRANCHES["am-agents-labs"]=""
+                REPOSITORY_BRANCHES["automagik"]=""
                 log_success "Selected: main (default branch)"
             else
                 local selected_branch=""
@@ -185,7 +185,7 @@ select_agents_branch() {
                     fi
                 done
                 
-                REPOSITORY_BRANCHES["am-agents-labs"]="$selected_branch"
+                REPOSITORY_BRANCHES["automagik"]="$selected_branch"
                 log_success "Selected: $selected_branch"
             fi
             break
@@ -472,7 +472,7 @@ clone_all_repositories() {
         return 1
     fi
     
-    # Select branch for am-agents-labs
+    # Select branch for automagik
     select_agents_branch
     
     # Show repositories to be cloned

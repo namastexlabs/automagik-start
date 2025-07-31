@@ -270,7 +270,7 @@ check_infrastructure_health() {
         local all_healthy=true
         
         # Check PostgreSQL containers
-        if ! docker exec am-agents-labs-postgres pg_isready -U postgres -d automagik_agents -p ${AUTOMAGIK_POSTGRES_PORT:-5401} >/dev/null 2>&1; then
+        if ! docker exec automagik-postgres pg_isready -U postgres -d automagik_agents -p ${AUTOMAGIK_POSTGRES_PORT:-5401} >/dev/null 2>&1; then
             all_healthy=false
         fi
         
