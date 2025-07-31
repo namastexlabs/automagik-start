@@ -34,7 +34,7 @@ EXAMPLE_ENV_FILE="$PROJECT_ROOT/.env.example"
 
 # Service directories
 declare -a SERVICES=(
-    "am-agents-labs"
+    "automagik"
     "automagik-spark"
     "automagik-tools"
     "automagik-omni"
@@ -102,10 +102,10 @@ declare -gA VARIABLE_MAPPINGS
 
 # Initialize variable mappings based on ENV_VARIABLE_MAPPING.md
 init_variable_mappings() {
-    # Core Automagik Service mappings (am-agents-labs)
-    VARIABLE_MAPPINGS["am-agents-labs:AUTOMAGIK_AGENTS_API_PORT"]="AUTOMAGIK_API_PORT"
-    VARIABLE_MAPPINGS["am-agents-labs:AUTOMAGIK_AGENTS_API_HOST"]="AUTOMAGIK_API_HOST"
-    VARIABLE_MAPPINGS["am-agents-labs:AUTOMAGIK_AGENTS_URL"]="AUTOMAGIK_API_URL"
+    # Core Automagik Service mappings (automagik)
+    VARIABLE_MAPPINGS["automagik:AUTOMAGIK_AGENTS_API_PORT"]="AUTOMAGIK_API_PORT"
+    VARIABLE_MAPPINGS["automagik:AUTOMAGIK_AGENTS_API_HOST"]="AUTOMAGIK_API_HOST"
+    VARIABLE_MAPPINGS["automagik:AUTOMAGIK_AGENTS_URL"]="AUTOMAGIK_API_URL"
     
     # Automagik Spark Service mappings
     # Note: Spark uses AUTOMAGIK_SPARK_* variables directly - no mappings needed for most variables

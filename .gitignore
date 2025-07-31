@@ -29,7 +29,7 @@ env/
 .dockerignore
 
 # Repository directories (will be cloned)
-am-agents-labs/
+automagik/
 automagik-ui/
 automagik-omni/
 automagik-spark/
