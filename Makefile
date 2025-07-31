@@ -37,7 +37,7 @@ CHART := 📊
 # 🎨 PROJECT COLOR SCHEME - SINGLE SOURCE OF TRUTH
 # ===========================================
 # Namastex Labs Repository Colors
-AGENTS_COLOR := $(FONT_BRIGHT_BLUE)  # am-agents-labs: Bright Blue (cyan blue)
+AGENTS_COLOR := $(FONT_BRIGHT_BLUE)  # automagik: Bright Blue (cyan blue)
 SPARK_COLOR := $(FONT_YELLOW)        # automagik-spark: Amber Yellow  
 TOOLS_COLOR := $(FONT_BLUE)          # automagik-tools: Dark Blue
 OMNI_COLOR := $(FONT_PURPLE)         # automagik-omni: Purple
@@ -64,23 +64,23 @@ INFRASTRUCTURE_COMPOSE := docker-infrastructure.yml
 
 # Service directories
 SERVICES_DIR := $(PROJECT_ROOT)
-AM_AGENTS_LABS_DIR := $(SERVICES_DIR)/am-agents-labs
+AUTOMAGIK_DIR := $(SERVICES_DIR)/automagik
 AUTOMAGIK_SPARK_DIR := $(SERVICES_DIR)/automagik-spark
 AUTOMAGIK_TOOLS_DIR := $(SERVICES_DIR)/automagik-tools
 AUTOMAGIK_OMNI_DIR := $(SERVICES_DIR)/automagik-omni
 AUTOMAGIK_UI_DIR := $(SERVICES_DIR)/automagik-ui
 
 # Service names (logical)
-SERVICES := am-agents-labs automagik-spark automagik-tools automagik-omni automagik-ui
+SERVICES := automagik automagik-spark automagik-tools automagik-omni automagik-ui
 
 # Actual runnable services (excludes automagik-tools which is a library)
-RUNNABLE_SERVICES := am-agents-labs automagik-spark automagik-omni automagik-ui
+RUNNABLE_SERVICES := automagik automagik-spark automagik-omni automagik-ui
 
 # PM2 service names
-PM2_SERVICES := am-agents-labs automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui
+PM2_SERVICES := automagik automagik-spark-api automagik-spark-worker automagik-tools-sse automagik-tools-http automagik-omni automagik-ui
 
 # Repository URLs
-AM_AGENTS_LABS_URL := https://github.com/namastexlabs/am-agents-labs.git
+AUTOMAGIK_URL := https://github.com/namastexlabs/automagik.git
 AUTOMAGIK_SPARK_URL := https://github.com/namastexlabs/automagik-spark.git
 AUTOMAGIK_TOOLS_URL := https://github.com/namastexlabs/automagik-tools.git
 AUTOMAGIK_OMNI_URL := https://github.com/namastexlabs/automagik-omni.git
@@ -341,9 +341,9 @@ uninstall-infrastructure: ## 🗑️ Uninstall Docker infrastructure (remove con
 	@if [ -f "$(EVOLUTION_COMPOSE)" ]; then \
 		$(DOCKER_COMPOSE) -f $(EVOLUTION_COMPOSE) -p evolution_api down -v --rmi all --remove-orphans >/dev/null 2>&1 || true; \
 	fi
-	@# Remove am-agents-labs docker project
-	@if [ -f "am-agents-labs/docker/docker-compose.yml" ]; then \
-		$(DOCKER_COMPOSE) -f am-agents-labs/docker/docker-compose.yml -p docker down -v --rmi all --remove-orphans >/dev/null 2>&1 || true; \
+	@# Remove automagik docker project
+	@if [ -f "automagik/docker/docker-compose.yml" ]; then \
+		$(DOCKER_COMPOSE) -f automagik/docker/docker-compose.yml -p docker down -v --rmi all --remove-orphans >/dev/null 2>&1 || true; \
 	fi
 	@# Clean up any remaining resources
 	@if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \
@@ -455,7 +455,7 @@ setup-env-files: ## 📝 Setup .env files from templates for main and all servic
 		echo -e "$(FONT_GREEN)$(CHECKMARK) Main .env file already exists$(FONT_RESET)"; \
 	fi
 	@# Create service .env files from their templates
-	@for service in "am-agents-labs" "automagik-spark" "automagik-tools" "automagik-omni"; do \
+	@for service in "automagik" "automagik-spark" "automagik-tools" "automagik-omni"; do \
 		service_dir="$(SERVICES_DIR)/$$service"; \
 		if [ -d "$$service_dir" ]; then \
 			if [ -f "$$service_dir/.env.example" ] && [ ! -f "$$service_dir/.env" ]; then \
@@ -495,8 +495,8 @@ sync-service-env-ports: ## 🔄 Sync port configuration from main .env to indivi
 	TOOLS_HTTP_PORT=$$(grep "^AUTOMAGIK_TOOLS_HTTP_PORT=" .env | head -1 | cut -d'=' -f2); \
 	UI_PORT=$$(grep "^AUTOMAGIK_UI_PORT=" .env | head -1 | cut -d'=' -f2); \
 	echo -e "$(FONT_CYAN)$(INFO) Detected ports: Agents=$$AGENTS_PORT, Omni=$$OMNI_PORT, Spark=$$SPARK_PORT, Tools(SSE)=$$TOOLS_SSE_PORT, Tools(HTTP)=$$TOOLS_HTTP_PORT, UI=$$UI_PORT$(FONT_RESET)"; \
-	if [ -n "$$AGENTS_PORT" ] && [ -f "$(AM_AGENTS_LABS_DIR)/.env" ]; then \
-		sed -i "s/AUTOMAGIK_API_PORT=.*/AUTOMAGIK_API_PORT=$$AGENTS_PORT/" "$(AM_AGENTS_LABS_DIR)/.env"; \
+	if [ -n "$$AGENTS_PORT" ] && [ -f "$(AUTOMAGIK_DIR)/.env" ]; then \
+		sed -i "s/AUTOMAGIK_API_PORT=.*/AUTOMAGIK_API_PORT=$$AGENTS_PORT/" "$(AUTOMAGIK_DIR)/.env"; \
 		echo -e "$(FONT_GREEN)$(CHECKMARK) Updated agents port to $$AGENTS_PORT$(FONT_RESET)"; \
 	fi; \
 	if [ -n "$$OMNI_PORT" ] && [ -f "$(AUTOMAGIK_OMNI_DIR)/.env" ]; then \
@@ -585,7 +585,7 @@ setup-pm2: ## 📦 Setup PM2 with ecosystem file
 		pm2 describe $$service >/dev/null 2>&1 && pm2 delete $$service >/dev/null 2>&1 || true; \
 	done
 	@# Start each service from its own ecosystem config
-	@cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
+	@cd $(AUTOMAGIK_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
 	@cd $(AUTOMAGIK_SPARK_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
 	@cd $(AUTOMAGIK_TOOLS_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
 	@cd $(AUTOMAGIK_OMNI_DIR) && pm2 start ecosystem.config.js >/dev/null 2>&1 || true
@@ -597,9 +597,9 @@ setup-pm2: ## 📦 Setup PM2 with ecosystem file
 install-dependencies-only: ## 📦 Install only dependencies (no service registration)
 	$(call print_status,Installing dependencies for all services...)
 	@# Install Python dependencies for each service
-	@if [ -d "$(AM_AGENTS_LABS_DIR)" ]; then \
-		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for am-agents-labs...$(FONT_RESET)"; \
-		cd "$(AM_AGENTS_LABS_DIR)" && AUTOMAGIK_QUIET_LOGO=1 make install >/dev/null 2>&1 || true; \
+	@if [ -d "$(AUTOMAGIK_DIR)" ]; then \
+		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik...$(FONT_RESET)"; \
+		cd "$(AUTOMAGIK_DIR)" && AUTOMAGIK_QUIET_LOGO=1 make install >/dev/null 2>&1 || true; \
 	fi
 	@if [ -d "$(AUTOMAGIK_SPARK_DIR)" ]; then \
 		echo -e "$(FONT_CYAN)$(INFO) Installing dependencies for automagik-spark...$(FONT_RESET)"; \
@@ -616,12 +616,12 @@ install-dependencies-only: ## 📦 Install only dependencies (no service registr
 	$(call delegate_to_service,$(AUTOMAGIK_UI_DIR),install)
 	@$(call print_success,All dependencies installed!)
 
-install-agents: ## Install am-agents-labs service
-	$(call print_status,Installing $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@if [ ! -d "$(AM_AGENTS_LABS_DIR)" ]; then \
-		$(call ensure_repository,am-agents-labs,$(AM_AGENTS_LABS_DIR),$(AM_AGENTS_LABS_URL)); \
+install-agents: ## Install automagik service
+	$(call print_status,Installing $(AGENTS_COLOR)automagik$(FONT_RESET) service...)
+	@if [ ! -d "$(AUTOMAGIK_DIR)" ]; then \
+		$(call ensure_repository,automagik,$(AUTOMAGIK_DIR),$(AUTOMAGIK_URL)); \
 	fi
-	$(call delegate_to_service,$(AM_AGENTS_LABS_DIR),install)
+	$(call delegate_to_service,$(AUTOMAGIK_DIR),install)
 
 install-spark: ## Install automagik-spark service
 	$(call print_status,Installing $(SPARK_COLOR)automagik-spark$(FONT_RESET) service...)
@@ -682,7 +682,7 @@ uninstall: ## 🗑️ Complete uninstall (stop everything, remove services and i
 # ===========================================
 start-all: ## 🚀 Start all services with PM2
 	$(call print_status,Starting all Automagik services with PM2...)
-	@cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js
+	@cd $(AUTOMAGIK_DIR) && pm2 start ecosystem.config.js
 	@cd $(AUTOMAGIK_SPARK_DIR) && pm2 start ecosystem.config.js
 	@cd $(AUTOMAGIK_TOOLS_DIR) && pm2 start ecosystem.config.js
 	@cd $(AUTOMAGIK_OMNI_DIR) && pm2 start ecosystem.config.js
@@ -711,7 +711,7 @@ restart-all: ## 🔄 Restart everything (PM2 services + infrastructure)
 status-all: ## 📊 Check status of all services
 	@echo -e "$(FONT_PURPLE)$(CHART) Automagik Services Status:$(FONT_RESET)"
 	@pm2 list | sed -E \
-		-e 's/(am-agents-labs)/\x1b[94m\1\x1b[0m/g' \
+		-e 's/(automagik)/\x1b[94m\1\x1b[0m/g' \
 		-e 's/(automagik-spark-api|automagik-spark-worker)/\x1b[33m\1\x1b[0m/g' \
 		-e 's/(automagik-tools-sse|automagik-tools-http)/\x1b[34m\1\x1b[0m/g' \
 		-e 's/(automagik-omni)/\x1b[35m\1\x1b[0m/g' \
@@ -745,9 +745,9 @@ status-all: ## 📊 Check status of all services
 # ===========================================
 
 # Individual Start Commands
-start-agents: ## 🚀 Start am-agents-labs service only
-	$(call print_status,Starting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js
+start-agents: ## 🚀 Start automagik service only
+	$(call print_status,Starting $(AGENTS_COLOR)automagik$(FONT_RESET) service...)
+	@cd $(AUTOMAGIK_DIR) && pm2 start ecosystem.config.js
 
 
 start-spark: ## 🚀 Start automagik-spark services (API + Worker)
@@ -774,9 +774,9 @@ start-ui: ## 🚀 Start automagik-ui service only (PM2)
 
 
 # Individual Stop Commands
-stop-agents: ## 🛑 Stop am-agents-labs service only
-	$(call print_status,Stopping $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@pm2 stop am-agents-labs 2>/dev/null || true
+stop-agents: ## 🛑 Stop automagik service only
+	$(call print_status,Stopping $(AGENTS_COLOR)automagik$(FONT_RESET) service...)
+	@pm2 stop automagik 2>/dev/null || true
 
 stop-spark: ## 🛑 Stop automagik-spark services (API + Worker)
 	$(call print_status,Stopping $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)
@@ -795,9 +795,9 @@ stop-ui: ## 🛑 Stop automagik-ui service only (PM2)
 	@pm2 stop automagik-ui 2>/dev/null || true
 
 # Individual Restart Commands
-restart-agents: ## 🔄 Restart am-agents-labs service only
-	$(call print_status,Restarting $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) service...)
-	@pm2 restart am-agents-labs 2>/dev/null || (cd $(AM_AGENTS_LABS_DIR) && pm2 start ecosystem.config.js)
+restart-agents: ## 🔄 Restart automagik service only
+	$(call print_status,Restarting $(AGENTS_COLOR)automagik$(FONT_RESET) service...)
+	@pm2 restart automagik 2>/dev/null || (cd $(AUTOMAGIK_DIR) && pm2 start ecosystem.config.js)
 
 restart-spark: ## 🔄 Restart automagik-spark services (API + Worker)
 	$(call print_status,Restarting $(SPARK_COLOR)automagik-spark$(FONT_RESET) services...)
@@ -832,9 +832,9 @@ restart-ui-with-build: ## 🔄 Rebuild and restart automagik-ui service (PM2)
 	fi
 
 # Individual Status Commands
-status-agents: ## 📊 Check am-agents-labs status only
-	$(call print_status,Checking $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) status...)
-	@pm2 show am-agents-labs 2>/dev/null || echo "Service not found"
+status-agents: ## 📊 Check automagik status only
+	$(call print_status,Checking $(AGENTS_COLOR)automagik$(FONT_RESET) status...)
+	@pm2 show automagik 2>/dev/null || echo "Service not found"
 
 status-spark: ## 📊 Check automagik-spark status (API + Worker)
 	$(call print_status,Checking $(SPARK_COLOR)automagik-spark$(FONT_RESET) status...)
@@ -865,9 +865,9 @@ status-ui: ## 📊 Check automagik-ui status only
 # ===========================================
 logs-all: logs ## 📋 Follow logs from all services (alias for logs)
 
-logs-agents: ## 📋 Follow am-agents-labs logs
-	$(call print_status,Following $(AGENTS_COLOR)am-agents-labs$(FONT_RESET) logs...)
-	@pm2 logs am-agents-labs
+logs-agents: ## 📋 Follow automagik logs
+	$(call print_status,Following $(AGENTS_COLOR)automagik$(FONT_RESET) logs...)
+	@pm2 logs automagik
 
 logs-spark: ## 📋 Follow automagik-spark logs (API + Worker)
 	$(call print_status,Following $(SPARK_COLOR)automagik-spark$(FONT_RESET) logs...)
@@ -913,7 +913,7 @@ logs-infrastructure: ## 📋 Follow Docker infrastructure logs
 clean-all: ## 🧹 Clean all service artifacts (parallel execution)
 	$(call print_status,Cleaning all service artifacts...)
 	@echo -e "$(FONT_CYAN)$(INFO) Cleaning services in parallel...$(FONT_RESET)"
-	@for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR); do \
+	@for service_dir in $(AUTOMAGIK_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR); do \
 		if [ -d "$$service_dir" ]; then \
 			(echo -e "Cleaning $$(basename $$service_dir)..."; cd $$service_dir && make clean 2>/dev/null || true) & \
 		fi; \
@@ -928,7 +928,7 @@ clean-all: ## 🧹 Clean all service artifacts (parallel execution)
 
 clean-fast: ## 🧹 Clean essential services only (skip UI for speed)
 	$(call print_status,Fast cleaning (essential services only)...)
-	@for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR); do \
+	@for service_dir in $(AUTOMAGIK_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR); do \
 		if [ -d "$$service_dir" ]; then \
 			(echo -e "Cleaning $$(basename $$service_dir)..."; cd $$service_dir && make clean 2>/dev/null || true) & \
 		fi; \
@@ -968,7 +968,7 @@ git-status: ## 📋 Check uncommitted changes in all repositories
 		echo -e "  $(FONT_GRAY)$(INFO) $$repo_name$(FONT_RESET) - Not a git repository"; \
 	fi
 	@# Check all service repositories
-	@for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+	@for service_dir in $(AUTOMAGIK_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
 		if [ -d "$$service_dir" ]; then \
 			repo_name=$$(basename $$service_dir); \
 			if [ -d "$$service_dir/.git" ]; then \
@@ -1030,7 +1030,7 @@ check-updates: ## 🔄 Check if there are new pulls available from remote
 		echo -e "  $(FONT_GRAY)$(INFO) $$repo_name$(FONT_RESET) - Not a git repository"; \
 	fi
 	@# Check all service repositories
-	@for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+	@for service_dir in $(AUTOMAGIK_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
 		if [ -d "$$service_dir" ]; then \
 			repo_name=$$(basename $$service_dir); \
 			if [ -d "$$service_dir/.git" ]; then \
@@ -1099,7 +1099,7 @@ docker-stop: ## 🛑 Stop full Docker stack
 install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-start)
 	$(call print_status,🚀 Installing Automagik suite...)
 	@# Clone all repositories first
-	@$(call ensure_repository,am-agents-labs,$(AM_AGENTS_LABS_DIR),$(AM_AGENTS_LABS_URL))
+	@$(call ensure_repository,automagik,$(AUTOMAGIK_DIR),$(AUTOMAGIK_URL))
 	@$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
 	@$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL))
 	@$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL))
@@ -1108,7 +1108,7 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 	@$(MAKE) setup-env-files
 	@# Start infrastructure automatically if not running
 	@echo -e "$(FONT_CYAN)🔄 Ensuring infrastructure is running...$(FONT_RESET)"
-	@if docker ps --filter "name=am-agents-labs-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "am-agents-labs-postgres" && \
+	@if docker ps --filter "name=automagik-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "automagik-postgres" && \
 	   docker ps --filter "name=automagik-spark-postgres" --filter "status=running" --format "{{.Names}}" | grep -q "automagik-spark-postgres" && \
 	   docker ps --filter "name=automagik-spark-redis" --filter "status=running" --format "{{.Names}}" | grep -q "automagik-spark-redis"; then \
 		echo -e "$(FONT_GREEN)✓ Infrastructure containers are already running and ready$(FONT_RESET)"; \
@@ -1147,7 +1147,7 @@ install: ## 🚀 Install Automagik suite (infrastructure + services - no auto-st
 install-full: ## 🚀 Complete installation (includes UI build - slower but fully ready)
 	$(call print_status,🚀 Installing complete Automagik suite with UI build...)
 	@# Clone all repositories first
-	@$(call ensure_repository,am-agents-labs,$(AM_AGENTS_LABS_DIR),$(AM_AGENTS_LABS_URL))
+	@$(call ensure_repository,automagik,$(AUTOMAGIK_DIR),$(AUTOMAGIK_URL))
 	@$(call ensure_repository,automagik-spark,$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
 	@$(call ensure_repository,automagik-tools,$(AUTOMAGIK_TOOLS_DIR),$(AUTOMAGIK_TOOLS_URL))
 	@$(call ensure_repository,automagik-omni,$(AUTOMAGIK_OMNI_DIR),$(AUTOMAGIK_OMNI_URL))
@@ -1256,7 +1256,7 @@ update: ## 🔄 Git pull and restart only updated services
 		echo "  $(FONT_YELLOW)🔄 Main repository updated$(FONT_RESET)"; \
 		updated_repos="$$updated_repos main"; \
 	fi; \
-	for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+	for service_dir in $(AUTOMAGIK_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
 		if [ -d "$$service_dir" ]; then \
 			echo -e "$(FONT_CYAN)📌 Checking $$(basename $$service_dir)...$(FONT_RESET)"; \
 			cd $$service_dir; \
@@ -1285,7 +1285,7 @@ update: ## 🔄 Git pull and restart only updated services
 				"main") \
 					echo -e "$(FONT_CYAN)🔄 Main repository updated - restarting PM2 services...$(FONT_RESET)"; \
 					$(MAKE) restart ;; \
-				"am-agents-labs") $(MAKE) restart-agents ;; \
+				"automagik") $(MAKE) restart-agents ;; \
 				"automagik-spark") $(MAKE) restart-spark ;; \
 				"automagik-tools") $(MAKE) restart-tools ;; \
 				"automagik-omni") $(MAKE) restart-omni ;; \
@@ -1308,7 +1308,7 @@ pull: ## 🔄 Pull from all GitHub repos (main + all services)
 	$(call print_status,🔄 Pulling from all GitHub repositories...)
 	@echo -e "$(FONT_CYAN)📌 Pulling main repository...$(FONT_RESET)"
 	@git pull
-	@for service_dir in $(AM_AGENTS_LABS_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
+	@for service_dir in $(AUTOMAGIK_DIR) $(AUTOMAGIK_SPARK_DIR) $(AUTOMAGIK_TOOLS_DIR) $(AUTOMAGIK_OMNI_DIR) $(AUTOMAGIK_UI_DIR); do \
 		if [ -d "$$service_dir" ]; then \
 			echo -e "$(FONT_CYAN)📌 Pulling $$(basename $$service_dir)...$(FONT_RESET)"; \
 			cd $$service_dir && git pull 2>/dev/null || echo "  $(FONT_YELLOW)⚠️ Not a git repository or no remote$(FONT_RESET)"; \
@@ -1317,8 +1317,8 @@ pull: ## 🔄 Pull from all GitHub repos (main + all services)
 	done
 	@$(call print_success,All repositories updated!)
 
-pull-agents: ## 🔄 Pull am-agents-labs repository only
-	$(call git_pull_service,am-agents-labs,$(AGENTS_COLOR),$(AM_AGENTS_LABS_DIR),$(AM_AGENTS_LABS_URL))
+pull-agents: ## 🔄 Pull automagik repository only
+	$(call git_pull_service,automagik,$(AGENTS_COLOR),$(AUTOMAGIK_DIR),$(AUTOMAGIK_URL))
 
 pull-spark: ## 🔄 Pull automagik-spark repository only
 	$(call git_pull_service,automagik-spark,$(SPARK_COLOR),$(AUTOMAGIK_SPARK_DIR),$(AUTOMAGIK_SPARK_URL))
@@ -1338,7 +1338,7 @@ logs: ## 📋 Show logs from all services (N=lines F=1 for follow mode)
 		echo -e "$(FONT_PURPLE)$(SUITE) 📋 Following logs from all services (Press Ctrl+C to stop)...$(FONT_RESET)"; \
 		echo -e "$(FONT_YELLOW)Press Ctrl+C to stop following logs$(FONT_RESET)"; \
 		pm2 logs | sed -E \
-			-e 's/(am-agents-labs)/$(AGENTS_COLOR)\1$(FONT_RESET)/g' \
+			-e 's/(automagik)/$(AGENTS_COLOR)\1$(FONT_RESET)/g' \
 			-e 's/(automagik-spark-api|automagik-spark-worker)/$(SPARK_COLOR)\1$(FONT_RESET)/g' \
 			-e 's/(automagik-tools-sse|automagik-tools-http)/$(TOOLS_COLOR)\1$(FONT_RESET)/g' \
 			-e 's/(automagik-omni)/$(OMNI_COLOR)\1$(FONT_RESET)/g' \
@@ -1346,7 +1346,7 @@ logs: ## 📋 Show logs from all services (N=lines F=1 for follow mode)
 	else \
 		echo -e "$(FONT_PURPLE)$(SUITE) 📋 Showing last $(N) lines from all services...$(FONT_RESET)"; \
 		echo -e "$(AGENTS_COLOR)[AGENTS] Last $(N) lines:$(FONT_RESET)"; \
-		pm2 logs am-agents-labs --lines $(N) --nostream 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
+		pm2 logs automagik --lines $(N) --nostream 2>/dev/null | sed "s/^/$(AGENTS_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(SPARK_COLOR)[SPARK-API] Last $(N) lines:$(FONT_RESET)"; \
 		pm2 logs automagik-spark-api --lines $(N) --nostream 2>/dev/null | sed "s/^/$(SPARK_COLOR)  $(FONT_RESET)/" || echo -e "$(FONT_RED)  Service not found$(FONT_RESET)"; \
 		echo -e "$(SPARK_COLOR)[SPARK-WORKER] Last $(N) lines:$(FONT_RESET)"; \
@@ -1362,7 +1362,7 @@ logs: ## 📋 Show logs from all services (N=lines F=1 for follow mode)
 status: ## 📊 Check status of PM2 services
 	@echo -e "$(FONT_PURPLE)$(CHART) Automagik Services Status:$(FONT_RESET)"
 	@pm2 list | sed -E \
-		-e 's/(am-agents-labs)/\x1b[94m\1\x1b[0m/g' \
+		-e 's/(automagik)/\x1b[94m\1\x1b[0m/g' \
 		-e 's/(automagik-spark-api|automagik-spark-worker)/\x1b[33m\1\x1b[0m/g' \
 		-e 's/(automagik-tools)/\x1b[34m\1\x1b[0m/g' \
 		-e 's/(automagik-omni)/\x1b[35m\1\x1b[0m/g' \
