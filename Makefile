@@ -4,7 +4,8 @@
 
 .DEFAULT_GOAL := help
 MAKEFLAGS += --no-print-directory
-SHELL := /bin/bash
+# Use modern bash if available (needed for associative arrays on macOS)
+SHELL := $(shell if [ -x "/opt/homebrew/bin/bash" ]; then echo "/opt/homebrew/bin/bash"; else echo "/bin/bash"; fi)
 
 # ===========================================
 # 🎨 Colors & Symbols
