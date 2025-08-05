@@ -35,6 +35,11 @@ automagik-omni/
 automagik-spark/
 automagik-tools/
 automagik-evolution/
+automagik-genie/
+automagik-hive/
+automagik-cli/
+automagik-forge/
+
 
 # IDE files
 .vscode/
