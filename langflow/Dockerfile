@@ -1,4 +1,4 @@
 FROM langflowai/langflow:latest
 
-# Install docling package
-RUN uv pip install docling
+# Install only docling-core without heavy ML dependencies
+RUN uv pip install docling-core pypdfium2 python-docx python-pptx openpyxl
