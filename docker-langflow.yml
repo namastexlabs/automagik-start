@@ -8,7 +8,10 @@
 services:
   # LangFlow Visual Workflow Builder
   langflow:
-    image: langflowai/langflow:latest
+    build:
+      context: ./langflow
+      dockerfile: Dockerfile
+    image: automagik-langflow:with-docling
     container_name: automagik-langflow
     restart: unless-stopped
     environment:
